@@ -46,7 +46,7 @@ function initializeMap() {
 
             // 사용자 마커 추가
             userMarker = L.marker([userLatitude, userLongitude]).addTo(map);
-            userMarker.bindPopup(`User's location!`).openPopup();
+            userMarker.bindPopup(`${username}'s location!`).openPopup();
 
             // 5초마다 위치 업데이트
             setInterval(updateUserLocation, 5000);
@@ -69,7 +69,7 @@ function updateUserLocation() {
 
             // 마커 위치 업데이트
             userMarker.setLatLng([userLatitude, userLongitude]);
-            userMarker.bindPopup(`Updated user's location!`).openPopup();
+            userMarker.bindPopup(`${username}'s location!`).openPopup();
         })
         .catch((error) => {
             console.error(error);

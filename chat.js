@@ -86,7 +86,6 @@ wss.on('connection', function connection(ws) {
 
             wss.clients.forEach(function each(client) {
                 if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({ action: 'updateUserLocations', userLocations: userLocations }));
                     client.send(JSON.stringify({ action: 'updateUsers', users: users }));
                 }
             });
