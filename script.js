@@ -28,7 +28,7 @@ ws.onmessage = function (event) {
     document.querySelectorAll(`p[data-id='${data.messageId}']`).forEach(el => el.remove());
   } else if (data.action === 'updateUserLocations') {
     userLocations = data.userLocations;
-    updateUserLocations();
+    //updateUserLocations();
   } else if (data.action === 'updateUsers') {
     users = data.users;
     updateUserList();
@@ -121,18 +121,18 @@ function displayUserLocation() {
   // 기존 하드코딩된 사용자 위치 표시 함수 제거
 }
 
-function updateUserLocations() {
-  userLocationsContainer.innerHTML = '';
+// function updateUserLocations() {
+//   userLocationsContainer.innerHTML = '';
 
-  userLocations.forEach(user => {
-    const userIcon = document.createElement('div');
-    userIcon.classList.add('user-icon');
-    userIcon.style.left = `${user.x}px`;
-    userIcon.style.top = `${user.y}px`;
-    userIcon.textContent = user.username;
-    userLocationsContainer.appendChild(userIcon);
-  });
-}
+//   userLocations.forEach(user => {
+//     const userIcon = document.createElement('div');
+//     userIcon.classList.add('user-icon');
+//     userIcon.style.left = `${user.x}px`;
+//     userIcon.style.top = `${user.y}px`;
+//     userIcon.textContent = user.username;
+//     userLocationsContainer.appendChild(userIcon);
+//   });
+// }
 
 function updateUserList() {
   userCount.textContent = `Users: ${users.length}`;
