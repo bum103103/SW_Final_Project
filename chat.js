@@ -90,6 +90,12 @@ wss.on('connection', function connection(ws) {
                 }
             });
         } else if (message.action === 'delete') {
+            pool.query('DELETE FROM messages WHERE id = ?', [message.messageId], (err) => {
+                if (err) {
+                    console.error('Error deleting message from MySQL:', err);
+                } else {
+                    console.log('Message deleted from MySQL');
+                }});
             wss.clients.forEach(function each(client) {
                 if (client.readyState === WebSocket.OPEN) {
                     client.send(JSON.stringify({ action: 'delete', messageId: message.messageId }));
