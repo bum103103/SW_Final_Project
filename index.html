@@ -2,6 +2,9 @@
 <html>
 <head>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
   <link rel="stylesheet" href="style.css">
   <meta charset="utf-8">
   <title>Chat App</title>
@@ -9,8 +12,7 @@
 <body>
   <div class="main-container">
     <div class="map-container">
-      <img src="map.png" alt="동아대학교 승학캠퍼스 지도" class="map-image" id="mapImage">
-      <div id="userLocations"></div>
+      <div id="map"></div>
     </div>
     <div class="chat-container">
       <div class="header">
@@ -25,7 +27,10 @@
       </div>
     </div>
   </div>
-  <script src="gps_set.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
   <script src="script.js"></script>
+  <script src="gps_set.js"></script>
 </body>
 </html>

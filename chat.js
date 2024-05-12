@@ -33,6 +33,15 @@ const server = http.createServer((req, res) => {
             res.writeHead(200, { 'Content-Type': 'application/javascript' });
             res.end(data);
         });
+    } else if (req.url === '/gps_set.js') {
+        fs.readFile(path.join(__dirname, 'gps_set.js'), (err, data) => {
+            if (err) {
+                res.writeHead(500);
+                return res.end('Error loading script.js');
+            }
+            res.writeHead(200, { 'Content-Type': 'application/javascript' });
+            res.end(data);
+        });
     } else if (req.url === '/style.css') {
         fs.readFile(path.join(__dirname, 'style.css'), (err, data) => {
             if (err) {
@@ -77,7 +86,6 @@ wss.on('connection', function connection(ws) {
 
             wss.clients.forEach(function each(client) {
                 if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({ action: 'updateUserLocations', userLocations: userLocations }));
                     client.send(JSON.stringify({ action: 'updateUsers', users: users }));
                 }
             });
