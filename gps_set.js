@@ -79,6 +79,9 @@ function sendLocation(latitude, longitude) {
             latitude: latitude,
             longitude: longitude
         });
+        map.setView([latitude, longitude], map.getZoom());
+            userMarker.setLatLng([latitude, longitude]);
+            userMarker.bindPopup(`${username}'s location!`).openPopup();
         socket.send(message);
         console.log('위치 데이터 전송:', message);
     } else {
@@ -95,6 +98,8 @@ function updateUserLocation() {
         }, error => {
             console.error('위치 정보 에러:', error);
         });
+        // 지도 중심 업데이트
+        
     } else {
         console.error('이 브라우저에서는 위치 정보를 지원하지 않습니다.');
     }
