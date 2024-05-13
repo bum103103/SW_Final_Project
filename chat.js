@@ -6,6 +6,13 @@ const fs = require('fs');
 const path = require('path');
 const session = require('express-session');
 
+const sessionParser = session({
+    secret: 'your_secret_key',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // HTTPS를 사용하는 경우 true로 설정하세요.
+});
+
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
@@ -23,8 +30,18 @@ const pool = mysql.createPool({
 let userLocations = [];
 let users = [];
 
+app.use(sessionParser);
+
 // 웹소켓 서버 이벤트 리스너
-wss.on('connection', function connection(ws) {
+wss.on('connection', function connection(ws, req) {
+
+    sessionParser(req, {}, () => {
+        if (req.session.username) {
+            ws.username = req.session.username;
+            console.log(`Session user: ${req.session.username}`);
+        }
+    });
+
     ws.on('message', function incoming(data) {
         const message = JSON.parse(data);
 
@@ -73,6 +90,18 @@ wss.on('connection', function connection(ws) {
     });
 
     ws.on('close', function () {
+        //sql의 status 0
+        console.log(`WebSocket disconnected: ${ws.username}`);
+        if (ws.username) {
+            pool.query('UPDATE user_login SET status = 0 WHERE username = ?', [ws.username], (err, result) => {
+                if (err) {
+                    console.error('Failed to update user status on disconnect:', err);
+                    return;
+                }
+                console.log(`Status updated to 0 for user ${ws.username}`);
+            });
+        }
+
         userLocations = userLocations.filter(user => user.username !== ws.username);
         users = users.filter(user => user.username !== ws.username);
         wss.clients.forEach(function each(client) {
@@ -195,6 +224,13 @@ app.post('/signup', (req, res) => {
                     if (results.length > 0) {
                         req.session.loggedin = true;
                         req.session.username = username;
+                        //sql의 status 1
+                        pool.query('UPDATE user_login SET status = 1 WHERE username = ?', [username], (err, result) => {
+                            if (err) {
+                                console.error('Failed to update user status:', err);
+                                return;
+                            }
+                        });
                         res.redirect('/index.html');
                     } else {
                         res.send('Incorrect Username and/or Password!');
