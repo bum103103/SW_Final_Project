@@ -1,6 +1,21 @@
+// script.js
+var username = null;
+
 document.addEventListener('DOMContentLoaded', function() {
+  
+  fetch('/get-username')
+  .then(response => response.json())
+  .then(data => {
+      if (data.username) {
+          console.log("Logged in as:", data.username);
+          username = data.username;
+          initializeChat();
+      }
+  })
+  .catch(error => console.error('Error fetching username:', error));
   displayUserLocation();
 });
+
 
 const ws = new WebSocket('ws://localhost:8080');
 const chat = document.getElementById('chat');
@@ -9,18 +24,10 @@ const sendButton = document.getElementById('sendButton');
 const fontSizeRange = document.getElementById('fontSizeRange');
 const userLocationsContainer = document.getElementById('userLocations');
 const userCount = document.getElementById('userCount');
-let username = '';
+
 let userLocations = [];
 let users = [];
-
-while (!username) {
-  username = prompt('Enter your username:');
-}
-
-ws.onopen = function () {
-  ws.send(JSON.stringify({ action: 'join', username: username }));
-};
-
+function initializeChat(){
 ws.onmessage = function (event) {
   const data = JSON.parse(event.data);
 
@@ -34,7 +41,7 @@ ws.onmessage = function (event) {
     scrollToBottom();
   }
 };
-
+}
 function addMessageToChat(messageText, messageId, messageUsername) {
   const messageContainer = document.createElement('div');
   messageContainer.classList.add('chat-message-container');

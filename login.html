@@ -9,14 +9,14 @@
 <body>
     <div class="login-container">
         <h2>Login</h2>
-        <form id="loginForm">
+        <form id="loginForm" action="/login" method="post">
             <input type="text" id="username" name="username" placeholder="Username" required>
             <input type="password" id="password" name="password" placeholder="Password" required>
             <button type="submit">Login</button>
         </form>
         <p class="error" id="errorMessage"></p>
+        <button type="submit" onClick="location.href='register.html'">register</button>
     </div>
 
-    <script src="login.js"></script>
 </body>
 </html>
