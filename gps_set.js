@@ -56,25 +56,58 @@ function initializeMap() {
         });
 }
 
+// WebSocket 연결 초기화
+var socket = new WebSocket('ws://localhost:8080');
+
+socket.onopen = function() {
+    console.log('WebSocket 연결 성공');
+};
+
+socket.onerror = function(error) {
+    console.log('WebSocket 에러:', error);
+};
+
+socket.onclose = function() {
+    console.log('WebSocket 연결 종료');
+};
+
+function sendLocation(latitude, longitude) {
+    if (socket.readyState === WebSocket.OPEN) {
+        const message = JSON.stringify({
+            action: 'updateLocation',
+            username: 'currentUsername', // 실제 사용자 이름을 적절하게 설정
+            latitude: latitude,
+            longitude: longitude
+        });
+        map.setView([latitude, longitude], map.getZoom());
+            userMarker.setLatLng([latitude, longitude]);
+            userMarker.bindPopup(`${username}'s location!`).openPopup();
+        socket.send(message);
+        console.log('위치 데이터 전송:', message);
+    } else {
+        console.log("WebSocket이 열려있지 않습니다.");
+    }
+}
+
 // 사용자 위치 업데이트 함수
 function updateUserLocation() {
-    getUserGeoData()
-        .then(([latitude, longitude]) => {
-            userLatitude = latitude;
-            userLongitude = longitude;
-            console.log(`Updated Latitude: ${userLatitude}, Longitude: ${userLongitude}`);
-            
-            // 지도 중심 업데이트
-            map.setView([userLatitude, userLongitude], map.getZoom());
-
-            // 마커 위치 업데이트
-            userMarker.setLatLng([userLatitude, userLongitude]);
-            userMarker.bindPopup(`${username}'s location!`).openPopup();
-        })
-        .catch((error) => {
-            console.error(error);
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(position => {
+            const { latitude, longitude } = position.coords;
+            sendLocation(latitude, longitude);  // 서버로 위치 데이터 전송
+        }, error => {
+            console.error('위치 정보 에러:', error);
         });
+        // 지도 중심 업데이트
+        
+    } else {
+        console.error('이 브라우저에서는 위치 정보를 지원하지 않습니다.');
+    }
 }
+
+
+
+
 
 // 초기화 함수 호출
 initializeMap();

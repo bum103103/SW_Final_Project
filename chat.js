@@ -45,7 +45,32 @@ wss.on('connection', function connection(ws, req) {
     ws.on('message', function incoming(data) {
         const message = JSON.parse(data);
 
-        if (message.action === 'join') {
+        if (message.action === 'updateLocation') {
+            // 위치 데이터 업데이트 메시지 처리
+            const { latitude, longitude } = message;
+            const username = ws.username;
+            console.log(`위치 업데이트: 사용자 ${username}, 위도 ${latitude}, 경도 ${longitude}`);
+    
+            // 서버 측 사용자 위치 목록 업데이트 로직
+            const userLocation = { username, latitude, longitude };
+            const index = userLocations.findIndex(loc => loc.username === username);
+            if (index !== -1) {
+                userLocations[index] = userLocation;
+            } else {
+                userLocations.push(userLocation);
+            }
+    
+            // 다른 클라이언트들에게 업데이트된 위치 정보를 브로드캐스트
+            wss.clients.forEach(client => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({
+                        action: 'updateUserLocations',
+                        userLocations: userLocations
+                    }));
+                }
+            });
+
+        } else if (message.action === 'join') {
             const userLocation = {
                 username: message.username,
                 x: Math.random() * 800,
