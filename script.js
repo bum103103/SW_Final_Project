@@ -2,7 +2,6 @@
 var username = null;
 
 document.addEventListener('DOMContentLoaded', function() {
-  
   fetch('/get-username')
   .then(response => response.json())
   .then(data => {
@@ -13,8 +12,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
   })
   .catch(error => console.error('Error fetching username:', error));
-  displayUserLocation();
 });
+
 
 
 const ws = new WebSocket('ws://localhost:8080');
@@ -25,23 +24,31 @@ const fontSizeRange = document.getElementById('fontSizeRange');
 const userLocationsContainer = document.getElementById('userLocations');
 const userCount = document.getElementById('userCount');
 
-let userLocations = [];
 let users = [];
 function initializeChat(){
-ws.onmessage = function (event) {
-  const data = JSON.parse(event.data);
+  ws.onmessage = function (event) {
+      const data = JSON.parse(event.data);
 
-  if (data.action === 'delete') {
-    document.querySelectorAll(`p[data-id='${data.messageId}']`).forEach(el => el.remove());
-  } else if (data.action === 'updateUsers') {
-    users = data.users;
-    updateUserList();
-  } else {
-    addMessageToChat(data.text, data.messageId, data.username);
-    scrollToBottom();
-  }
-};
+      if (data.action === 'delete') {
+          document.querySelectorAll(`p[data-id='${data.messageId}']`).forEach(el => el.remove());
+      } else if (data.action === 'updateUsers') {
+          users = data.users;
+          updateUserList();
+      } else if (data.action === 'updateUserLocations') {
+          updateUserMarkers(data.userLocations);
+      } else {
+          addMessageToChat(data.text, data.messageId, data.username);
+          scrollToBottom();
+      }
+  };
 }
+
+function updateUserMarkers(userLocations) {
+  userLocations.forEach(userLocation => {
+      addOrUpdateUserMarker(userLocation.username, userLocation.latitude, userLocation.longitude);
+  });
+}
+
 function addMessageToChat(messageText, messageId, messageUsername) {
   const messageContainer = document.createElement('div');
   messageContainer.classList.add('chat-message-container');

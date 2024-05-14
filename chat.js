@@ -46,12 +46,10 @@ wss.on('connection', function connection(ws, req) {
         const message = JSON.parse(data);
 
         if (message.action === 'updateLocation') {
-            // 위치 데이터 업데이트 메시지 처리
             const { latitude, longitude } = message;
             const username = ws.username;
             console.log(`위치 업데이트: 사용자 ${username}, 위도 ${latitude}, 경도 ${longitude}`);
     
-            // 서버 측 사용자 위치 목록 업데이트 로직
             const userLocation = { username, latitude, longitude };
             const index = userLocations.findIndex(loc => loc.username === username);
             if (index !== -1) {
@@ -60,7 +58,6 @@ wss.on('connection', function connection(ws, req) {
                 userLocations.push(userLocation);
             }
     
-            // 다른 클라이언트들에게 업데이트된 위치 정보를 브로드캐스트
             wss.clients.forEach(client => {
                 if (client.readyState === WebSocket.OPEN) {
                     client.send(JSON.stringify({
@@ -115,7 +112,6 @@ wss.on('connection', function connection(ws, req) {
     });
 
     ws.on('close', function () {
-        //sql의 status 0
         console.log(`WebSocket disconnected: ${ws.username}`);
         if (ws.username) {
             pool.query('UPDATE user_login SET status = 0 WHERE username = ?', [ws.username], (err, result) => {
@@ -186,20 +182,14 @@ app.get('/', (req, res) => {
 
 app.get('/index.html', (req, res) => {
     if (req.session.loggedin) {
-        // 파일을 동기적으로 읽기
         const indexHtml = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
-        console.log('Original HTML:', indexHtml); // 원본 HTML 출력
-
-        // HTML 내용을 변경
         const modifiedHtml = indexHtml.replace('<!--USERNAME-->', `<script>var username = "${req.session.username}";</script>`);
-        console.log('Modified HTML:', modifiedHtml); // 수정된 HTML 출력
-
-        // 변경된 HTML을 클라이언트에게 전송
         res.send(modifiedHtml);
     } else {
         res.redirect('/login.html');
     }
 });
+
 app.get('/get-username', (req, res) => {
     if (req.session.loggedin) {
         res.json({ username: req.session.username });
@@ -234,38 +224,38 @@ app.post('/signup', (req, res) => {
     }
 });
 
-    app.post('/login', (req, res) => {
-        const { username, password } = req.body;
-    
-        if (username && password) {
-            pool.execute(
-                'SELECT * FROM user_login WHERE username = ? AND password = ?',
-                [username, password],
-                (err, results) => {
-                    if (err) {
-                        res.status(500).send('Database error');
-                        return;
-                    }
-                    if (results.length > 0) {
-                        req.session.loggedin = true;
-                        req.session.username = username;
-                        //sql의 status 1
-                        pool.query('UPDATE user_login SET status = 1 WHERE username = ?', [username], (err, result) => {
-                            if (err) {
-                                console.error('Failed to update user status:', err);
-                                return;
-                            }
-                        });
-                        res.redirect('/index.html');
-                    } else {
-                        res.send('Incorrect Username and/or Password!');
-                    }
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+
+    if (username && password) {
+        pool.execute(
+            'SELECT * FROM user_login WHERE username = ? AND password = ?',
+            [username, password],
+            (err, results) => {
+                if (err) {
+                    res.status(500).send('Database error');
+                    return;
                 }
-            );
-        } else {
-            res.status(400).send('Username and Password are required');
-        }
-    });
+                if (results.length > 0) {
+                    req.session.loggedin = true;
+                    req.session.username = username;
+                    pool.query('UPDATE user_login SET status = 1 WHERE username = ?', [username], (err, result) => {
+                        if (err) {
+                            console.error('Failed to update user status:', err);
+                            return;
+                        }
+                    });
+                    res.redirect('/index.html');
+                } else {
+                    res.send('Incorrect Username and/or Password!');
+                }
+            }
+        );
+    } else {
+        res.status(400).send('Username and Password are required');
+    }
+});
+
 server.listen(8080, () => {
     console.log('Server is listening on http://localhost:8080');
 });
