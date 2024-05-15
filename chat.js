@@ -36,7 +36,7 @@ app.use(sessionParser);
 wss.on('connection', function connection(ws, req) {
 
     sessionParser(req, {}, () => {
-        if (req.session.username) {
+        if (req.session && req.session.username) {
             ws.username = req.session.username;
             console.log(`Session user: ${req.session.username}`);
         }
@@ -131,6 +131,14 @@ wss.on('connection', function connection(ws, req) {
                 client.send(JSON.stringify({ action: 'updateUsers', users: users }));
             }
         });
+        wss.clients.forEach(client => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({
+                    action: 'removeMarker',
+                    username: ws.username
+                }));
+            }
+        });
     });
 });
 
@@ -141,12 +149,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.use(session({
-    secret: 'your_secret_key',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false } // HTTPS가 아니라면 false로 설정
-}));
+
 
 
 // HTTP 서버를 사용하는 추가 경로 설정
@@ -256,6 +259,6 @@ app.post('/login', (req, res) => {
     }
 });
 
-server.listen(8080, () => {
-    console.log('Server is listening on http://localhost:8080');
+server.listen(8080, '0.0.0.0', () => {
+    console.log('Server is listening on http://0.0.0.0:8080');
 });

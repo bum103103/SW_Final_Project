@@ -1,6 +1,5 @@
 // script.js
 var username = null;
-
 document.addEventListener('DOMContentLoaded', function() {
   fetch('/get-username')
   .then(response => response.json())
@@ -16,7 +15,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
 
-const ws = new WebSocket('ws://localhost:8080');
+
+const ws = new WebSocket(`wss://${window.location.host}`);
+
 const chat = document.getElementById('chat');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');

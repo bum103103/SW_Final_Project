@@ -2,6 +2,23 @@
 
 // 함수 모음
 // 현재 웹사이트에 접속 중인 사용자의 위경도 값을 가져오는 함수
+var username = null;
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/get-username')
+    .then(response => response.json())
+    .then(data => {
+        if (data.username) {
+            console.log("Logged in as:", data.username);
+            username = data.username;
+            initializeChat();
+            initializeMap(); // username이 정의된 후 initializeMap 호출
+        }
+    })
+    .catch(error => console.error('Error fetching username:', error));
+  });
+
+
+
 function getUserGeoData() {
     return new Promise((resolve, reject) => {
         if ("geolocation" in navigator) {
@@ -22,7 +39,6 @@ function getUserGeoData() {
         }
     });
 }
-
 // 사용자 위치 정보.
 let userLatitude = 0.0;
 let userLongitude = 0.0;   
@@ -43,24 +59,48 @@ function initializeMap() {
                 attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             }).addTo(map);
 
-            addOrUpdateUserMarker(username, userLatitude, userLongitude);
+            if (username) {
+                addOrUpdateUserMarker(username, userLatitude, userLongitude);
+            }
 
             setInterval(updateUserLocation, 5000);
         })
         .catch((error) => {
             console.error(error);
         });
+    
 }
 
+/*
 function addOrUpdateUserMarker(username, latitude, longitude) {
     if (userMarkers[username]) {
         userMarkers[username].setLatLng([latitude, longitude]).bindPopup(`${username}'s location`).openPopup();
     } else {
         userMarkers[username] = L.marker([latitude, longitude]).addTo(map).bindPopup(`${username}'s location`).openPopup();
     }
+}*/
+function addOrUpdateUserMarker(username, latitude, longitude) {
+    if (userMarkers[username]) {
+        // 기존 마커의 위치를 업데이트
+        userMarkers[username].setLatLng([latitude, longitude]).bindPopup(`${username}'s location`);
+    } else {
+        // 새로운 마커를 추가
+        userMarkers[username] = L.marker([latitude, longitude]).addTo(map).bindPopup(`${username}'s location`);
+    }
+}
+
+function updateUserMarkers(userLocations) {
+    userLocations.forEach(userLocation => {
+        addOrUpdateUserMarker(userLocation.username, userLocation.latitude, userLocation.longitude);
+    });
+
+    // 모든 사용자 마커의 말풍선을 열어둠
+    Object.keys(userMarkers).forEach(username => {
+        userMarkers[username].openPopup();
+    });
 }
 // WebSocket 연결 초기화
-var socket = new WebSocket('ws://localhost:8080');
+var socket = new WebSocket(`wss://${window.location.host}`);
 
 socket.onopen = function() {
     console.log('WebSocket 연결 성공');
@@ -79,8 +119,17 @@ socket.onmessage = function(event) {
         message.userLocations.forEach(userLocation => {
             addOrUpdateUserMarker(userLocation.username, userLocation.latitude, userLocation.longitude);
         });
+    }else if (message.action === 'removeMarker') {
+        // 마커 제거
+        removeUserMarker(message.username);
     }
 };
+function removeUserMarker(username) {
+    if (userMarkers[username]) {
+        map.removeLayer(userMarkers[username]);
+        delete userMarkers[username];
+    }
+}
 function sendLocation(latitude, longitude) {
     if (socket.readyState === WebSocket.OPEN) {
         const message = JSON.stringify({
@@ -102,7 +151,9 @@ function updateUserLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(position => {
             const { latitude, longitude } = position.coords;
-            sendLocation(latitude, longitude);  
+            if (username) {
+                sendLocation(latitude, longitude);
+            }  
         }, error => {
             console.error('위치 정보 에러:', error);
         });
@@ -111,9 +162,5 @@ function updateUserLocation() {
     }
 }
 
-
-
-
-
 // 초기화 함수 호출
-initializeMap();
+//initializeMap();
