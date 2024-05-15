@@ -7,7 +7,6 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log("Logged in as:", data.username);
             username = data.username;
             initializeChat();
-            //initializeMap(); // username이 정의된 후 initializeMap 호출
         }
     })
     .catch(error => console.error('Error fetching username:', error));
@@ -19,7 +18,6 @@ const chat = document.getElementById('chat');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 const fontSizeRange = document.getElementById('fontSizeRange');
-const userLocationsContainer = document.getElementById('userLocations');
 const userCount = document.getElementById('userCount');
 
 let users = [];
@@ -83,7 +81,19 @@ function addMessageToChat(messageText, messageId, messageUsername) {
 
     // 채팅 메시지를 마커 팝업에 업데이트
     if (userMarkers[messageUsername]) {
-        userMarkers[messageUsername].getPopup().setContent(`${messageUsername}: ${messageText}`).openPopup();
+        const popupElement = document.getElementById(`${messageUsername}-popup`).querySelector('.messages');
+        const newMessage = document.createElement('div');
+        newMessage.textContent = messageText;
+        popupElement.appendChild(newMessage);
+
+        // 3개 이상의 메시지가 있는 경우, 가장 오래된 메시지를 서서히 제거
+        if (popupElement.children.length > 3) {
+            const oldestMessage = popupElement.children[0];
+            oldestMessage.classList.add('fade-out');
+            setTimeout(() => {
+                oldestMessage.remove();
+            }, 1000); // 애니메이션 시간 (1초)과 일치시킵니다.
+        }
     }
 }
 
@@ -130,10 +140,6 @@ function changeFontSize(size) {
 
 function scrollToBottom() {
     chat.scrollTop = chat.scrollHeight;
-}
-
-function displayUserLocation() {
-    // 기존 하드코딩된 사용자 위치 표시 함수 제거
 }
 
 function updateUserList() {

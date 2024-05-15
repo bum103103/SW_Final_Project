@@ -70,12 +70,11 @@ function initializeMap() {
 function addOrUpdateUserMarker(username, latitude, longitude) {
     if (userMarkers[username]) {
         // 기존 마커의 위치를 업데이트하고 팝업 내용도 업데이트
-        userMarkers[username].setLatLng([latitude, longitude])
-            .getPopup().setContent(`${username}'s location`);
+        userMarkers[username].setLatLng([latitude, longitude]);
     } else {
         // 새로운 마커를 추가하고 팝업을 바인딩
         userMarkers[username] = L.marker([latitude, longitude]).addTo(map)
-            .bindPopup(`${username}'s location`, { closeButton: false, autoClose: false })
+            .bindPopup(`<div id="${username}-popup"><strong>${username}'s location</strong><br><div class="messages"></div></div>`, { closeButton: false, autoClose: false })
             .openPopup();
     }
 }
