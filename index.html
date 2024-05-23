@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+  <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <title>Chat App</title>
+  <!--USERNAME-->
+  <style>
+    #map { height: 100vh; }
+    .custom-popup {
+        background: white;
+        border: 1px solid black;
+        padding: 5px;
+        border-radius: 5px;
+        max-width: 150px;
+        text-align: center;
+        white-space: nowrap;
+    }
+    .fade-out {
+        animation: fadeOut 1s forwards;
+    }
+    @keyframes fadeOut {
+        0% { opacity: 1; }
+        100% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <!--USERNAME-->
+  <div class="main-container">
+    <div class="map-container">
+      <div id="map"></div>
+    </div>
+    <div class="chat-container">
+      <div class="header">
+        <div class="user-count" id="userCount">Users: 0</div>
+      </div>
+      <div id="chat" class="chat-content"></div>
+      <div class="input-container">
+        <input type="text" id="messageInput" placeholder="Type a message...">
+        <button id="sendButton" onclick="sendMessage()">Send</button>
+        <label for="fontSizeRange">Adjust Font Size</label>
+        <input type="range" id="fontSizeRange" min="10" max="60" value="16" onchange="changeFontSize(this.value)">
+      </div>
+    </div>
+  </div>
+  <script src="gps_set.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+  <script src="script.js"></script>
+</body>
+</html>
