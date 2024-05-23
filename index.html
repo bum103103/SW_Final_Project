@@ -2,24 +2,26 @@
 <html>
 <head>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-     crossorigin=""/>
   <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=53644151cc4f34401c8eef39c8923729&libraries=services,clusterer,drawing"></script>
+
   <meta charset="utf-8">
   <title>Chat App</title>
-  <!--USERNAME-->
   <style>
     #map { height: 100vh; }
     .custom-popup {
-        background: white;
-        border: 1px solid black;
-        padding: 5px;
-        border-radius: 5px;
-        max-width: 150px;
-        text-align: center;
-        white-space: nowrap;
-    }
+      background: white;
+      border: 1px solid black;
+      padding: 5px;
+      border-radius: 5px;
+      max-width: 150px;
+      text-align: center;
+      white-space: nowrap;
+      position: relative;
+      transform: translateY(-100%); /* This moves the popup upward */
+  }
+  
     .fade-out {
         animation: fadeOut 1s forwards;
     }
@@ -30,7 +32,6 @@
   </style>
 </head>
 <body>
-  <!--USERNAME-->
   <div class="main-container">
     <div class="map-container">
       <div id="map"></div>
@@ -49,9 +50,6 @@
     </div>
   </div>
   <script src="gps_set.js"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin=""></script>
   <script src="script.js"></script>
 </body>
 </html>

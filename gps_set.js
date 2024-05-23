@@ -1,5 +1,3 @@
-// 함수 모음
-// 현재 웹사이트에 접속 중인 사용자의 위경도 값을 가져오는 함수
 var username = null;
 document.addEventListener('DOMContentLoaded', function() {
     fetch('/get-username')
@@ -36,13 +34,11 @@ function getUserGeoData() {
     });
 }
 
-// 사용자 위치 정보.
 let userLatitude = 0.0;
-let userLongitude = 0.0;   
+let userLongitude = 0.0;
 let map;
 let userMarkers = {};
 
-// 사용자 위치 정보 초기화 및 지도 설정
 function initializeMap() {
     getUserGeoData()
         .then(([latitude, longitude]) => {
@@ -50,11 +46,13 @@ function initializeMap() {
             userLongitude = longitude;
             console.log(`Initial Latitude: ${userLatitude}, Longitude: ${userLongitude}`);
             
-            map = L.map('map').setView([userLatitude, userLongitude], 13);    
-            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 19,
-                attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-            }).addTo(map);
+            var container = document.getElementById('map'); 
+            var options = { 
+                center: new kakao.maps.LatLng(userLatitude, userLongitude), 
+                level: 3 
+            };
+
+            map = new kakao.maps.Map(container, options);
 
             if (username) {
                 addOrUpdateUserMarker(username, userLatitude, userLongitude);
@@ -66,27 +64,41 @@ function initializeMap() {
             console.error(error);
         });
 }
-
 function addOrUpdateUserMarker(username, latitude, longitude) {
     if (userMarkers[username]) {
-        // 기존 마커의 위치를 업데이트하고 팝업 내용도 업데이트
-        userMarkers[username].setLatLng([latitude, longitude]);
+        // Update existing marker's position
+        userMarkers[username].marker.setPosition(new kakao.maps.LatLng(latitude, longitude));
     } else {
-        // 새로운 마커를 추가하고 팝업을 바인딩
-        userMarkers[username] = L.marker([latitude, longitude]).addTo(map)
-            .bindPopup(`<div id="${username}-popup"><strong>${username}'s location</strong><br><div class="messages"></div></div>`, { closeButton: false, autoClose: false })
-            .openPopup();
+        // Create a new marker
+        var markerPosition = new kakao.maps.LatLng(latitude, longitude); 
+        var marker = new kakao.maps.Marker({
+            position: markerPosition
+        });
+        marker.setMap(map);
+
+        var content = `<div id="${username}-popup" class="custom-popup"><strong>${username}'s location</strong><br><div class="messages"></div></div>`;
+        
+        var overlay = new kakao.maps.CustomOverlay({
+            position: markerPosition,
+            content: content,
+            yAnchor: 1, // Position the overlay above the marker
+            xAnchor: 0.5 // Center the overlay horizontally on the marker
+        });
+        overlay.setMap(map);
+
+        userMarkers[username] = {
+            marker: marker,
+            overlay: overlay
+        };
     }
 }
-
 function updateUserMarkers(userLocations) {
     userLocations.forEach(userLocation => {
         addOrUpdateUserMarker(userLocation.username, userLocation.latitude, userLocation.longitude);
     });
 }
 
-// WebSocket 연결 초기화
-var socket = new WebSocket(`wss://${window.location.host}`);
+var socket = new WebSocket('ws//localhost:8080');
 
 socket.onopen = function() {
     console.log('WebSocket 연결 성공');
@@ -112,7 +124,7 @@ socket.onmessage = function(event) {
 
 function removeUserMarker(username) {
     if (userMarkers[username]) {
-        map.removeLayer(userMarkers[username]);
+        userMarkers[username].setMap(null);
         delete userMarkers[username];
     }
 }
@@ -132,7 +144,6 @@ function sendLocation(latitude, longitude) {
     }
 }
 
-// 사용자 위치 업데이트 함수
 function updateUserLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(position => {

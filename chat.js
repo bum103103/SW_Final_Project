@@ -67,7 +67,7 @@ wss.on('connection', function connection(ws, req) {
                 }
             });
 
-        } else if (message.action === 'join') {
+        }else if (message.action === 'join') {
             const userLocation = {
                 username: message.username,
                 x: Math.random() * 800,
