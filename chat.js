@@ -36,7 +36,7 @@ app.use(sessionParser);
 wss.on('connection', function connection(ws, req) {
 
     sessionParser(req, {}, () => {
-        if (req.session && req.session.username) {
+        if (req.session.username) {
             ws.username = req.session.username;
             console.log(`Session user: ${req.session.username}`);
         }
@@ -67,7 +67,7 @@ wss.on('connection', function connection(ws, req) {
                 }
             });
 
-        } else if (message.action === 'join') {
+        }else if (message.action === 'join') {
             const userLocation = {
                 username: message.username,
                 x: Math.random() * 800,
@@ -131,14 +131,6 @@ wss.on('connection', function connection(ws, req) {
                 client.send(JSON.stringify({ action: 'updateUsers', users: users }));
             }
         });
-        wss.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({
-                    action: 'removeMarker',
-                    username: ws.username
-                }));
-            }
-        });
     });
 });
 
@@ -149,11 +141,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-
+app.use(session({
+    secret: 'your_secret_key',
+    resave: false,
+    saveUninitialized: true,
+    cookie: { secure: false } // HTTPS가 아니라면 false로 설정
+}));
 
 
 // HTTP 서버를 사용하는 추가 경로 설정
-['/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css'].forEach(file => {
+['/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html' ].forEach(file => {
     app.get(file, (req, res) => {
         // 파일 경로를 보다 명확하게 지정
         const filePath = path.join(__dirname, file); // 'public' 디렉토리 내 파일을 가정
@@ -259,6 +256,10 @@ app.post('/login', (req, res) => {
     }
 });
 
-server.listen(8080, '0.0.0.0', () => {
-    console.log('Server is listening on http://0.0.0.0:8080');
+app.get('/map.html', (req, res) => {
+    res.sendFile(__dirname + '/map.html');
+  });
+
+server.listen(8080, () => {
+    console.log('Server is listening on http://localhost:8080');
 });
