@@ -150,7 +150,7 @@ app.use(session({
 
 
 // HTTP 서버를 사용하는 추가 경로 설정
-['/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css'].forEach(file => {
+['/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html' ].forEach(file => {
     app.get(file, (req, res) => {
         // 파일 경로를 보다 명확하게 지정
         const filePath = path.join(__dirname, file); // 'public' 디렉토리 내 파일을 가정
@@ -255,6 +255,10 @@ app.post('/login', (req, res) => {
         res.status(400).send('Username and Password are required');
     }
 });
+
+app.get('/map.html', (req, res) => {
+    res.sendFile(__dirname + '/map.html');
+  });
 
 server.listen(8080, () => {
     console.log('Server is listening on http://localhost:8080');

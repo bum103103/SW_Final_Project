@@ -1,7 +1,20 @@
-// gps 관련 js 파일, index.html에서 이 스크립트를 가장 먼저 불러오기
-
 // 함수 모음
 // 현재 웹사이트에 접속 중인 사용자의 위경도 값을 가져오는 함수
+var username = null;
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/get-username')
+    .then(response => response.json())
+    .then(data => {
+        if (data.username) {
+            console.log("Logged in as:", data.username);
+            username = data.username;
+            initializeChat();
+            initializeMap(); // username이 정의된 후 initializeMap 호출
+        }
+    })
+    .catch(error => console.error('Error fetching username:', error));
+});
+
 function getUserGeoData() {
     return new Promise((resolve, reject) => {
         if ("geolocation" in navigator) {
@@ -43,7 +56,9 @@ function initializeMap() {
                 attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             }).addTo(map);
 
-            addOrUpdateUserMarker(username, userLatitude, userLongitude);
+            if (username) {
+                addOrUpdateUserMarker(username, userLatitude, userLongitude);
+            }
 
             setInterval(updateUserLocation, 5000);
         })
@@ -54,13 +69,24 @@ function initializeMap() {
 
 function addOrUpdateUserMarker(username, latitude, longitude) {
     if (userMarkers[username]) {
-        userMarkers[username].setLatLng([latitude, longitude]).bindPopup(`${username}'s location`).openPopup();
+        // 기존 마커의 위치를 업데이트하고 팝업 내용도 업데이트
+        userMarkers[username].setLatLng([latitude, longitude]);
     } else {
-        userMarkers[username] = L.marker([latitude, longitude]).addTo(map).bindPopup(`${username}'s location`).openPopup();
+        // 새로운 마커를 추가하고 팝업을 바인딩
+        userMarkers[username] = L.marker([latitude, longitude]).addTo(map)
+            .bindPopup(`<div id="${username}-popup"><strong>${username}'s location</strong><br><div class="messages"></div></div>`, { closeButton: false, autoClose: false })
+            .openPopup();
     }
 }
+
+function updateUserMarkers(userLocations) {
+    userLocations.forEach(userLocation => {
+        addOrUpdateUserMarker(userLocation.username, userLocation.latitude, userLocation.longitude);
+    });
+}
+
 // WebSocket 연결 초기화
-var socket = new WebSocket('ws://localhost:8080');
+var socket = new WebSocket(`wss://${window.location.host}`);
 
 socket.onopen = function() {
     console.log('WebSocket 연결 성공');
@@ -73,14 +99,24 @@ socket.onerror = function(error) {
 socket.onclose = function() {
     console.log('WebSocket 연결 종료');
 };
+
 socket.onmessage = function(event) {
     const message = JSON.parse(event.data);
     if (message.action === 'updateUserLocations') {
-        message.userLocations.forEach(userLocation => {
-            addOrUpdateUserMarker(userLocation.username, userLocation.latitude, userLocation.longitude);
-        });
+        updateUserMarkers(message.userLocations);
+    } else if (message.action === 'removeMarker') {
+        // 마커 제거
+        removeUserMarker(message.username);
     }
 };
+
+function removeUserMarker(username) {
+    if (userMarkers[username]) {
+        map.removeLayer(userMarkers[username]);
+        delete userMarkers[username];
+    }
+}
+
 function sendLocation(latitude, longitude) {
     if (socket.readyState === WebSocket.OPEN) {
         const message = JSON.stringify({
@@ -97,12 +133,13 @@ function sendLocation(latitude, longitude) {
 }
 
 // 사용자 위치 업데이트 함수
-
 function updateUserLocation() {
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(position => {
             const { latitude, longitude } = position.coords;
-            sendLocation(latitude, longitude);  
+            if (username) {
+                sendLocation(latitude, longitude);
+            }
         }, error => {
             console.error('위치 정보 에러:', error);
         });
@@ -110,10 +147,3 @@ function updateUserLocation() {
         console.error('이 브라우저에서는 위치 정보를 지원하지 않습니다.');
     }
 }
-
-
-
-
-
-// 초기화 함수 호출
-initializeMap();
