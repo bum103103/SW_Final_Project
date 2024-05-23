@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', function() {
     .catch(error => console.error('Error fetching username:', error));
 });
 
-const ws = new WebSocket(`wss://${window.location.host}`);
+const ws = new WebSocket('ws://localhost:8080');
 
 const chat = document.getElementById('chat');
 const messageInput = document.getElementById('messageInput');
