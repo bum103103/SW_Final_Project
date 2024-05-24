@@ -19,7 +19,6 @@
     <div id="map"></div>
     <p><em>지도를 클릭해주세요!</em></p>
     <div id="clickLatlng"></div>
-    <!-- 사용자 입력을 받을 입력 필드 추가 -->
     <input type="text" id="markerText" placeholder="마커에 표시할 텍스트를 입력하세요">
     <!--USERNAME-->
     <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=53644151cc4f34401c8eef39c8923729"></script>
@@ -55,21 +54,16 @@
             console.log('WebSocket 연결 종료');
         };
 
-        let userMarkers = {}; // 사용자 마커를 저장할 객체
+        let userMarkers = {};
 
         socket.onmessage = function (event) {
             const message = JSON.parse(event.data);
             if (message.action === 'updateUserLocations') {
                 updateUserMarkers(message.userLocations);
             } else if (message.action === 'removeMarker') {
-                removeUserMarker(message.username);
-            } else if (message.action === 'initMarkers') {
-                message.markers.forEach(marker => {
-                    addMarker(marker.latitude, marker.longitude, marker.username, marker.userText);
-                });
+                removeUserMarker(message.username, message.latitude, message.longitude);
             } else if (message.action === 'addMarker') {
-                const { latitude, longitude, username, userText } = message.marker;
-                addMarker(latitude, longitude, username, userText);
+                addMarker(message.latitude, message.longitude, message.username, message.userText);
             }
         };
 
@@ -134,10 +128,11 @@
             });
         }
 
-        function removeUserMarker(username) {
-            if (userMarkers[username]) {
-                userMarkers[username].setMap(null);
-                delete userMarkers[username];
+        function removeUserMarker(username, latitude, longitude) {
+            const key = `${username}_${latitude}_${longitude}`;
+            if (userMarkers[key]) {
+                userMarkers[key].setMap(null);
+                delete userMarkers[key];
             }
         }
 
@@ -206,7 +201,8 @@
             });
             infowindow.open(map, marker);
 
-            userMarkers[username] = marker;
+            const key = `${username}_${latitude}_${longitude}`;
+            userMarkers[key] = marker;
         }
 
         kakao.maps.event.addListener(map, 'click', function (mouseEvent) {
