@@ -64,6 +64,7 @@ function initializeMap() {
             console.error(error);
         });
 }
+
 function addOrUpdateUserMarker(username, latitude, longitude) {
     if (userMarkers[username]) {
         // Update existing marker's position
@@ -116,18 +117,36 @@ socket.onmessage = function(event) {
     const message = JSON.parse(event.data);
     if (message.action === 'updateUserLocations') {
         updateUserMarkers(message.userLocations);
+        if (message.center) {
+            addOrUpdateCenterMarker(message.center.latitude, message.center.longitude);
+        }
     } else if (message.action === 'removeMarker') {
-        // 마커 제거
         removeUserMarker(message.username);
     }
 };
 
+
+let centerMarker = null;
+function addOrUpdateCenterMarker(latitude, longitude) {
+    if (centerMarker) {
+        centerMarker.setPosition(new kakao.maps.LatLng(latitude, longitude));
+    } else {
+        var markerPosition = new kakao.maps.LatLng(latitude, longitude); 
+        centerMarker = new kakao.maps.Marker({
+            position: markerPosition
+        });
+        centerMarker.setMap(map);
+    }
+}
+
 function removeUserMarker(username) {
     if (userMarkers[username]) {
-        userMarkers[username].setMap(null);
+        userMarkers[username].marker.setMap(null); // 마커 제거
+        userMarkers[username].overlay.setMap(null); // 오버레이 제거
         delete userMarkers[username];
     }
 }
+
 
 function sendLocation(latitude, longitude) {
     if (socket.readyState === WebSocket.OPEN) {

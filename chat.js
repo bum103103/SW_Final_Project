@@ -33,6 +33,21 @@ let users = [];
 app.use(sessionParser);
 
 // 웹소켓 서버 이벤트 리스너
+
+
+function calculateCenter(locations) {
+    let latSum = 0;
+    let lngSum = 0;
+    locations.forEach(loc => {
+        latSum += loc.latitude;
+        lngSum += loc.longitude;
+    });
+    return {
+        latitude: latSum / locations.length,
+        longitude: lngSum / locations.length
+    };
+}
+
 wss.on('connection', function connection(ws, req) {
 
     sessionParser(req, {}, () => {
@@ -48,7 +63,6 @@ wss.on('connection', function connection(ws, req) {
         if (message.action === 'updateLocation') {
             const { latitude, longitude } = message;
             const username = ws.username;
-            console.log(`위치 업데이트: 사용자 ${username}, 위도 ${latitude}, 경도 ${longitude}`);
     
             const userLocation = { username, latitude, longitude };
             const index = userLocations.findIndex(loc => loc.username === username);
@@ -57,12 +71,14 @@ wss.on('connection', function connection(ws, req) {
             } else {
                 userLocations.push(userLocation);
             }
-    
+            const center = calculateCenter(userLocations);
+
             wss.clients.forEach(client => {
                 if (client.readyState === WebSocket.OPEN) {
                     client.send(JSON.stringify({
                         action: 'updateUserLocations',
-                        userLocations: userLocations
+                        userLocations: userLocations,
+                        center: center
                     }));
                 }
             });
@@ -129,6 +145,10 @@ wss.on('connection', function connection(ws, req) {
             if (client.readyState === WebSocket.OPEN) {
                 client.send(JSON.stringify({ action: 'updateUserLocations', userLocations: userLocations }));
                 client.send(JSON.stringify({ action: 'updateUsers', users: users }));
+                client.send(JSON.stringify({
+                    action: 'removeMarker',
+                    username: ws.username
+                }));
             }
         });
     });
