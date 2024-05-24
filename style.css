@@ -114,7 +114,8 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
-}/* Leaflet Popup 스타일 추가 */
+}
+/* Leaflet Popup 스타일 추가 */
 .leaflet-popup-content-wrapper {
     padding: 1px;
     text-align: center;
@@ -166,7 +167,7 @@ body {
     border-radius: 12px;
     background: white;
     box-shadow: 0 3px 14px rgba(0,0,0,0.2);
-    width: 150px; /* 고정 너비 설정 */
+    width:  150px; /* 고정 너비 설정 */
     height: auto; /* 높이를 자동으로 설정 */
     min-height: 50px; /* 최소 높이 설정 */
 }
