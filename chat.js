@@ -32,9 +32,6 @@ let users = [];
 
 app.use(sessionParser);
 
-// 웹소켓 서버 이벤트 리스너
-
-
 function calculateCenter(locations) {
     let latSum = 0;
     let lngSum = 0;
@@ -49,7 +46,6 @@ function calculateCenter(locations) {
 }
 
 wss.on('connection', function connection(ws, req) {
-
     sessionParser(req, {}, () => {
         if (req.session.username) {
             ws.username = req.session.username;
@@ -63,13 +59,14 @@ wss.on('connection', function connection(ws, req) {
         if (message.action === 'updateLocation') {
             const { latitude, longitude } = message;
             const username = ws.username;
-    
+
             const userLocation = { username, latitude, longitude };
             const index = userLocations.findIndex(loc => loc.username === username);
             if (index !== -1) {
                 userLocations[index] = userLocation;
             } else {
                 userLocations.push(userLocation);
+                users.push({ username: username });
             }
             const center = calculateCenter(userLocations);
 
@@ -78,23 +75,9 @@ wss.on('connection', function connection(ws, req) {
                     client.send(JSON.stringify({
                         action: 'updateUserLocations',
                         userLocations: userLocations,
-                        center: center
+                        center: center,
+                        users: users
                     }));
-                }
-            });
-
-        }else if (message.action === 'join') {
-            const userLocation = {
-                username: message.username,
-                x: Math.random() * 800,
-                y: Math.random() * 600
-            };
-            userLocations.push(userLocation);
-            users.push({ username: message.username });
-
-            wss.clients.forEach(function each(client) {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({ action: 'updateUsers', users: users }));
                 }
             });
         } else if (message.action === 'delete') {
@@ -143,8 +126,7 @@ wss.on('connection', function connection(ws, req) {
         users = users.filter(user => user.username !== ws.username);
         wss.clients.forEach(function each(client) {
             if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ action: 'updateUserLocations', userLocations: userLocations }));
-                client.send(JSON.stringify({ action: 'updateUsers', users: users }));
+                client.send(JSON.stringify({ action: 'updateUserLocations', userLocations: userLocations, users: users }));
                 client.send(JSON.stringify({
                     action: 'removeMarker',
                     username: ws.username
@@ -153,9 +135,6 @@ wss.on('connection', function connection(ws, req) {
         });
     });
 });
-
-
-
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
@@ -168,18 +147,14 @@ app.use(session({
     cookie: { secure: false } // HTTPS가 아니라면 false로 설정
 }));
 
-
-// HTTP 서버를 사용하는 추가 경로 설정
 ['/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html' ].forEach(file => {
     app.get(file, (req, res) => {
-        // 파일 경로를 보다 명확하게 지정
-        const filePath = path.join(__dirname, file); // 'public' 디렉토리 내 파일을 가정
+        const filePath = path.join(__dirname, file);
         fs.readFile(filePath, (err, data) => {
             if (err) {
                 res.status(500).send('Error loading ' + file);
                 return;
             }
-            // 적절한 Content-Type 설정
             const contentType = {
                 '.js': 'application/javascript',
                 '.css': 'text/css',

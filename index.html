@@ -17,8 +17,8 @@
       text-align: center;
       white-space: nowrap;
       position: relative;
-      transform: translateY(-100%); /* This moves the popup upward */
-  }
+      transform: translateY(-100%);
+    }
   
     .fade-out {
         animation: fadeOut 1s forwards;
@@ -37,6 +37,10 @@
     <div class="chat-container">
       <div class="header">
         <div class="user-count" id="userCount">Users: 0</div>
+        <div class="user-list-container">
+          <button class="user-list-button" onclick="toggleUserList()">접속자 목록</button>
+          <div id="userList" class="user-list"></div>
+        </div>
       </div>
       <div id="chat" class="chat-content"></div>
       <div class="input-container">

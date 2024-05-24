@@ -19,6 +19,7 @@ const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 const fontSizeRange = document.getElementById('fontSizeRange');
 const userCount = document.getElementById('userCount');
+const userList = document.getElementById('userList'); // 사용자 목록 요소
 
 let users = [];
 
@@ -28,11 +29,10 @@ function initializeChat(){
 
         if (data.action === 'delete') {
             document.querySelectorAll(`p[data-id='${data.messageId}']`).forEach(el => el.remove());
-        } else if (data.action === 'updateUsers') {
-            users = data.users;
-            updateUserList();
         } else if (data.action === 'updateUserLocations') {
             updateUserMarkers(data.userLocations);
+            users = data.users; // 사용자 목록 업데이트
+            updateUserList();
         } else {
             addMessageToChat(data.text, data.messageId, data.username);
             scrollToBottom();
@@ -144,4 +144,20 @@ function scrollToBottom() {
 
 function updateUserList() {
     userCount.textContent = `Users: ${users.length}`;
+    userList.innerHTML = ''; // 기존 사용자 목록 초기화
+    users.forEach(user => {
+        const userItem = document.createElement('div');
+        userItem.textContent = user.username;
+        userItem.classList.add('user-list-item'); // 사용자 목록 스타일 클래스 추가
+        userList.appendChild(userItem);
+    });
+}
+
+function toggleUserList() {
+    const userListElement = document.getElementById('userList');
+    if (userListElement.style.display === 'none' || userListElement.style.display === '') {
+        userListElement.style.display = 'block';
+    } else {
+        userListElement.style.display = 'none';
+    }
 }
