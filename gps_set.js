@@ -64,7 +64,6 @@ function initializeMap() {
             console.error(error);
         });
 }
-
 function addOrUpdateUserMarker(username, latitude, longitude) {
     if (userMarkers[username]) {
         // Update existing marker's position
@@ -77,12 +76,23 @@ function addOrUpdateUserMarker(username, latitude, longitude) {
         });
         marker.setMap(map);
 
-        var content = `<div id="${username}-popup" class="custom-popup"><strong>${username}'s location</strong><br><div class="messages"></div></div>`;
+        var content = `
+        <div id="${username}-popup" class="custom-popup">
+            <div class="leaflet-popup-content-wrapper">
+                <div class="leaflet-popup-content">
+                    <strong>${username}'s location</strong><br>
+                    <div class="messages"></div>
+                </div>
+            </div>
+            <div class="leaflet-popup-tip-container">
+                <div class="leaflet-popup-tip"></div>
+            </div>
+        </div>`;
         
         var overlay = new kakao.maps.CustomOverlay({
             position: markerPosition,
             content: content,
-            yAnchor: 1, // Position the overlay above the marker
+            yAnchor: 0.6, // 팝업을 마커에 더 가깝게 위치시킴
             xAnchor: 0.5 // Center the overlay horizontally on the marker
         });
         overlay.setMap(map);
@@ -93,6 +103,9 @@ function addOrUpdateUserMarker(username, latitude, longitude) {
         };
     }
 }
+
+
+
 function updateUserMarkers(userLocations) {
     userLocations.forEach(userLocation => {
         addOrUpdateUserMarker(userLocation.username, userLocation.latitude, userLocation.longitude);

@@ -114,4 +114,85 @@ body {
     width: 100%;
     height: 100%;
     object-fit: cover;
+}/* Leaflet Popup 스타일 추가 */
+.leaflet-popup-content-wrapper {
+    padding: 1px;
+    text-align: center;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.2);
+    width: 200px; /* 고정 너비 설정 */
+    height: auto; /* 높이를 자동으로 설정 */
+    min-height: 50px; /* 최소 높이 설정 */
+}
+
+.leaflet-popup-content {
+    margin: 13px 19px;
+    line-height: 1.4;
+    word-wrap: break-word; /* 단어가 넘칠 경우 줄바꿈 */
+    white-space: normal; /* 줄바꿈이 가능하도록 설정 */
+}
+
+.leaflet-popup-tip-container {
+    width: 20px; /* 너비를 줄임 */
+    height: 20px; /* 높이를 늘림 */
+    position: absolute;
+    pointer-events: none;
+    left: 50%;
+    margin-left: -10px;
+    overflow: hidden;
+}
+
+.leaflet-popup-tip {
+    width: 14px; /* 너비를 줄임 */
+    height: 14px; /* 높이를 줄임 */
+    background: white;
+    transform: rotate(45deg);
+    margin: -7px auto 0; /* 높이를 줄인 것에 맞춰 마진 조정 */
+    box-shadow: 0 3px 14px rgba(0,0,0,0.2);
+}
+
+.custom-popup {
+    position: absolute;
+    text-align: center;
+    white-space: nowrap;
+    transform: translateY(-100%);
+    margin-bottom: 10px; /* 팝업과 마커 사이의 거리를 줄임 */
+}
+
+.custom-popup .leaflet-popup-content-wrapper {
+    padding: 1px;
+    text-align: center;
+    border-radius: 12px;
+    background: white;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.2);
+    width: 150px; /* 고정 너비 설정 */
+    height: auto; /* 높이를 자동으로 설정 */
+    min-height: 50px; /* 최소 높이 설정 */
+}
+
+.custom-popup .leaflet-popup-content {
+    margin: 13px 19px;
+    line-height: 1.4;
+    word-wrap: break-word; /* 단어가 넘칠 경우 줄바꿈 */
+    white-space: normal; /* 줄바꿈이 가능하도록 설정 */
+}
+
+.custom-popup .leaflet-popup-tip-container {
+    width: 20px; /* 너비를 줄임 */
+    height: 20px; /* 높이를 늘림 */
+    position: absolute;
+    pointer-events: none;
+    left: 50%;
+    margin-left: -10px;
+    overflow: hidden;
+}
+
+.custom-popup .leaflet-popup-tip {
+    width: 14px; /* 너비를 줄임 */
+    height: 14px; /* 높이를 줄임 */
+    background: white;
+    transform: rotate(45deg);
+    margin: -7px auto 0; /* 높이를 줄인 것에 맞춰 마진 조정 */
+    box-shadow: 0 3px 14px rgba(0,0,0,0.2);
 }
