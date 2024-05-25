@@ -272,7 +272,7 @@ app.post('/login', (req, res) => {
                             return;
                         }
                     });
-                    res.redirect('/index.html');
+                    res.redirect('/map.html');
                 } else {
                     res.send('Incorrect Username and/or Password!');
                 }

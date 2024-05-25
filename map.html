@@ -4,20 +4,72 @@
     <meta charset="utf-8">
     <title>Kakao Map</title>
     <style>
-        #map {
-            width: 500px;
-            height: 400px;
+        @font-face{
+            font-family: 'GangwonEdu_OTFBoldA';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2201-2@1.0/GangwonEdu_OTFBoldA.woff')format('woff');
+            font-weight: normal;
+            font-style: normal;
         }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: 'GangwonEdu_OTFBoldA', sans-serif;
+        }
+        body{
+            display: flex;
+            flex-direction: column;
+        }
+        #topBar {
+            width: 100%;
+            /* background-color: #2b0670; */
+
+            color: rgb(255, 254, 195);
+            padding: 30px;
+            font-size: 60px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            background-image: url(https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcTWtsDB1VtXgpKD5G9XuwTryjr8zgwESC0iSUYwuaDzQuPEv_nz);
+            
+        
+        }
+
+        #topBar button {
+            background-color: #ff5722; /* 버튼 배경색 */
+            color: white;
+            border: none;
+            padding: 30px 50px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+
+        #map {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+        }
+
         #userInfo {
             font-weight: bold;
             margin-bottom: 10px;
+            display: none;
         }
+
+        
+        
     </style>
 </head>
 <body>
+    <div id="topBar">
+        <div>Title</div>
+        <button id="myButton">Click Me</button>
+    </div>
     <div id="userInfo"></div>
     <div id="map"></div>
-    <p><em>지도를 클릭해주세요!</em></p>
     <div id="clickLatlng"></div>
     <input type="text" id="markerText" placeholder="마커에 표시할 텍스트를 입력하세요">
     <!--USERNAME-->
@@ -80,7 +132,7 @@
         console.log('로그인한 사용자:', username);
 
         var userInfoDiv = document.getElementById('userInfo');
-        userInfoDiv.innerHTML = username + '님이 접속했습니다.';
+        userInfo.textContent = username + '님이 접속했습니다.';
 
         let userLatitude = 0.0;
         let userLongitude = 0.0;
@@ -192,6 +244,47 @@
             });
         }
 
+        function createPromise() {
+            // 여기서 약속 장소를 생성하는 데 필요한 정보를 기입하는 html form 태그 생성하기
+            // 팝업창의 URL과 특성을 설정합니다.
+            const popupContent = `
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>약속 생성</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        h1 { color: #333; }
+                        p { font-size: 14px; }
+                        .input-container { margin-bottom: 15px; font-size: 20px; }
+                        input { display: block; width: 200px; padding: 8px; margin-top: 5px; }
+                    </style>
+                </head>
+                <body>
+                    <h1>약속 생성</h1>
+                    <div class="input-container">
+                        <label for="promiseName">약속 이름을 입력하세요.</label>
+                        <input type="text" id="promiseName">
+                    </div>
+                    <div class="input-container">
+                        <label for="maxParticipants">최대 인원 수를 입력하세요.</label>
+                        <input type="number" id="maxParticipants">
+                    </div>
+                    <button onclick="window.close()">Close Popup</button>
+                </body>
+                </html>
+            `;
+
+            // 팝업창을 엽니다.
+            const popupWindow = window.open('', 'PopupWindow', 'width=400,height=300');
+
+            // 팝업창의 문서에 내용을 작성합니다.
+            popupWindow.document.write(popupContent);
+            popupWindow.document.close();
+        }
+
         function addMarker(latitude, longitude, username, userText) {
             const markerPosition = new kakao.maps.LatLng(latitude, longitude);
             const marker = new kakao.maps.Marker({
@@ -199,7 +292,21 @@
                 map: map
             });
 
-            const iwContent = '<div style="padding:5px;">' + userText + ' (' + username + ')' + '</div>';
+            const iwContent = `
+                <div style="padding:10px; 
+                            width: 430px; 
+                            height: 150px; 
+                            display: flex; 
+                            flex-direction: column; 
+                            align-items: center; 
+                            justify-content: center; 
+                            margin-top: 20px;
+                            font-size: 40px;">` + userText + '약속을 생성하시겠습니까?' + `
+                
+                    <br>
+                    <button style="padding: 10px 20px; font-size: 25px; margin-top: 30px; margin-bottom: 10px;" onclick="createPromise()">네</button>
+                </div>  
+            `;
             const infowindow = new kakao.maps.InfoWindow({
                 content: iwContent,
                 removable: true
@@ -236,8 +343,8 @@
 
             socket.send(JSON.stringify(markerInfo));
 
-            var message = '클릭한 위치의 위도는 ' + latlng.getLat() + ' 이고, ';
-            message += '경도는 ' + latlng.getLng() + ' 입니다';
+            var message = ''
+            
             var resultDiv = document.getElementById('clickLatlng');
             resultDiv.innerHTML = message;
         });
