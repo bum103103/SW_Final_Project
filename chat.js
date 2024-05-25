@@ -29,6 +29,7 @@ const pool = mysql.createPool({
 
 let userLocations = [];
 let users = [];
+let userMarkers = {};
 
 app.use(sessionParser);
 
@@ -77,6 +78,37 @@ wss.on('connection', function connection(ws, req) {
                         userLocations: userLocations,
                         center: center,
                         users: users
+                    }));
+                }
+            });
+        } else if (message.action === 'addMarker') {
+            const { latitude, longitude, username, userText } = message;
+            
+            if (userMarkers[username]) {
+                const { latitude: prevLatitude, longitude: prevLongitude } = userMarkers[username];
+                
+                wss.clients.forEach(client => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(JSON.stringify({
+                            action: 'removeMarker',
+                            username: username,
+                            latitude: prevLatitude,
+                            longitude: prevLongitude
+                        }));
+                    }
+                });
+            }
+            
+            userMarkers[username] = { latitude, longitude, userText };
+            
+            wss.clients.forEach(client => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(JSON.stringify({
+                        action: 'addMarker',
+                        username: username,
+                        latitude: latitude,
+                        longitude: longitude,
+                        userText: userText
                     }));
                 }
             });
@@ -253,7 +285,7 @@ app.post('/login', (req, res) => {
 
 app.get('/map.html', (req, res) => {
     res.sendFile(__dirname + '/map.html');
-  });
+});
 
 server.listen(8080, () => {
     console.log('Server is listening on http://localhost:8080');
