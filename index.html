@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=53644151cc4f34401c8eef39c8923729&libraries=services,clusterer,drawing"></script>
+  <script>
+    const socket = io(); // 전역으로 socket 객체를 정의
+  </script>
+  <meta charset="utf-8">
+  <title>Chat App</title>
+  <style>
+    #map { height: 100vh; }
+    .custom-popup {
+      padding: 5px;
+      border-radius: 5px;
+      max-width: 150px;
+      text-align: center;
+      white-space: nowrap;
+      position: relative;
+      transform: translateY(-100%);
+    }
+  
+    .fade-out {
+        animation: fadeOut 1s forwards;
+    }
+    @keyframes fadeOut {
+        0% { opacity: 1; }
+        100% { opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="map-container">
+      <div id="map"></div>
+    </div>
+    <div class="chat-container">
+      <div class="header">
+        <div class="user-count" id="userCount">Users: 0</div>
+        <div class="user-list-container">
+          <button class="user-list-button" onclick="toggleUserList()">접속자 목록</button>
+          <div id="userList" class="user-list"></div>
+        </div>
+      </div>
+      <div id="chat" class="chat-content"></div>
+      <div class="input-container">
+        <input type="text" id="messageInput" placeholder="Type a message...">
+        <button id="sendButton" onclick="sendMessage()">Send</button>
+        <label for="fontSizeRange">Adjust Font Size</label>
+        <input type="range" id="fontSizeRange" min="10" max="60" value="16" onchange="changeFontSize(this.value)">
+      </div>
+    </div>
+  </div>
+  <script src="gps_set.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

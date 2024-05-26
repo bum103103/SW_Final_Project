@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Kakao Map</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        #map-container {
+            display: flex;
+            width: 100%;
+            height: 70vh; /* Adjust the height as needed */
+        }
+        #map {
+            flex: 1;
+            height: 100%;
+        }
+        #right-sidebar {
+            width: 30%;
+            background-color: #f0f0f0;
+        }
+        #buttons-container {
+            display: flex;
+            width: 100%;
+            background-color: #f8f8f8;
+            box-shadow: 0 -4px 8px rgba(0,0,0,0.1);
+        }
+        #buttons {
+            display: flex;
+            width: 70%;
+            justify-content: flex-start;
+            padding: 10px;
+        }
+        #buttons button {
+            flex: 1;
+            padding: 10px 0;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        #spacer {
+            flex: 1;
+        }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div id="map-container">
+        <div id="map"></div>
+        <div id="right-sidebar"></div>
+    </div>
+    <div id="buttons-container">
+        <div id="buttons">
+            <button id="taxiBtn">택시</button>
+            <button id="libraryBtn">도서관</button>
+            <button id="restaurantBtn">식당</button>
+            <button id="meetingBtn">만남</button>
+            <button id="schoolBtn">등교/하교</button>
+            <button id="etcBtn">기타</button>
+            <div id="spacer"></div>
+        </div>
+    </div>
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=53644151cc4f34401c8eef39c8923729"></script>
+    <script>
+        var container = document.getElementById('map');
+        var options = {
+            center: new kakao.maps.LatLng(35.1152, 128.9684),
+            level: 2
+        };
+        var map = new kakao.maps.Map(container, options);
+        var socket = io();
+
+        var markerImages = {
+            taxi: '/images/taxi.jpg',
+            library: '/images/library.jpg',
+            restaurant: '/images/restaurant.jpg',
+            meeting: '/images/meeting.jpg',
+            school: '/images/school.jpg',
+            etc: '/images/etc.jpg'
+        };
+
+        var currentMarkerImage = markerImages.taxi;
+
+        var imageSize = new kakao.maps.Size(64, 69);
+        var imageOption = { offset: new kakao.maps.Point(27, 69) };
+
+        function createMarker(latitude, longitude) {
+            const markerId = 'marker_' + new Date().getTime();
+            const markerData = {
+                id: markerId,
+                latitude,
+                longitude,
+                image: currentMarkerImage // Save the current marker image in marker data
+            };
+            socket.emit('createMarker', markerData);
+
+            var markerPosition = new kakao.maps.LatLng(latitude, longitude);
+            var markerImage = new kakao.maps.MarkerImage(currentMarkerImage, imageSize, imageOption);
+            var marker = new kakao.maps.Marker({
+                position: markerPosition,
+                map: map,
+                image: markerImage
+            });
+
+            kakao.maps.event.addListener(marker, 'click', function () {
+                socket.emit('joinMarkerRoom', markerData.id);
+            });
+        }
+
+        kakao.maps.event.addListener(map, 'click', function (mouseEvent) {
+            var latlng = mouseEvent.latLng;
+            createMarker(latlng.getLat(), latlng.getLng());
+        });
+
+        socket.on('newMarker', function (markerData) {
+            var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
+            var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption); // Use the image from markerData
+            var marker = new kakao.maps.Marker({
+                position: markerPosition,
+                map: map,
+                image: markerImage
+            });
+
+            kakao.maps.event.addListener(marker, 'click', function () {
+                socket.emit('joinMarkerRoom', markerData.id);
+            });
+        });
+
+        socket.on('joinedRoom', function (roomId, markerData) {
+            window.location.href = `/index.html?roomId=${roomId}`;
+        });
+
+        document.getElementById('taxiBtn').addEventListener('click', function () {
+            currentMarkerImage = markerImages.taxi;
+        });
+        document.getElementById('libraryBtn').addEventListener('click', function () {
+            currentMarkerImage = markerImages.library;
+        });
+        document.getElementById('restaurantBtn').addEventListener('click', function () {
+            currentMarkerImage = markerImages.restaurant;
+        });
+        document.getElementById('meetingBtn').addEventListener('click', function () {
+            currentMarkerImage = markerImages.meeting;
+        });
+        document.getElementById('schoolBtn').addEventListener('click', function () {
+            currentMarkerImage = markerImages.school;
+        });
+        document.getElementById('etcBtn').addEventListener('click', function () {
+            currentMarkerImage = markerImages.etc;
+        });
+    </script>
+</body>
+</html>
