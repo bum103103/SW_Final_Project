@@ -24,18 +24,23 @@
         #right-sidebar {
             width: 30%;
             background-color: #f0f0f0;
+            padding: 10px;
+            box-sizing: border-box;
         }
         #buttons-container {
             display: flex;
-            width: 100%;
+            width: 70%; /* Match the width of the map */
+            flex-direction: column;
             background-color: #f8f8f8;
             box-shadow: 0 -4px 8px rgba(0,0,0,0.1);
+            margin-left: 0; /* Align to the left */
+            padding: 10px;
         }
         #buttons {
             display: flex;
-            width: 70%;
-            justify-content: flex-start;
-            padding: 10px;
+            width: 100%; /* Adjust to fit the container */
+            justify-content: space-between;
+            margin-bottom: 10px;
         }
         #buttons button {
             flex: 1;
@@ -44,8 +49,25 @@
             cursor: pointer;
             margin: 0 5px;
         }
-        #spacer {
+        #input-container {
+            display: flex;
+            width: 100%;
+            justify-content: center;
+        }
+        #input-container input {
             flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            margin: 0 5px;
+        }
+        #marker-details {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #fff;
+        }
+        #marker-details h3 {
+            margin: 0 0 10px 0;
         }
     </style>
     <script src="/socket.io/socket.io.js"></script>
@@ -53,7 +75,13 @@
 <body>
     <div id="map-container">
         <div id="map"></div>
-        <div id="right-sidebar"></div>
+        <div id="right-sidebar">
+            <div id="marker-details">
+                <h3>세부 내용</h3>
+                <p id="marker-type">타입: 없음</p>
+                <p id="marker-desc">내용: 없음</p>
+            </div>
+        </div>
     </div>
     <div id="buttons-container">
         <div id="buttons">
@@ -63,7 +91,9 @@
             <button id="meetingBtn">만남</button>
             <button id="schoolBtn">등교/하교</button>
             <button id="etcBtn">기타</button>
-            <div id="spacer"></div>
+        </div>
+        <div id="input-container">
+            <input type="text" id="markerDetails" placeholder="세부 내용: ~~~으로 간다">
         </div>
     </div>
     <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=53644151cc4f34401c8eef39c8923729"></script>
@@ -86,17 +116,21 @@
         };
 
         var currentMarkerImage = markerImages.taxi;
+        var currentMarkerType = "택시";
 
         var imageSize = new kakao.maps.Size(64, 69);
         var imageOption = { offset: new kakao.maps.Point(27, 69) };
 
         function createMarker(latitude, longitude) {
             const markerId = 'marker_' + new Date().getTime();
+            const markerDetails = document.getElementById('markerDetails').value;
             const markerData = {
                 id: markerId,
                 latitude,
                 longitude,
-                image: currentMarkerImage // Save the current marker image in marker data
+                image: currentMarkerImage, // Save the current marker image in marker data
+                type: currentMarkerType,
+                details: markerDetails
             };
             socket.emit('createMarker', markerData);
 
@@ -109,8 +143,14 @@
             });
 
             kakao.maps.event.addListener(marker, 'click', function () {
+                displayMarkerDetails(markerData.type, markerDetails); // Display marker details when clicked
                 socket.emit('joinMarkerRoom', markerData.id);
             });
+        }
+
+        function displayMarkerDetails(type, details) {
+            document.getElementById('marker-type').innerText = `타입: ${type}`;
+            document.getElementById('marker-desc').innerText = `내용: ${details}`;
         }
 
         kakao.maps.event.addListener(map, 'click', function (mouseEvent) {
@@ -128,6 +168,7 @@
             });
 
             kakao.maps.event.addListener(marker, 'click', function () {
+                displayMarkerDetails(markerData.type, markerData.details); // Display marker details when clicked
                 socket.emit('joinMarkerRoom', markerData.id);
             });
         });
@@ -138,21 +179,27 @@
 
         document.getElementById('taxiBtn').addEventListener('click', function () {
             currentMarkerImage = markerImages.taxi;
+            currentMarkerType = "택시";
         });
         document.getElementById('libraryBtn').addEventListener('click', function () {
             currentMarkerImage = markerImages.library;
+            currentMarkerType = "도서관";
         });
         document.getElementById('restaurantBtn').addEventListener('click', function () {
             currentMarkerImage = markerImages.restaurant;
+            currentMarkerType = "식당";
         });
         document.getElementById('meetingBtn').addEventListener('click', function () {
             currentMarkerImage = markerImages.meeting;
+            currentMarkerType = "만남";
         });
         document.getElementById('schoolBtn').addEventListener('click', function () {
             currentMarkerImage = markerImages.school;
+            currentMarkerType = "등교/하교";
         });
         document.getElementById('etcBtn').addEventListener('click', function () {
             currentMarkerImage = markerImages.etc;
+            currentMarkerType = "기타";
         });
     </script>
 </body>
