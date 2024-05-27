@@ -39,6 +39,15 @@ wss.on('connection', function connection(ws, req) {
         if (req.session.username) {
             ws.username = req.session.username;
             console.log(`Session user: ${req.session.username}`);
+
+            // 사용자가 접속하면 모든 마커 정보를 보내줍니다. (수정된 부분)
+            pool.query('SELECT * FROM markers', (err, results) => {
+                if (err) {
+                    console.error('Error fetching markers from MySQL:', err);
+                    return;
+                }
+                ws.send(JSON.stringify({ action: 'loadMarkers', markers: results }));
+            });
         }
     });
 
@@ -67,7 +76,7 @@ wss.on('connection', function connection(ws, req) {
                 }
             });
 
-        }else if (message.action === 'join') {
+        } else if (message.action === 'join') {
             const userLocation = {
                 username: message.username,
                 x: Math.random() * 800,
@@ -92,6 +101,25 @@ wss.on('connection', function connection(ws, req) {
             wss.clients.forEach(function each(client) {
                 if (client.readyState === WebSocket.OPEN) {
                     client.send(JSON.stringify({ action: 'delete', messageId: message.messageId }));
+                }
+            });
+        } else if (message.action === 'addMarker') { // 마커 추가 (수정된 부분)
+            const { latitude, longitude, type, max_people } = message;
+            const username = ws.username;
+            pool.query('INSERT INTO markers (latitude, longitude, username, type, max_people) VALUES (?, ?, ?, ?, ?)', 
+                [latitude, longitude, username, type, max_people], (err) => {
+                if (err) {
+                    console.error('Error saving marker to MySQL:', err);
+                } else {
+                    console.log('Marker saved to MySQL');
+                    wss.clients.forEach(client => {
+                        if (client.readyState === WebSocket.OPEN) {
+                            client.send(JSON.stringify({
+                                action: 'addMarker',
+                                marker: { latitude, longitude, username, type, max_people }
+                            }));
+                        }
+                    });
                 }
             });
         } else {
@@ -134,9 +162,6 @@ wss.on('connection', function connection(ws, req) {
     });
 });
 
-
-
-
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -147,7 +172,6 @@ app.use(session({
     saveUninitialized: true,
     cookie: { secure: false } // HTTPS가 아니라면 false로 설정
 }));
-
 
 // HTTP 서버를 사용하는 추가 경로 설정
 ['/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html' ].forEach(file => {
@@ -258,7 +282,7 @@ app.post('/login', (req, res) => {
 
 app.get('/map.html', (req, res) => {
     res.sendFile(__dirname + '/map.html');
-  });
+});
 
 server.listen(8080, () => {
     console.log('Server is listening on http://localhost:8080');
