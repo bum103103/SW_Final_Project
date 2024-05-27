@@ -1,0 +1,24 @@
+1. markers 테이블 생성 sql
+title : 약속 제목
+created_by : 생성한 유저의 이름
+context : 약속 상세 내용
+latitude : 위도
+longitude : 경도
+max_number : 최대 인원 수
+type : 약속의 종류(택시, 도서관 등)
+created_at : 약속 생성 시간
+
+CREATE TABLE markers (
+    title varchar(255) not null,
+    created_by VARCHAR(255),
+    context text,
+    latitude DOUBLE NOT NULL,
+    longitude DOUBLE NOT NULL,
+    max_number int not null default 4,
+    type varchar(30) not null,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+2. markers 테이블 생성한 다음에는 map.html에서 마커 생성하면 자동으로 insert sql을 실행하기 때문에 추가적인 데이터를 미리 테이블에 저장하고 싶다면 사용할 insert sql
+INSERT INTO markers (title, created_by, context, latitude, longitude, max_number, type) values 
+('1', 'tp', 'gkgkg', 35.1, 129.5, 5, '택시');
