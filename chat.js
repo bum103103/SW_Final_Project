@@ -1,6 +1,6 @@
 const express = require('express');
 const http = require('http');
-const WebSocket = require('ws');
+const socketIo = require('socket.io');
 const mysql = require('mysql2');
 const fs = require('fs');
 const path = require('path');
@@ -15,7 +15,7 @@ const sessionParser = session({
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const io = socketIo(server);
 
 const pool = mysql.createPool({
     host: 'localhost',
@@ -27,141 +27,161 @@ const pool = mysql.createPool({
     queueLimit: 0
 });
 
-let userLocations = [];
-let users = [];
-let userMarkers = {};
+let markers = {}; // 마커 정보를 저장할 객체
+let roomUserLocations = {}; // 방별로 사용자 위치를 저장하는 객체
+let roomUsers = {}; // 방별 사용자 목록
 
 app.use(sessionParser);
 
-wss.on('connection', function connection(ws, req) {
-    sessionParser(req, {}, () => {
-        if (req.session.username) {
-            ws.username = req.session.username;
-            console.log(`Session user: ${req.session.username}`);
+// 여기에 마커 이미지를 추가하는 경로를 넣어주면됨
+app.use('/images', express.static(path.join(__dirname, 'images')));
+
+
+function calculateCenter(locations) {
+    let latSum = 0;
+    let lngSum = 0;
+    locations.forEach(loc => {
+        latSum += loc.latitude;
+        lngSum += loc.longitude;
+    });
+    return {
+        latitude: latSum / locations.length,
+        longitude: lngSum / locations.length
+    };
+}
+
+io.use((socket, next) => {
+    sessionParser(socket.request, {}, next);
+});
+
+io.on('connection', (socket) => {
+    const req = socket.request;
+    if (req.session.username) {
+        socket.username = req.session.username;
+        console.log(`Session user: ${req.session.username}`);
+    }
+
+    socket.on('joinRoom', (roomId) => {
+        socket.join(roomId);
+        socket.room = roomId;
+        console.log(`${socket.username} joined room ${roomId}`);
+
+        // 방별 사용자 위치 초기화
+        if (!roomUserLocations[roomId]) {
+            roomUserLocations[roomId] = [];
         }
+        if (!roomUsers[roomId]) {
+            roomUsers[roomId] = [];
+        }
+
+        // 사용자 목록에 추가
+        if (!roomUsers[roomId].includes(socket.username)) {
+            roomUsers[roomId].push(socket.username);
+        }
+
+        // 사용자 목록 업데이트
+        io.to(roomId).emit('updateUserLocations', {
+            userLocations: roomUserLocations[roomId],
+            center: calculateCenter(roomUserLocations[roomId]),
+            users: roomUsers[roomId]
+        });
     });
 
-    ws.on('message', function incoming(data) {
-        const message = JSON.parse(data);
+    socket.on('updateLocation', (data) => {
+        const { latitude, longitude, roomId } = data;
+        const username = socket.username;
 
-        if (message.action === 'updateLocation') {
-            const { latitude, longitude } = message;
-            const username = ws.username;
-            console.log(`Location update: User ${username}, Latitude ${latitude}, Longitude ${longitude}`);
+        const userLocation = { username, latitude, longitude };
+        let userLocations = roomUserLocations[roomId] || [];
 
-            const userLocation = { username, latitude, longitude };
-            const index = userLocations.findIndex(loc => loc.username === username);
-            if (index !== -1) {
-                userLocations[index] = userLocation;
-            } else {
-                userLocations.push(userLocation);
-            }
-
-            wss.clients.forEach(client => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({
-                        action: 'updateUserLocations',
-                        userLocations: userLocations
-                    }));
-                }
-            });
-
-        } else if (message.action === 'addMarker') {
-            const { latitude, longitude, username, userText } = message;
-            
-            if (userMarkers[username]) {
-                const { latitude: prevLatitude, longitude: prevLongitude } = userMarkers[username];
-                
-                wss.clients.forEach(client => {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(JSON.stringify({
-                            action: 'removeMarker',
-                            username: username,
-                            latitude: prevLatitude,
-                            longitude: prevLongitude
-                        }));
-                    }
-                });
-            }
-            
-            userMarkers[username] = { latitude, longitude, userText };
-            
-            wss.clients.forEach(client => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({
-                        action: 'addMarker',
-                        username: username,
-                        latitude: latitude,
-                        longitude: longitude,
-                        userText: userText
-                    }));
-                }
-            });
-
-        } else if (message.action === 'join') {
-            const userLocation = {
-                username: message.username,
-                x: Math.random() * 800,
-                y: Math.random() * 600
-            };
-            userLocations.push(userLocation);
-            users.push({ username: message.username });
-
-            wss.clients.forEach(client => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({ action: 'updateUsers', users: users }));
-                }
-            });
-        } else if (message.action === 'delete') {
-            pool.query('DELETE FROM messages WHERE id = ?', [message.messageId], (err) => {
-                if (err) {
-                    console.error('Error deleting message from MySQL:', err);
-                } else {
-                    console.log('Message deleted from MySQL');
-                }
-            });
-            wss.clients.forEach(client => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({ action: 'delete', messageId: message.messageId }));
-                }
-            });
+        const index = userLocations.findIndex(loc => loc.username === username);
+        if (index !== -1) {
+            userLocations[index] = userLocation;
         } else {
-            wss.clients.forEach(client => {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(JSON.stringify({ text: message.text, messageId: message.messageId, username: message.username }));
-                }
-            });
+            userLocations.push(userLocation);
+        }
 
-            pool.query('INSERT INTO messages (id, username, text) VALUES (?, ?, ?)', [message.messageId, message.username, message.text], (err) => {
-                if (err) {
-                    console.error('Error saving message to MySQL:', err);
-                } else {
-                    console.log('Message saved to MySQL');
-                }
-            });
+        roomUserLocations[roomId] = userLocations;
+
+        const center = calculateCenter(userLocations);
+
+        io.to(roomId).emit('updateUserLocations', {
+            userLocations: userLocations,
+            center: center,
+            users: roomUsers[roomId]
+        });
+    });
+
+    socket.on('createMarker', (markerData) => {
+        // 마커 생성자 정보 추가
+        markerData.admin = socket.id;
+        // 방 생성 (마커 ID를 방 ID로 사용)
+        const roomId = markerData.id;
+        socket.join(roomId);
+        socket.room = roomId;
+        console.log(`${socket.username} created and joined room ${roomId}`);
+        // 마커 정보 저장 및 브로드캐스트
+        markers[roomId] = markerData;
+        io.emit('newMarker', markerData);
+    });
+
+    socket.on('joinMarkerRoom', (markerId) => {
+        const roomId = markerId;
+        if (markers[roomId]) {
+            socket.join(roomId);
+            socket.room = roomId;
+            console.log(`${socket.username} joined marker room ${roomId}`);
+            // 해당 방의 마커 정보를 전송하여 사용자 이동
+            socket.emit('joinedRoom', roomId, markers[roomId]);
         }
     });
 
-    ws.on('close', function () {
-        console.log(`WebSocket disconnected: ${ws.username}`);
-        if (ws.username) {
-            pool.query('UPDATE user_login SET status = 0 WHERE username = ?', [ws.username], (err, result) => {
+    socket.on('delete', (messageId) => {
+        pool.query('DELETE FROM messages WHERE id = ?', [messageId], (err) => {
+            if (err) {
+                console.error('Error deleting message from MySQL:', err);
+            } else {
+                console.log('Message deleted from MySQL');
+                io.to(socket.room).emit('delete', { messageId: messageId });
+            }
+        });
+    });
+
+    socket.on('message', (message) => {
+        io.to(message.roomId).emit('message', { text: message.text, messageId: message.messageId, username: message.username });
+
+        pool.query('INSERT INTO messages (id, username, text) VALUES (?, ?, ?)', [message.messageId, message.username, message.text], (err) => {
+            if (err) {
+                console.error('Error saving message to MySQL:', err);
+            } else {
+                console.log('Message saved to MySQL');
+            }
+        });
+    });
+
+    socket.on('disconnect', () => {
+        console.log(`Socket disconnected: ${socket.username}`);
+        if (socket.username) {
+            pool.query('UPDATE user_login SET status = 0 WHERE username = ?', [socket.username], (err, result) => {
                 if (err) {
                     console.error('Failed to update user status on disconnect:', err);
                     return;
                 }
-                console.log(`Status updated to 0 for user ${ws.username}`);
+                console.log(`Status updated to 0 for user ${socket.username}`);
             });
-        }
 
-        userLocations = userLocations.filter(user => user.username !== ws.username);
-        users = users.filter(user => user.username !== ws.username);
-        wss.clients.forEach(client => {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({ action: 'updateUserLocations', userLocations: userLocations }));
-                client.send(JSON.stringify({ action: 'updateUsers', users: users }));
-            }
-        });
+            const userLocations = roomUserLocations[socket.room] || [];
+            roomUserLocations[socket.room] = userLocations.filter(user => user.username !== socket.username);
+
+            const users = roomUsers[socket.room] || [];
+            roomUsers[socket.room] = users.filter(user => user !== socket.username);
+
+            io.to(socket.room).emit('updateUserLocations', {
+                userLocations: roomUserLocations[socket.room],
+                users: roomUsers[socket.room]
+            });
+            io.to(socket.room).emit('removeMarker', { username: socket.username });
+        }
     });
 });
 
@@ -239,7 +259,7 @@ app.post('/signup', (req, res) => {
                         res.status(500).json({ success: false, message: 'Database error' });
                         return;
                     }
-                    res.json({ success: true, message: 'Sign up successful!' });
+                    res.json({ success: true, message: '가입이 성공되었습니다!' });
                 });
             }
         });
@@ -269,7 +289,7 @@ app.post('/login', (req, res) => {
                             return;
                         }
                     });
-                    res.redirect('/index.html');
+                    res.redirect('/map.html');
                 } else {
                     res.send('Incorrect Username and/or Password!');
                 }
@@ -311,13 +331,7 @@ app.post('/createMarkers', (req, res)=>{
 
 
 app.get('/map.html', (req, res) => {
-    if (req.session.loggedin) {
-        const mapHtml = fs.readFileSync(path.join(__dirname, 'map.html'), 'utf8');
-        const modifiedHtml = mapHtml.replace('<!--USERNAME-->', `<script>var username = "${req.session.username}";</script>`);
-        res.send(mapHtml);
-    } else {
-        res.redirect('/login.html');
-    }
+    res.sendFile(__dirname + '/map.html');
 });
 
 server.listen(8080, () => {
