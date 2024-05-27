@@ -300,6 +300,35 @@ app.post('/login', (req, res) => {
     }
 });
 
+app.post('/getMarkers', (req, res) => {
+    const markerType = req.body.type;
+
+    pool.execute('SELECT * FROM markers WHERE type = ?', [markerType], (err, results) => {
+        if (err) {
+            console.error('Error fetching markers:', err);
+            res.status(500).send('Database error');
+            return;
+        }
+        res.json(results);
+    });
+});
+
+app.post('/createMarkers', (req, res)=>{
+    const marker = req.body;
+    console.log(`Received data: ${marker}`);
+    pool.execute('INSERT INTO markers (title, created_by, context, latitude, longitude, max_number, type) values (?, ?, ?, ?, ?, ?, ?)',
+    [marker.title, marker.created_by, marker.context, marker.latitude, marker.longitude, marker.max_number, marker.type], (err, results) => {
+        if(err) {
+            console.error('Error fetching markers:', err);
+            res.status(500).send('Database error');
+            return;
+        }
+        else {
+            console.log('create marker success.');
+        }
+    })
+})
+
 app.get('/map.html', (req, res) => {
     res.sendFile(__dirname + '/map.html');
 });

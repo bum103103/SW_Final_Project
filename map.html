@@ -25,6 +25,8 @@
             width: 30%;
             background-color: #f0f0f0;
             padding: 10px;
+            overflow-y: auto;
+            border-left: 1px solid #ddd;
             box-sizing: border-box;
         }
         #buttons-container {
@@ -69,19 +71,45 @@
         #marker-details h3 {
             margin: 0 0 10px 0;
         }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0,0,0);
+            background-color: rgba(0,0,0,0.4);
+            padding-top: 60px;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+        #close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        #close:hover,
+        #close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
     <div id="map-container">
         <div id="map"></div>
-        <div id="right-sidebar">
-            <div id="marker-details">
-                <h3>세부 내용</h3>
-                <p id="marker-type">타입: 없음</p>
-                <p id="marker-desc">내용: 없음</p>
-            </div>
-        </div>
+        <div id="right-sidebar"></div>
     </div>
     <div id="buttons-container">
         <div id="buttons">
@@ -96,7 +124,31 @@
             <input type="text" id="markerDetails" placeholder="세부 내용: ~~~으로 간다">
         </div>
     </div>
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=53644151cc4f34401c8eef39c8923729"></script>
+    <!-- 모달 구조 -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span id="close" onclick="">&times;</span>
+            <form id="markerForm" onsubmit="return false;">
+                <label for="title">Title:</label>
+                <input type="text" id="title" name="title" required><br>
+
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required><br>
+
+                <label for="userText">Text:</label>
+                <input type="text" id="userText" name="userText" required><br>
+
+                <label for="maxNumber">Max Number:</label>
+                <input type="text" id="maxNumber" name="maxNumber" required><br>
+
+                <input type="hidden" id="latitude" name="latitude">
+                <input type="hidden" id="longitude" name="longitude"><br>
+
+                <button type="button" onclick="submitForm()">Create Marker</button>
+            </form>
+        </div>
+    </div>
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=bd2fcd69a2beb433b8b026c2d381f957"></script>
     <script>
         var container = document.getElementById('map');
         var options = {
@@ -148,16 +200,6 @@
             });
         }
 
-        function displayMarkerDetails(type, details) {
-            document.getElementById('marker-type').innerText = `타입: ${type}`;
-            document.getElementById('marker-desc').innerText = `내용: ${details}`;
-        }
-
-        kakao.maps.event.addListener(map, 'click', function (mouseEvent) {
-            var latlng = mouseEvent.latLng;
-            createMarker(latlng.getLat(), latlng.getLng());
-        });
-
         socket.on('newMarker', function (markerData) {
             var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
             var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption); // Use the image from markerData
@@ -168,10 +210,88 @@
             });
 
             kakao.maps.event.addListener(marker, 'click', function () {
-                displayMarkerDetails(markerData.type, markerData.details); // Display marker details when clicked
+                
                 socket.emit('joinMarkerRoom', markerData.id);
             });
         });
+
+        // 세진 변경사항
+        document.getElementById('close').addEventListener('click', function() {
+            document.getElementById('myModal').style.display = "none";
+        });
+
+        kakao.maps.event.addListener(map, 'click', function (mouseEvent) {
+            var latlng = mouseEvent.latLng;
+            // 입력창 띄우기
+            document.getElementById('latitude').value = latlng.getLat();
+            document.getElementById('longitude').value = latlng.getLng();
+            document.getElementById('myModal').style.display = "block";
+        });
+
+        function addSidebar(title, markerType, userText, maxNumber) {
+            var newDiv = document.createElement('div');
+            newDiv.id = 'promise'; // ID 설정 (선택사항)
+            newDiv.innerHTML = `
+            <div id="marker-details">
+                <h3>${title}</h3>
+                <p id="marker-type">타입: ${markerType}</p>
+                <p id="marker-desc">내용: ${userText}</p>
+                <p id="marker-num">최대 인원수: ${maxNumber}</p>
+            </div>`; 
+            // 새로운 div를 marker-details 내부에 추가
+            var markerDetails = document.getElementById('right-sidebar');
+            markerDetails.appendChild(newDiv);
+        }
+
+        function clearSidebar() {
+            const rightSidebar = document.getElementById('right-sidebar');
+            while (rightSidebar.firstChild) {
+                rightSidebar.removeChild(rightSidebar.firstChild);
+            }
+        }
+
+        function submitForm() {
+            var title = document.getElementById('title').value;
+            var username = document.getElementById('username').value;
+            var context = document.getElementById('userText').value;
+            var latitude = document.getElementById('latitude').value;
+            var longitude = document.getElementById('longitude').value;
+            var maxNumber = document.getElementById('maxNumber').value;
+
+            createMarker(latitude, longitude);
+            // markers 테이블에 새로운 약속 데이터 넣기
+            fetch('/createMarkers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    title: title,
+                    created_by: username,
+                    context: context,
+                    latitude: latitude,
+                    longitude: longitude,
+                    max_number: maxNumber,
+                    type: currentMarkerType })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('create marker!'); 
+                
+            })
+            .catch(error => {
+                console.error('Error fetching markers:', error);
+            });
+            // 세부내용 박스 생성
+            
+            addSidebar(title, username, context, maxNumber);
+            document.getElementById('myModal').style.display = "none";
+            
+            document.getElementById('title').value = "";
+            document.getElementById('username').value = "";
+            document.getElementById('userText').value = "";
+            document.getElementById('maxNumber').value = "";
+        }
 
         socket.on('joinedRoom', function (roomId, markerData) {
             window.location.href = `/index.html?roomId=${roomId}`;
@@ -180,10 +300,50 @@
         document.getElementById('taxiBtn').addEventListener('click', function () {
             currentMarkerImage = markerImages.taxi;
             currentMarkerType = "택시";
+            fetch('/getMarkers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ type: "택시" })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data); // 받은 데이터를 콘솔에 출력
+                clearSidebar();
+                for (let i = 0; i < data.length; i++) {
+                    // 사이드바에 요소 생성
+                    addSidebar(data[i].title, data[i].type, data[i].context, data[i].max_number);
+                    // 마커 생성
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching markers:', error);
+            });
+
         });
         document.getElementById('libraryBtn').addEventListener('click', function () {
             currentMarkerImage = markerImages.library;
             currentMarkerType = "도서관";
+            fetch('/getMarkers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ type: "도서관" })
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data); // 받은 데이터를 콘솔에 출력
+                clearSidebar();
+                for (let i = 0; i < data.length; i++) {
+                    addSidebar(data[i].title, data[i].type, data[i].context, data[i].max_number);   
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching markers:', error);
+            });
+
         });
         document.getElementById('restaurantBtn').addEventListener('click', function () {
             currentMarkerImage = markerImages.restaurant;
