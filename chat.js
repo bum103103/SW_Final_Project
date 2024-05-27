@@ -28,14 +28,12 @@ const pool = mysql.createPool({
 });
 
 let markers = {}; // 마커 정보를 저장할 객체
+let userMarkers = {}; // 사용자별 마커 ID 저장
 let roomUserLocations = {}; // 방별로 사용자 위치를 저장하는 객체
 let roomUsers = {}; // 방별 사용자 목록
 
 app.use(sessionParser);
-
-// 여기에 마커 이미지를 추가하는 경로를 넣어주면됨
 app.use('/images', express.static(path.join(__dirname, 'images')));
-
 
 function calculateCenter(locations) {
     let latSum = 0;
@@ -50,6 +48,19 @@ function calculateCenter(locations) {
     };
 }
 
+function loadMarkersFromDB() {
+    pool.query('SELECT * FROM markers', (err, results) => {
+        if (err) {
+            console.error('Error loading markers from MySQL:', err);
+            return;
+        }
+        results.forEach(marker => {
+            markers[marker.id] = marker;
+            io.emit('newMarker', marker);
+        });
+    });
+}
+
 io.use((socket, next) => {
     sessionParser(socket.request, {}, next);
 });
@@ -60,6 +71,15 @@ io.on('connection', (socket) => {
         socket.username = req.session.username;
         console.log(`Session user: ${req.session.username}`);
     }
+
+    // 기존 마커 정보를 클라이언트에 전송
+    Object.values(markers).forEach(marker => {
+        socket.emit('newMarker', marker);
+        // 사용자가 이미 마커를 생성한 경우 삭제 버튼을 표시하기 위해 이벤트를 전송
+        if (marker.created_by === socket.username) {
+            socket.emit('markerExists', { success: true, markerId: marker.id });
+        }
+    });
 
     socket.on('joinRoom', (roomId) => {
         socket.join(roomId);
@@ -113,6 +133,12 @@ io.on('connection', (socket) => {
     });
 
     socket.on('createMarker', (markerData) => {
+        if (userMarkers[socket.username]) {
+            // 이미 마커가 있는 경우
+            socket.emit('markerExists', { success: false, message: 'Marker already exists' });
+            return;
+        }
+
         // 마커 생성자 정보 추가
         markerData.admin = socket.id;
         // 방 생성 (마커 ID를 방 ID로 사용)
@@ -120,9 +146,44 @@ io.on('connection', (socket) => {
         socket.join(roomId);
         socket.room = roomId;
         console.log(`${socket.username} created and joined room ${roomId}`);
+
         // 마커 정보 저장 및 브로드캐스트
         markers[roomId] = markerData;
+        userMarkers[socket.username] = roomId;
         io.emit('newMarker', markerData);
+
+        // 마커 정보를 데이터베이스에 저장
+        pool.query('INSERT INTO markers (id, title, created_by, context, latitude, longitude, max_number, type, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+            [markerData.id, markerData.title, markerData.created_by, markerData.context, markerData.latitude, markerData.longitude, markerData.max_number, markerData.type, markerData.image], 
+            (err) => {
+                if (err) {
+                    console.error('Error saving marker to MySQL:', err);
+                } else {
+                    console.log('Marker saved to MySQL');
+                }
+            });
+    });
+
+    socket.on('deleteMarker', () => {
+        if (!userMarkers[socket.username]) {
+            socket.emit('markerDeleteError', { success: false, message: 'No marker to delete' });
+            return;
+        }
+
+        const markerId = userMarkers[socket.username];
+        delete markers[markerId];
+        delete userMarkers[socket.username];
+
+        io.emit('removeMarker', { id: markerId });
+        pool.query('DELETE FROM markers WHERE id = ?', [markerId], (err) => {
+            if (err) {
+                console.error('Error deleting marker from MySQL:', err);
+                socket.emit('markerDeleteError', { success: false, message: 'Error deleting marker from database' });
+            } else {
+                console.log('Marker deleted from MySQL');
+                socket.emit('markerDeleted', { success: true, message: 'Marker deleted' });
+            }
+        });
     });
 
     socket.on('joinMarkerRoom', (markerId) => {
@@ -150,7 +211,7 @@ io.on('connection', (socket) => {
     socket.on('message', (message) => {
         io.to(message.roomId).emit('message', { text: message.text, messageId: message.messageId, username: message.username });
 
-        pool.query('INSERT INTO messages (id, username, text) VALUES (?, ?, ?)', [message.messageId, message.username, message.text], (err) => {
+        pool.query('INSERT INTO messages (id, username, text, roomId) VALUES (?, ?, ?, ?)', [message.messageId, message.username, message.text, message.roomId], (err) => {
             if (err) {
                 console.error('Error saving message to MySQL:', err);
             } else {
@@ -180,6 +241,7 @@ io.on('connection', (socket) => {
                 userLocations: roomUserLocations[socket.room],
                 users: roomUsers[socket.room]
             });
+
             io.to(socket.room).emit('removeMarker', { username: socket.username });
         }
     });
@@ -289,7 +351,7 @@ app.post('/login', (req, res) => {
                             return;
                         }
                     });
-                    res.redirect('/map.html');
+                    res.redirect('/index.html');
                 } else {
                     res.send('Incorrect Username and/or Password!');
                 }
@@ -312,22 +374,21 @@ app.post('/getMarkers', (req, res) => {
         res.json(results);
     });
 });
-
+/*
 app.post('/createMarkers', (req, res)=>{
     const marker = req.body;
-    console.log(`Received data: ${marker}`);
-    pool.execute('INSERT INTO markers (title, created_by, context, latitude, longitude, max_number, type) values (?, ?, ?, ?, ?, ?, ?)',
-    [marker.title, marker.created_by, marker.context, marker.latitude, marker.longitude, marker.max_number, marker.type], (err, results) => {
+    pool.execute('INSERT INTO markers (id, title, created_by, context, latitude, longitude, max_number, type, image) values (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [marker.id, marker.title, marker.created_by, marker.context, marker.latitude, marker.longitude, marker.max_number, marker.type, marker.image], 
+    (err, results) => {
         if(err) {
-            console.error('Error fetching markers:', err);
+            console.error('Error creating marker:', err);
             res.status(500).send('Database error');
             return;
         }
-        else {
-            console.log('create marker success.');
-        }
-    })
-})
+        console.log('create marker success.');
+        res.json({ success: true, message: 'Marker created successfully!' });
+    });
+}); */
 
 app.get('/map.html', (req, res) => {
     res.sendFile(__dirname + '/map.html');
@@ -335,4 +396,5 @@ app.get('/map.html', (req, res) => {
 
 server.listen(8080, () => {
     console.log('Server is listening on http://localhost:8080');
+    loadMarkersFromDB(); // 서버 시작 시 마커 로드
 });
