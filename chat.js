@@ -196,7 +196,7 @@ app.use(session({
     cookie: { secure: false }
 }));
 
-['/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html' ].forEach(file => {
+['/intro.html','/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html' ].forEach(file => {
     app.get(file, (req, res) => {
         const filePath = path.join(__dirname, file);
         fs.readFile(filePath, (err, data) => {
@@ -217,6 +217,10 @@ app.use(session({
 });
 
 app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'intro.html'));
+});
+
+app.get('/login.html', (req, res) => {
     if (req.session.loggedin) {
         res.sendFile(path.join(__dirname, 'login.html'));
     } else {
