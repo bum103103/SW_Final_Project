@@ -242,29 +242,28 @@
         var imageOption = { offset: new kakao.maps.Point(27, 69) };
 
 
-        window.joinMarkerRoom = function (markerId) {
+        window.joinMarkerRoom = function(markerId) {
             socket.emit('joinMarkerRoom', markerId);
         };
-
+    
         function createOverlay(markerData) {
-
-            var content = '<div class="customoverlay">' +
-                `<a href="javascript:void(0);" onclick="joinMarkerRoom('${markerData.id}')">` +
-                '<span class="title">' + markerData.context + '</span>' +
-                '  </a>' +
-                '</div>';
-
+            var content = `
+                <div class="customoverlay">
+                    <a href="javascript:void(0);" onclick="joinMarkerRoom('${markerData.id}')">
+                        <span class="title">${markerData.context}</span>
+                    </a>
+                </div>
+            `;
             var overlay = new kakao.maps.CustomOverlay({
                 map: map,
                 position: new kakao.maps.LatLng(markerData.latitude, markerData.longitude),
                 content: content,
                 yAnchor: 1
             });
-
-
-
+    
             return overlay;
         }
+    
         function createMarker(latitude, longitude) {
             if (markerCreated) {
                 alert('You have already created a marker.');
@@ -285,7 +284,7 @@
                 details: markerDetails
             };
             socket.emit('createMarker', markerData);
-
+    
             var markerPosition = new kakao.maps.LatLng(latitude, longitude);
             var markerImage = new kakao.maps.MarkerImage(currentMarkerImage, imageSize, imageOption);
             var marker = new kakao.maps.Marker({
@@ -293,15 +292,21 @@
                 map: map,
                 image: markerImage
             });
-
-            markers[markerId] = marker;
-
-            // 오버레이 생성
+    
             var overlay = createOverlay(markerData);
-
+    
+            markers[markerId] = {
+                marker: marker,
+                overlay: overlay
+            };
+    
+            kakao.maps.event.addListener(marker, 'click', function () {
+                socket.emit('joinMarkerRoom', markerData.id);
+            });
+    
             markerCreated = true;
         }
-
+    
         socket.on('newMarker', function (markerData) {
             if (markers[markerData.id]) {
                 return;
@@ -313,43 +318,24 @@
                 map: map,
                 image: markerImage
             });
-
-            markers[markerData.id] = marker;
-
-            // 오버레이 생성
-            var overlay = createOverlay(markerData); 
+    
+            var overlay = createOverlay(markerData);
+    
+            markers[markerData.id] = {
+                marker: marker,
+                overlay: overlay
+            };
+    
+            kakao.maps.event.addListener(marker, 'click', function () {
+                socket.emit('joinMarkerRoom', markerData.id);
+            });
         });
-
-        socket.on('markerExists', function (data) {
-            if (data.success) {
-                markerCreated = true;
-            } else {
-                alert(data.message);
-            }
-        });
-
-        socket.on('markerDeleted', function (data) {
-            if (data.success) {
-                alert(data.message);
-                var marker = markers[data.id];
-                if (marker) {
-                    marker.setMap(null);
-                    delete markers[data.id];
-                }
-                markerCreated = false;
-            } else {
-                alert(data.message);
-            }
-        });
-
-        socket.on('markerDeleteError', function (data) {
-            alert(data.message);
-        });
-
+    
         socket.on('removeMarker', function (data) {
-            var marker = markers[data.id];
-            if (marker) {
-                marker.setMap(null);
+            var markerObj = markers[data.id];
+            if (markerObj) {
+                markerObj.marker.setMap(null);
+                markerObj.overlay.setMap(null);
                 delete markers[data.id];
             }
         });
@@ -402,6 +388,7 @@
 
         function deleteMarker() {
             socket.emit('deleteMarker');
+            markerCreated = false;
         }
 
         socket.on('joinedRoom', function (roomId, markerData) {
