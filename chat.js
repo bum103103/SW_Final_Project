@@ -355,7 +355,7 @@ app.post('/login', (req, res) => {
                             return;
                         }
                     });
-                    res.redirect('/index.html');
+                    res.redirect('/map.html');
                 } else {
                     res.send('Incorrect Username and/or Password!');
                 }
@@ -378,6 +378,7 @@ app.post('/getMarkers', (req, res) => {
         res.json(results);
     });
 });
+
 /*
 app.post('/createMarkers', (req, res)=>{
     const marker = req.body;

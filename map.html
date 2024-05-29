@@ -143,7 +143,7 @@
             </form>
         </div>
     </div>
-    <button id="deleteMarkerBtn" style="display: none;" onclick="deleteMarker()">Delete Marker</button>
+    <button id="deleteMarkerBtn" onclick="deleteMarker()">Delete Marker</button> <!-- Always visible -->
     <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=bd2fcd69a2beb433b8b026c2d381f957"></script>
     <script>
         var container = document.getElementById('map');
@@ -203,15 +203,17 @@
             markers[markerId] = marker;
 
             kakao.maps.event.addListener(marker, 'click', function () {
-                displayMarkerDetails(markerData.type, markerDetails); // Display marker details when clicked
                 socket.emit('joinMarkerRoom', markerData.id);
             });
 
             markerCreated = true;
-            document.getElementById('deleteMarkerBtn').style.display = 'block';
         }
 
         socket.on('newMarker', function (markerData) {
+            if (markers[markerData.id]) {
+                // 이미 존재하는 마커면 중복 생성을 방지
+                return;
+            }
             var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
             var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption); // Use the image from markerData
             var marker = new kakao.maps.Marker({
@@ -231,7 +233,6 @@
         socket.on('markerExists', function (data) {
             if (data.success) {
                 markerCreated = true;
-                document.getElementById('deleteMarkerBtn').style.display = 'block';
             } else {
                 alert(data.message);
             }
@@ -246,7 +247,6 @@
                     delete markers[data.id];
                 }
                 markerCreated = false;
-                document.getElementById('deleteMarkerBtn').style.display = 'none';
             } else {
                 alert(data.message);
             }
