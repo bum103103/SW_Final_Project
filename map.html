@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <title>Kakao Map</title>
     <style>
-        body, html {
+        body,
+        html {
             margin: 0;
             padding: 0;
             width: 100%;
@@ -12,15 +14,19 @@
             display: flex;
             flex-direction: column;
         }
+
         #map-container {
             display: flex;
             width: 100%;
-            height: 70vh; /* Adjust the height as needed */
+            height: 70vh;
+            /* Adjust the height as needed */
         }
+
         #map {
             flex: 1;
             height: 100%;
         }
+
         #right-sidebar {
             width: 30%;
             background-color: #f0f0f0;
@@ -29,21 +35,27 @@
             border-left: 1px solid #ddd;
             box-sizing: border-box;
         }
+
         #buttons-container {
             display: flex;
-            width: 70%; /* Match the width of the map */
+            width: 70%;
+            /* Match the width of the map */
             flex-direction: column;
             background-color: #f8f8f8;
-            box-shadow: 0 -4px 8px rgba(0,0,0,0.1);
-            margin-left: 0; /* Align to the left */
+            box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
+            margin-left: 0;
+            /* Align to the left */
             padding: 10px;
         }
+
         #buttons {
             display: flex;
-            width: 100%; /* Adjust to fit the container */
+            width: 100%;
+            /* Adjust to fit the container */
             justify-content: space-between;
             margin-bottom: 10px;
         }
+
         #buttons button {
             flex: 1;
             padding: 10px 0;
@@ -51,26 +63,31 @@
             cursor: pointer;
             margin: 0 5px;
         }
+
         #input-container {
             display: flex;
             width: 100%;
             justify-content: center;
         }
+
         #input-container input {
             flex: 1;
             padding: 10px;
             font-size: 16px;
             margin: 0 5px;
         }
+
         #marker-details {
             margin-top: 20px;
             border: 1px solid #ccc;
             padding: 10px;
             background-color: #fff;
         }
+
         #marker-details h3 {
             margin: 0 0 10px 0;
         }
+
         .modal {
             display: none;
             position: fixed;
@@ -80,10 +97,11 @@
             width: 100%;
             height: 100%;
             overflow: auto;
-            background-color: rgb(0,0,0);
-            background-color: rgba(0,0,0,0.4);
+            background-color: rgb(0, 0, 0);
+            background-color: rgba(0, 0, 0, 0.4);
             padding-top: 60px;
         }
+
         .modal-content {
             background-color: #fefefe;
             margin: 5% auto;
@@ -91,21 +109,72 @@
             border: 1px solid #888;
             width: 80%;
         }
+
         #close {
             color: #aaa;
             float: right;
             font-size: 28px;
             font-weight: bold;
         }
+
         #close:hover,
         #close:focus {
             color: black;
             text-decoration: none;
             cursor: pointer;
         }
+
+        .customoverlay {
+            position: relative;
+            bottom: 85px;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            border-bottom: 2px solid #ddd;
+            float: left;
+        }
+
+        .customoverlay:nth-of-type(n) {
+            border: 0;
+            box-shadow: 0px 1px 2px #888;
+        }
+
+        .customoverlay a {
+            display: block;
+            text-decoration: none;
+            color: #000;
+            text-align: center;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            overflow: hidden;
+            background: #d95050;
+            background: #d95050 url(https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/arrow_white.png) no-repeat right 14px center;
+        }
+
+        .customoverlay .title {
+            display: block;
+            text-align: center;
+            background: #fff;
+            margin-right: 35px;
+            padding: 10px 15px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .customoverlay:after {
+            content: '';
+            position: absolute;
+            margin-left: -12px;
+            left: 50%;
+            bottom: -12px;
+            width: 22px;
+            height: 12px;
+            background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png')
+        }
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
+
 <body>
     <div id="map-container">
         <div id="map"></div>
@@ -144,7 +213,8 @@
         </div>
     </div>
     <button id="deleteMarkerBtn" onclick="deleteMarker()">Delete Marker</button> <!-- Always visible -->
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=bd2fcd69a2beb433b8b026c2d381f957"></script>
+    <script type="text/javascript"
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=bd2fcd69a2beb433b8b026c2d381f957"></script>
     <script>
         var container = document.getElementById('map');
         var options = {
@@ -171,6 +241,30 @@
         var imageSize = new kakao.maps.Size(64, 69);
         var imageOption = { offset: new kakao.maps.Point(27, 69) };
 
+
+        window.joinMarkerRoom = function (markerId) {
+            socket.emit('joinMarkerRoom', markerId);
+        };
+
+        function createOverlay(markerData) {
+
+            var content = '<div class="customoverlay">' +
+                `<a href="javascript:void(0);" onclick="joinMarkerRoom('${markerData.id}')">` +
+                '<span class="title">' + markerData.context + '</span>' +
+                '  </a>' +
+                '</div>';
+
+            var overlay = new kakao.maps.CustomOverlay({
+                map: map,
+                position: new kakao.maps.LatLng(markerData.latitude, markerData.longitude),
+                content: content,
+                yAnchor: 1
+            });
+
+
+
+            return overlay;
+        }
         function createMarker(latitude, longitude) {
             if (markerCreated) {
                 alert('You have already created a marker.');
@@ -187,7 +281,7 @@
                 longitude: parseFloat(longitude),
                 max_number: parseInt(document.getElementById('maxNumber').value, 10),
                 type: currentMarkerType,
-                image: currentMarkerImage, // 추가된 이미지 경로
+                image: currentMarkerImage,
                 details: markerDetails
             };
             socket.emit('createMarker', markerData);
@@ -202,20 +296,18 @@
 
             markers[markerId] = marker;
 
-            kakao.maps.event.addListener(marker, 'click', function () {
-                socket.emit('joinMarkerRoom', markerData.id);
-            });
+            // 오버레이 생성
+            var overlay = createOverlay(markerData);
 
             markerCreated = true;
         }
 
         socket.on('newMarker', function (markerData) {
             if (markers[markerData.id]) {
-                // 이미 존재하는 마커면 중복 생성을 방지
                 return;
             }
             var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
-            var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption); // Use the image from markerData
+            var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption);
             var marker = new kakao.maps.Marker({
                 position: markerPosition,
                 map: map,
@@ -224,10 +316,8 @@
 
             markers[markerData.id] = marker;
 
-            // 마커 클릭 이벤트 추가
-            kakao.maps.event.addListener(marker, 'click', function () {
-                socket.emit('joinMarkerRoom', markerData.id);
-            });
+            // 오버레이 생성
+            var overlay = createOverlay(markerData); 
         });
 
         socket.on('markerExists', function (data) {
@@ -264,7 +354,7 @@
             }
         });
 
-        document.getElementById('close').addEventListener('click', function() {
+        document.getElementById('close').addEventListener('click', function () {
             document.getElementById('myModal').style.display = "none";
         });
 
@@ -328,16 +418,16 @@
                 },
                 body: JSON.stringify({ type: "택시" })
             })
-            .then(response => response.json())
-            .then(data => {
-                clearSidebar();
-                data.forEach(marker => {
-                    addSidebar(marker.title, marker.type, marker.context, marker.max_number);
+                .then(response => response.json())
+                .then(data => {
+                    clearSidebar();
+                    data.forEach(marker => {
+                        addSidebar(marker.title, marker.type, marker.context, marker.max_number);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching markers:', error);
                 });
-            })
-            .catch(error => {
-                console.error('Error fetching markers:', error);
-            });
         });
 
         document.getElementById('libraryBtn').addEventListener('click', function () {
@@ -350,16 +440,16 @@
                 },
                 body: JSON.stringify({ type: "도서관" })
             })
-            .then(response => response.json())
-            .then(data => {
-                clearSidebar();
-                data.forEach(marker => {
-                    addSidebar(marker.title, marker.type, marker.context, marker.max_number);
+                .then(response => response.json())
+                .then(data => {
+                    clearSidebar();
+                    data.forEach(marker => {
+                        addSidebar(marker.title, marker.type, marker.context, marker.max_number);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching markers:', error);
                 });
-            })
-            .catch(error => {
-                console.error('Error fetching markers:', error);
-            });
         });
 
         document.getElementById('restaurantBtn').addEventListener('click', function () {
@@ -380,4 +470,5 @@
         });
     </script>
 </body>
+
 </html>
