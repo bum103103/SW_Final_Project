@@ -134,25 +134,20 @@ io.on('connection', (socket) => {
 
     socket.on('createMarker', (markerData) => {
         if (userMarkers[socket.username]) {
-            // 이미 마커가 있는 경우
             socket.emit('markerExists', { success: false, message: 'Marker already exists' });
             return;
         }
-
-        // 마커 생성자 정보 추가
+    
         markerData.admin = socket.id;
-        // 방 생성 (마커 ID를 방 ID로 사용)
         const roomId = markerData.id;
         socket.join(roomId);
         socket.room = roomId;
         console.log(`${socket.username} created and joined room ${roomId}`);
-
-        // 마커 정보 저장 및 브로드캐스트
-        markers[roomId] = markerData;
+    
+        markers[roomId] = markerData; // Store the full marker data
         userMarkers[socket.username] = roomId;
         io.emit('newMarker', markerData);
-
-        // 마커 정보를 데이터베이스에 저장
+    
         pool.query('INSERT INTO markers (id, title, created_by, context, latitude, longitude, max_number, type, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
             [markerData.id, markerData.title, markerData.created_by, markerData.context, markerData.latitude, markerData.longitude, markerData.max_number, markerData.type, markerData.image], 
             (err) => {
@@ -379,21 +374,19 @@ app.post('/getMarkers', (req, res) => {
     });
 });
 
-/*
-app.post('/createMarkers', (req, res)=>{
-    const marker = req.body;
-    pool.execute('INSERT INTO markers (id, title, created_by, context, latitude, longitude, max_number, type, image) values (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    [marker.id, marker.title, marker.created_by, marker.context, marker.latitude, marker.longitude, marker.max_number, marker.type, marker.image], 
-    (err, results) => {
-        if(err) {
-            console.error('Error creating marker:', err);
-            res.status(500).send('Database error');
-            return;
-        }
-        console.log('create marker success.');
-        res.json({ success: true, message: 'Marker created successfully!' });
-    });
-}); */
+app.get('/getUserCounts', (req, res) => {
+    const userCounts = {};
+
+    for (const roomId in roomUsers) {
+        userCounts[roomId] = {
+            userCount: roomUsers[roomId].length,
+            maxNumber: markers[roomId] ? markers[roomId].max_number : 0
+        };
+    }
+
+    res.json(userCounts);
+});
+
 
 app.get('/map.html', (req, res) => {
     res.sendFile(__dirname + '/map.html');
