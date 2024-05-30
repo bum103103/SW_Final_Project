@@ -31,6 +31,8 @@ let markers = {}; // 마커 정보를 저장할 객체
 let userMarkers = {}; // 사용자별 마커 ID 저장
 let roomUserLocations = {}; // 방별로 사용자 위치를 저장하는 객체
 let roomUsers = {}; // 방별 사용자 목록
+let bannedUsers = {}; // 방별 강퇴된 사용자 목록
+
 
 app.use(sessionParser);
 app.use('/images', express.static(path.join(__dirname, 'images')));
@@ -85,7 +87,7 @@ io.on('connection', (socket) => {
         socket.join(roomId);
         socket.room = roomId;
         console.log(`${socket.username} joined room ${roomId}`);
-
+    
         // 방별 사용자 위치 초기화
         if (!roomUserLocations[roomId]) {
             roomUserLocations[roomId] = [];
@@ -93,12 +95,15 @@ io.on('connection', (socket) => {
         if (!roomUsers[roomId]) {
             roomUsers[roomId] = [];
         }
-
+    
         // 사용자 목록에 추가
         if (!roomUsers[roomId].includes(socket.username)) {
             roomUsers[roomId].push(socket.username);
         }
-
+    
+        const isAdmin = markers[roomId].created_by === socket.username;
+        socket.emit('joinedRoom', roomId, markers[roomId], isAdmin);
+    
         // 사용자 목록 업데이트
         io.to(roomId).emit('updateUserLocations', {
             userLocations: roomUserLocations[roomId],
@@ -187,6 +192,12 @@ io.on('connection', (socket) => {
             const currentUsersCount = roomUsers[roomId] ? roomUsers[roomId].length : 0;
             const maxNumber = markers[roomId].max_number;
     
+            // 사용자가 강퇴된 목록에 있는지 확인
+            if (bannedUsers[roomId] && bannedUsers[roomId].includes(socket.username)) {
+                socket.emit('banned', { success: false, message: 'You are banned from this room.' });
+                return;
+            }
+    
             if (currentUsersCount < maxNumber) {
                 socket.join(roomId);
                 socket.room = roomId;
@@ -205,6 +216,41 @@ io.on('connection', (socket) => {
             }
         }
     });
+
+    socket.on('kickUser', (data) => {
+        const { roomId, username } = data;
+    
+        if (socket.username === markers[roomId].created_by) { // 방 관리자인지 확인
+            if (!bannedUsers[roomId]) {
+                bannedUsers[roomId] = [];
+            }
+            if (!bannedUsers[roomId].includes(username)) {
+                bannedUsers[roomId].push(username);
+            }
+    
+            // 강퇴된 사용자 소켓 연결 끊기
+            io.sockets.sockets.forEach(s => {
+                if (s.username === username && s.room === roomId) {
+                    s.leave(roomId);
+                    s.emit('kicked', { message: 'You have been kicked from the room.' });
+                    io.to(roomId).emit('updateUserLocations', {
+                        userLocations: roomUserLocations[roomId].filter(loc => loc.username !== username),
+                        users: roomUsers[roomId].filter(user => user !== username)
+                    });
+                }
+            });
+    
+            // 사용자 목록에서 제거
+            roomUserLocations[roomId] = roomUserLocations[roomId].filter(loc => loc.username !== username);
+            roomUsers[roomId] = roomUsers[roomId].filter(user => user !== username);
+    
+            console.log(`${username} was kicked from room ${roomId} by ${socket.username}`);
+        }
+    });
+
+
+
+    
 
     socket.on('delete', (messageId) => {
         pool.query('DELETE FROM messages WHERE id = ?', [messageId], (err) => {

@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="utf-8">
     <title>Kakao Map</title>
     <style>
-        body,
-        html {
+        body, html {
             margin: 0;
             padding: 0;
             width: 100%;
@@ -19,7 +17,6 @@
             display: flex;
             width: 100%;
             height: 70vh;
-            /* Adjust the height as needed */
         }
 
         #map {
@@ -39,19 +36,16 @@
         #buttons-container {
             display: flex;
             width: 70%;
-            /* Match the width of the map */
             flex-direction: column;
             background-color: #f8f8f8;
             box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
             margin-left: 0;
-            /* Align to the left */
             padding: 10px;
         }
 
         #buttons {
             display: flex;
             width: 100%;
-            /* Adjust to fit the container */
             justify-content: space-between;
             margin-bottom: 10px;
         }
@@ -117,8 +111,7 @@
             font-weight: bold;
         }
 
-        #close:hover,
-        #close:focus {
+        #close:hover, #close:focus {
             color: black;
             text-decoration: none;
             cursor: pointer;
@@ -174,7 +167,6 @@
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
-
 <body>
     <div id="map-container">
         <div id="map"></div>
@@ -200,8 +192,6 @@
             <form id="markerForm" onsubmit="return false;">
                 <label for="title">Title:</label>
                 <input type="text" id="title" name="title" required><br>
-                <label for="username">Username:</label>
-                <input type="text" id="username" name="username" required><br>
                 <label for="userText">Text:</label>
                 <input type="text" id="userText" name="userText" required><br>
                 <label for="maxNumber">Max Number:</label>
@@ -213,177 +203,181 @@
         </div>
     </div>
     <button id="deleteMarkerBtn" onclick="deleteMarker()">Delete Marker</button> <!-- Always visible -->
-    <script type="text/javascript"
-        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=bd2fcd69a2beb433b8b026c2d381f957"></script>
-        <script>
-            var container = document.getElementById('map');
-    var options = {
-        center: new kakao.maps.LatLng(35.1152, 128.9684),
-        level: 2
-    };
-    var map = new kakao.maps.Map(container, options);
-    var socket = io();
-
-    var markerImages = {
-        taxi: '/images/taxi.jpg',
-        library: '/images/library.jpg',
-        restaurant: '/images/restaurant.jpg',
-        meeting: '/images/meeting.jpg',
-        school: '/images/school.jpg',
-        etc: '/images/etc.jpg'
-    };
-
-    var currentMarkerImage = markerImages.taxi;
-    var currentMarkerType = "택시";
-    var markerCreated = false;
-    var markers = {}; // 마커를 저장할 객체
-
-    var imageSize = new kakao.maps.Size(64, 69);
-    var imageOption = { offset: new kakao.maps.Point(27, 69) };
-
-    window.joinMarkerRoom = function(markerId) {
-        socket.emit('joinMarkerRoom', markerId);
-    };
-
-    function createOverlay(markerData, userCount = 0) {
-        const context = markerData.context || '';
-        const maxNumber = markerData.max_number || 0;
-        const content = `
-            <div class="customoverlay">
-                <a href="javascript:void(0);" onclick="joinMarkerRoom('${markerData.id}')">
-                    <span class="title">${context} (${userCount}/${maxNumber})</span>
-                </a>
-            </div>
-        `;
-        var overlay = new kakao.maps.CustomOverlay({
-            map: map,
-            position: new kakao.maps.LatLng(markerData.latitude, markerData.longitude),
-            content: content,
-            yAnchor: 1
-        });
-
-        return overlay;
-    }
-
-    function createMarker(latitude, longitude) {
-        if (markerCreated) {
-            alert('You have already created a marker.');
-            return;
-        }
-        const markerId = 'marker_' + new Date().getTime();
-        const markerDetails = document.getElementById('markerDetails').value;
-        const markerData = {
-            id: markerId,
-            title: document.getElementById('title').value,
-            created_by: document.getElementById('username').value,
-            context: document.getElementById('userText').value,
-            latitude: parseFloat(latitude),
-            longitude: parseFloat(longitude),
-            max_number: parseInt(document.getElementById('maxNumber').value, 10),
-            type: currentMarkerType,
-            image: currentMarkerImage,
-            details: markerDetails
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=bd2fcd69a2beb433b8b026c2d381f957"></script>
+    <script>
+        var container = document.getElementById('map');
+        var options = {
+            center: new kakao.maps.LatLng(35.1152, 128.9684),
+            level: 2
         };
-        socket.emit('createMarker', markerData);
+        var map = new kakao.maps.Map(container, options);
+        var socket = io();
 
-        var markerPosition = new kakao.maps.LatLng(latitude, longitude);
-        var markerImage = new kakao.maps.MarkerImage(currentMarkerImage, imageSize, imageOption);
-        var marker = new kakao.maps.Marker({
-            position: markerPosition,
-            map: map,
-            image: markerImage
-        });
-
-        var overlay = createOverlay(markerData);
-
-        markers[markerId] = {
-            marker: marker,
-            overlay: overlay,
-            context: markerData.context,
-            maxNumber: markerData.max_number
+        var markerImages = {
+            taxi: '/images/taxi.jpg',
+            library: '/images/library.jpg',
+            restaurant: '/images/restaurant.jpg',
+            meeting: '/images/meeting.jpg',
+            school: '/images/school.jpg',
+            etc: '/images/etc.jpg'
         };
 
-        kakao.maps.event.addListener(marker, 'click', function () {
-            socket.emit('joinMarkerRoom', markerData.id);
+        var currentMarkerImage = markerImages.taxi;
+        var currentMarkerType = "택시";
+        var markerCreated = false;
+        var markers = {}; // 마커를 저장할 객체
+
+        var imageSize = new kakao.maps.Size(64, 69);
+        var imageOption = { offset: new kakao.maps.Point(27, 69) };
+
+        let username=""; 
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/get-username')
+            .then(response => response.json())
+            .then(data => {
+                if (data.username) {
+                    username = data.username;
+                }
+            })
+            .catch(error => console.error('Error fetching username:', error));
         });
 
-        markerCreated = true;
-    }
+        
+        window.joinMarkerRoom = function(markerId) {
+            socket.emit('joinMarkerRoom', markerId);
+        };
 
-    function updateOverlayContent(markerId, userCount, maxNumber) {
-        if (markers[markerId]) {
-            const context = markers[markerId].context || 'No Context';
-            console.log(`Updating overlay for marker ${markerId} with context: ${context}`);
-            const overlayContent = `
+        function createOverlay(markerData, userCount = 0) {
+            const context = markerData.context || '';
+            const maxNumber = markerData.max_number || 0;
+            const content = `
                 <div class="customoverlay">
-                    <a href="javascript:void(0);" onclick="joinMarkerRoom('${markerId}')">
-                        <span class="title">${context} (${userCount || 0}/${maxNumber || 0})</span>
+                    <a href="javascript:void(0);" onclick="joinMarkerRoom('${markerData.id}')">
+                        <span class="title">${context} (${userCount}/${maxNumber})</span>
                     </a>
                 </div>
             `;
-            markers[markerId].overlay.setContent(overlayContent);
-        }
-    }
-
-    function fetchUserCounts() {
-        fetch('/getUserCounts')
-            .then(response => response.json())
-            .then(userCounts => {
-                for (const roomId in userCounts) {
-                    if (markers[roomId]) {
-                        updateOverlayContent(roomId, userCounts[roomId].userCount, userCounts[roomId].maxNumber);
-                    }
-                }
-            })
-            .catch(error => {
-                console.error('Error fetching user counts:', error);
+            var overlay = new kakao.maps.CustomOverlay({
+                map: map,
+                position: new kakao.maps.LatLng(markerData.latitude, markerData.longitude),
+                content: content,
+                yAnchor: 1
             });
-    }
 
-    // Fetch user counts every 5 seconds
-    setInterval(fetchUserCounts, 1000);
-
-    socket.on('roomFull', function (data) {
-        if (!data.success) {
-            alert(data.message);
+            return overlay;
         }
-    });
-    
 
-    socket.on('newMarker', function (markerData) {
-        if (markers[markerData.id]) {
-            return;
+        function createMarker(latitude, longitude) {
+            if (markerCreated) {
+                alert('You have already created a marker.');
+                return;
+            }
+            const markerId = 'marker_' + new Date().getTime();
+            const markerDetails = document.getElementById('markerDetails').value;
+            const markerData = {
+                id: markerId,
+                title: document.getElementById('title').value,
+                created_by: username, // 동적으로 username 추가
+                context: document.getElementById('userText').value,
+                latitude: parseFloat(latitude),
+                longitude: parseFloat(longitude),
+                max_number: parseInt(document.getElementById('maxNumber').value, 10),
+                type: currentMarkerType,
+                image: currentMarkerImage,
+                details: markerDetails
+            };
+            socket.emit('createMarker', markerData);
+
+            var markerPosition = new kakao.maps.LatLng(latitude, longitude);
+            var markerImage = new kakao.maps.MarkerImage(currentMarkerImage, imageSize, imageOption);
+            var marker = new kakao.maps.Marker({
+                position: markerPosition,
+                map: map,
+                image: markerImage
+            });
+
+            var overlay = createOverlay(markerData);
+
+            markers[markerId] = {
+                marker: marker,
+                overlay: overlay,
+                context: markerData.context,
+                maxNumber: markerData.max_number
+            };
+
+            kakao.maps.event.addListener(marker, 'click', function () {
+                socket.emit('joinMarkerRoom', markerData.id);
+            });
+
+            markerCreated = true;
         }
-        var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
-        var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption);
-        var marker = new kakao.maps.Marker({
-            position: markerPosition,
-            map: map,
-            image: markerImage
+
+        function updateOverlayContent(markerId, userCount, maxNumber) {
+            if (markers[markerId]) {
+                const context = markers[markerId].context || 'No Context';
+                const overlayContent = `
+                    <div class="customoverlay">
+                        <a href="javascript:void(0);" onclick="joinMarkerRoom('${markerId}')">
+                            <span class="title">${context} (${userCount || 0}/${maxNumber || 0})</span>
+                        </a>
+                    </div>
+                `;
+                markers[markerId].overlay.setContent(overlayContent);
+            }
+        }
+
+        function fetchUserCounts() {
+            fetch('/getUserCounts')
+                .then(response => response.json())
+                .then(userCounts => {
+                    for (const roomId in userCounts) {
+                        if (markers[roomId]) {
+                            updateOverlayContent(roomId, userCounts[roomId].userCount, userCounts[roomId].maxNumber);
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching user counts:', error);
+                });
+        }
+
+        // Fetch user counts every 5 seconds
+        setInterval(fetchUserCounts, 1000);
+
+        socket.on('newMarker', function (markerData) {
+            if (markers[markerData.id]) {
+                return;
+            }
+            var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
+            var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption);
+            var marker = new kakao.maps.Marker({
+                position: markerPosition,
+                map: map,
+                image: markerImage
+            });
+
+            var overlay = createOverlay(markerData);
+
+            markers[markerData.id] = {
+                marker: marker,
+                overlay: overlay,
+                context: markerData.context,
+                maxNumber: markerData.max_number
+            };
+
+            kakao.maps.event.addListener(marker, 'click', function () {
+                socket.emit('joinMarkerRoom', markerData.id);
+            });
         });
 
-        var overlay = createOverlay(markerData);
-
-        markers[markerData.id] = {
-            marker: marker,
-            overlay: overlay,
-            context: markerData.context,
-            maxNumber: markerData.max_number
-        };
-
-        kakao.maps.event.addListener(marker, 'click', function () {
-            socket.emit('joinMarkerRoom', markerData.id);
+        socket.on('removeMarker', function (data) {
+            var markerObj = markers[data.id];
+            if (markerObj) {
+                markerObj.marker.setMap(null);
+                markerObj.overlay.setMap(null);
+                delete markers[data.id];
+            }
         });
-    });
-
-    socket.on('removeMarker', function (data) {
-        var markerObj = markers[data.id];
-        if (markerObj) {
-            markerObj.marker.setMap(null);
-            markerObj.overlay.setMap(null);
-            delete markers[data.id];
-        }
-    });
 
         document.getElementById('close').addEventListener('click', function () {
             document.getElementById('myModal').style.display = "none";
@@ -418,13 +412,12 @@
 
         function submitForm() {
             var title = document.getElementById('title').value;
-            var username = document.getElementById('username').value;
             var context = document.getElementById('userText').value;
             var latitude = document.getElementById('latitude').value;
             var longitude = document.getElementById('longitude').value;
             var maxNumber = document.getElementById('maxNumber').value;
 
-            if (!title || !username || !context || !latitude || !longitude || !maxNumber) {
+            if (!title || !context || !latitude || !longitude || !maxNumber) {
                 alert('모든 필드를 채워주세요.');
                 return;
             }
@@ -439,7 +432,11 @@
         socket.on('joinedRoom', function (roomId, markerData) {
             window.location.href = `/index.html?roomId=${roomId}`;
         });
-
+        socket.on('banned', function (data) {
+            if (!data.success) {
+                alert(data.message);
+            }
+        });
         document.getElementById('taxiBtn').addEventListener('click', function () {
             currentMarkerImage = markerImages.taxi;
             currentMarkerType = "택시";
@@ -502,5 +499,4 @@
         });
     </script>
 </body>
-
 </html>
