@@ -184,11 +184,25 @@ io.on('connection', (socket) => {
     socket.on('joinMarkerRoom', (markerId) => {
         const roomId = markerId;
         if (markers[roomId]) {
-            socket.join(roomId);
-            socket.room = roomId;
-            console.log(`${socket.username} joined marker room ${roomId}`);
-            // 해당 방의 마커 정보를 전송하여 사용자 이동
-            socket.emit('joinedRoom', roomId, markers[roomId]);
+            const currentUsersCount = roomUsers[roomId] ? roomUsers[roomId].length : 0;
+            const maxNumber = markers[roomId].max_number;
+    
+            if (currentUsersCount < maxNumber) {
+                socket.join(roomId);
+                socket.room = roomId;
+                console.log(`${socket.username} joined marker room ${roomId}`);
+                
+                // 사용자 목록에 추가
+                if (!roomUsers[roomId]) {
+                    roomUsers[roomId] = [];
+                }
+                if (!roomUsers[roomId].includes(socket.username)) {
+                    roomUsers[roomId].push(socket.username);
+                }
+                socket.emit('joinedRoom', roomId, markers[roomId]);
+            } else {
+                socket.emit('roomFull', { success: false, message: 'Room is full' });
+            }
         }
     });
 

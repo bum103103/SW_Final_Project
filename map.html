@@ -341,7 +341,14 @@
     }
 
     // Fetch user counts every 5 seconds
-    setInterval(fetchUserCounts, 5000);
+    setInterval(fetchUserCounts, 1000);
+
+    socket.on('roomFull', function (data) {
+        if (!data.success) {
+            alert(data.message);
+        }
+    });
+    
 
     socket.on('newMarker', function (markerData) {
         if (markers[markerData.id]) {
