@@ -1,5 +1,3 @@
-
-
 document.addEventListener('DOMContentLoaded', function() {
     const urlParams = new URLSearchParams(window.location.search);
     roomId = urlParams.get('roomId');  // URL에서 roomId 추출
@@ -9,12 +7,13 @@ document.addEventListener('DOMContentLoaded', function() {
     .then(data => {
         if (data.username) {
             console.log("Logged in as:", data.username);
-            username = data.username;
+            username = data.username; // 전역 변수로 username 설정
             initializeChat(roomId);
         }
     })
     .catch(error => console.error('Error fetching username:', error));
 });
+
 
 
 const chat = document.getElementById('chat');
@@ -25,6 +24,8 @@ const userCount = document.getElementById('userCount');
 const userList = document.getElementById('userList');
 
 let users = [];
+let isAdmin = false;
+let username = '';
 
 function initializeChat(roomId) {
     socket.emit('joinRoom', roomId);
@@ -43,6 +44,20 @@ function initializeChat(roomId) {
         updateUserMarkers(data.userLocations);
         users = data.users;
         updateUserList();
+    });
+    socket.on('joinedRoom', (roomId, markerData, adminStatus) => {
+        isAdmin = adminStatus;
+        updateUserList();
+    });
+    socket.on('kicked', (data) => {
+        alert(data.message);
+        window.location.href = '/map.html';
+    });
+
+    socket.on('banned', (data) => {
+        if (!data.success) {
+            alert(data.message);
+        }
     });
 }
 
@@ -142,12 +157,26 @@ function updateUserList() {
             const userItem = document.createElement('div');
             userItem.textContent = user;
             userItem.classList.add('user-list-item');
+
+            // 강퇴 버튼 추가
+            if (isAdmin && user !== username) { // 현재 사용자가 방 관리자일 때, 본인이 아닌 경우에만 버튼을 추가
+                const kickButton = document.createElement('button');
+                kickButton.textContent = 'Kick';
+                kickButton.classList.add('kick-button');
+                kickButton.onclick = () => kickUser(user);
+                userItem.appendChild(kickButton);
+            }
+
             userList.appendChild(userItem);
         });
     } else {
         userCount.textContent = 'Users: 0';
         userList.innerHTML = '';
     }
+}
+
+function kickUser(user) {
+    socket.emit('kickUser', { roomId: roomId, username: user });
 }
 
 function toggleUserList() {

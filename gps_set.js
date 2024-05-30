@@ -61,6 +61,10 @@ function initializeMap(roomId) {
 
             map = new kakao.maps.Map(container, options);
 
+            var mapTypeControl = new kakao.maps.MapTypeControl();
+
+            map.addControl(mapTypeControl, kakao.maps.ControlPosition.TOPRIGHT);
+        
             if (username) {
                 addOrUpdateUserMarker(username, userLatitude, userLongitude);
             }
