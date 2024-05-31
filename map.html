@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <title>Kakao Map</title>
     <style>
-        body, html {
+        body,
+        html {
             margin: 0;
             padding: 0;
             width: 100%;
@@ -111,7 +113,8 @@
             font-weight: bold;
         }
 
-        #close:hover, #close:focus {
+        #close:hover,
+        #close:focus {
             color: black;
             text-decoration: none;
             cursor: pointer;
@@ -167,6 +170,7 @@
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
+
 <body>
     <div id="map-container">
         <div id="map"></div>
@@ -203,7 +207,8 @@
         </div>
     </div>
     <button id="deleteMarkerBtn" onclick="deleteMarker()">Delete Marker</button> <!-- Always visible -->
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=22c293b2277db520a282856b10771470"></script>
+    <script type="text/javascript"
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=22c293b2277db520a282856b10771470"></script>
     <script>
         var container = document.getElementById('map');
         var options = {
@@ -235,26 +240,26 @@
         var imageSize = new kakao.maps.Size(64, 69);
         var imageOption = { offset: new kakao.maps.Point(27, 69) };
 
-        let username=""; 
-        document.addEventListener('DOMContentLoaded', function() {
+        let username = "";
+        document.addEventListener('DOMContentLoaded', function () {
             fetch('/get-username')
-            .then(response => response.json())
-            .then(data => {
-                if (data.username) {
-                    username = data.username;
-                }
-            })
-            .catch(error => console.error('Error fetching username:', error));
-        });
+                .then(response => response.json())
+                .then(data => {
+                    if (data.username) {
+                        username = data.username;
+                    }
+                })
+                .catch(error => console.error('Error fetching username:', error));
+            });
 
-        
-        window.joinMarkerRoom = function(markerId) {
+        window.joinMarkerRoom = function (markerId) {
             socket.emit('joinMarkerRoom', markerId);
         };
 
         function createOverlay(markerData, userCount = 0) {
             const context = markerData.context || '';
             const maxNumber = markerData.max_number || 0;
+            userCount = markerData.userCount || 0;
             const content = `
                 <div class="customoverlay">
                     <a href="javascript:void(0);" onclick="joinMarkerRoom('${markerData.id}')">
@@ -282,7 +287,7 @@
             const markerData = {
                 id: markerId,
                 title: document.getElementById('title').value,
-                created_by: username, // 동적으로 username 추가
+                created_by: username, 
                 context: document.getElementById('userText').value,
                 latitude: parseFloat(latitude),
                 longitude: parseFloat(longitude),
@@ -331,24 +336,6 @@
             }
         }
 
-        function fetchUserCounts() {
-            fetch('/getUserCounts')
-                .then(response => response.json())
-                .then(userCounts => {
-                    for (const roomId in userCounts) {
-                        if (markers[roomId]) {
-                            updateOverlayContent(roomId, userCounts[roomId].userCount, userCounts[roomId].maxNumber);
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching user counts:', error);
-                });
-        }
-
-        // Fetch user counts every 5 seconds
-        setInterval(fetchUserCounts, 1000);
-
         socket.on('newMarker', function (markerData) {
             if (markers[markerData.id]) {
                 return;
@@ -375,12 +362,32 @@
             });
         });
 
+        socket.on('updateUserCount', function (data) {
+            if (markers[data.roomId]) {
+                updateOverlayContent(data.roomId, data.userCount, data.maxNumber);
+            }
+        });
+
         socket.on('removeMarker', function (data) {
             var markerObj = markers[data.id];
             if (markerObj) {
                 markerObj.marker.setMap(null);
                 markerObj.overlay.setMap(null);
                 delete markers[data.id];
+            }
+        });
+
+        socket.on('joinedRoom', function (roomId, markerData) {
+            window.location.href = `/index.html?roomId=${roomId}`;
+        });
+        socket.on('banned', function (data) {
+            if (!data.success) {
+                alert(data.message);
+            }
+        });
+        socket.on('roomFull', function(data) {
+            if (!data.success) {
+                alert(data.message);
             }
         });
 
@@ -434,14 +441,7 @@
             markerCreated = false;
         }
 
-        socket.on('joinedRoom', function (roomId, markerData) {
-            window.location.href = `/index.html?roomId=${roomId}`;
-        });
-        socket.on('banned', function (data) {
-            if (!data.success) {
-                alert(data.message);
-            }
-        });
+        
         document.getElementById('taxiBtn').addEventListener('click', function () {
             currentMarkerImage = markerImages.taxi;
             currentMarkerType = "택시";
@@ -504,4 +504,5 @@
         });
     </script>
 </body>
+
 </html>
