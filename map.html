@@ -131,10 +131,8 @@
             transition: all 0.3s ease;
             background: white;
             box-shadow: 0px 1px 2px #888;
-            width: 150px;
-            /* 크기를 원래대로 복원 */
+            width: 180px;
             transform-origin: bottom center;
-            /* 중앙 하단 기준으로 확장 */
         }
 
         .customoverlay.expanded {
@@ -311,16 +309,15 @@
 
         function createOverlay(markerData, userCount = 0) {
             const title = markerData.title || '';
-            const context = markerData.context || '';
             const maxNumber = markerData.max_number || 0;
             userCount = markerData.userCount || 0;
             const content = `
                 <div class="customoverlay" id="overlay_${markerData.id}">
                     <a href="javascript:void(0);" class="overlay-link">
-                        <span class="title">${title}</span>
+                        <span class="title">${title} (${userCount}/${maxNumber})</span>
                         <div class="details">
-                            <p>모임: ${title} </p>
-                            <p>세부내용: ${context}</p>
+                            <p>모임: ${title}</p>
+                            <p>세부내용: ${markerData.context}</p>
                             <p>현재 인원: ${userCount}</p>
                             <p>최대 인원: ${maxNumber}</p>
                             <button class="btn-share" onclick="joinMarkerRoom('${markerData.id}')">참여하기</button>
@@ -334,7 +331,7 @@
                 content: content,
                 yAnchor: 1
             });
-
+        
             // Add event listeners based on the device type
             const overlayLink = overlay.a.getElementsByClassName('overlay-link')[0];
             if (isMobileDevice()) {
@@ -349,7 +346,7 @@
                     collapseOverlay(markerData.id);
                 });
             }
-
+        
             return overlay;
         }
         function isMobileDevice() {
@@ -447,36 +444,25 @@
 
         function updateOverlayContent(markerId, userCount, maxNumber) {
             if (markers[markerId]) {
-                const title = markers[markerId].markerData.title || 'No Title';
-                const context = markers[markerId].context || 'No Context';
-                const overlayContent = `
-                    <div class="customoverlay" id="overlay_${markerId}">
-                        <a href="javascript:void(0);" class="overlay-link">
-                            <span class="title">${title}</span>
-                            <div class="details">
-                                <p>모임: ${title}</p> 
-                                <p>세부내용: ${context}</p>
-                                <p>현재 인원: ${userCount || 0}</p>
-                                <p>최대 인원: ${maxNumber || 0}</p>
-                                <button class="btn-share" onclick="joinMarkerRoom('${markerId}')">참여하기</button>
-                            </div>
-                        </a>
-                    </div>
-                `;
-                markers[markerId].overlay.setContent(overlayContent);
-
-                const overlayLink = document.querySelector(`#overlay_${markerId} .overlay-link`);
-                if (isMobileDevice()) {
-                    overlayLink.addEventListener('click', function (event) {
-                        toggleMarkerDetails(markerId, event);
-                    });
-                } else {
-                    overlayLink.addEventListener('mouseover', function () {
-                        expandOverlay(markerId);
-                    });
-                    overlayLink.addEventListener('mouseout', function () {
-                        collapseOverlay(markerId);
-                    });
+                const overlay = document.getElementById(`overlay_${markerId}`);
+                if (overlay) {
+                    const title = markers[markerId].markerData.title || 'No Title';
+                    const context = markers[markerId].context || 'No Context';
+        
+                    // 업데이트된 인원 정보를 설정
+                    const titleElement = overlay.querySelector('.title');
+                    const userCountElement = overlay.querySelector('.details p:nth-child(3)'); // 현재 인원
+                    const maxNumberElement = overlay.querySelector('.details p:nth-child(4)'); // 최대 인원
+        
+                    if (titleElement) {
+                        titleElement.textContent = `${title} (${userCount}/${maxNumber})`;
+                    }
+                    if (userCountElement) {
+                        userCountElement.textContent = `현재 인원: ${userCount}`;
+                    }
+                    if (maxNumberElement) {
+                        maxNumberElement.textContent = `최대 인원: ${maxNumber}`;
+                    }
                 }
             }
         }
