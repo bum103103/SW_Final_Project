@@ -131,58 +131,63 @@
             transition: all 0.3s ease;
             background: white;
             box-shadow: 0px 1px 2px #888;
-            width: 180px;
-            transform-origin: bottom center;
+            width: 180px; /* 크기 수정 */
+            transform-origin: bottom center; /* 중앙 하단 기준으로 확장 */
+            white-space: normal; /* 줄바꿈을 허용 */
+            word-break: break-all; /* 단어가 폭을 넘으면 줄바꿈 */
         }
-
+        
         .customoverlay.expanded {
-            width: 300px;
-            /* 확장 시의 너비 */
+            width: 300px; /* 확장 시의 너비 */
             height: auto;
             bottom: 80px;
         }
-
+        
         .customoverlay .details {
             display: none;
             padding: 10px;
-            text-align: center;
-            /* 가운데 정렬 추가 */
+            text-align: center; /* 가운데 정렬 추가 */
         }
-
+        
         .customoverlay.expanded .details {
             display: block;
         }
-
+        
         .customoverlay.expanded .details p {
-            margin: 5px 0;
-            /* 간격 조정 */
+            margin: 5px 0; /* 간격 조정 */
         }
-
+        
         .customoverlay a {
             display: block;
             text-decoration: none;
             color: #000;
-            text-align: center;
+            text-align: justify; /* 추가 */
             border-radius: 6px;
             font-size: 14px;
             font-weight: bold;
             overflow: hidden;
             background: #fff;
-            /* 배경색 수정 */
             padding: 10px;
-        }
-
-        .customoverlay .title {
+            white-space: normal;
+            word-break: break-all;
+          }
+          
+          .customoverlay .title {
             display: block;
-            text-align: center;
+            text-align: justify; /* 추가 */
             background: #fff;
-            /* 배경색 수정 */
             margin-right: 35px;
             padding: 10px 15px;
             font-size: 14px;
             font-weight: bold;
-        }
-
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            text-overflow: ellipsis;
+            word-break: break-all;
+          }
+        
         .customoverlay:after {
             content: '';
             position: absolute;
@@ -193,7 +198,7 @@
             height: 12px;
             background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png')
         }
-
+        
         .btn-share {
             display: inline-block;
             padding: 0.5rem 1rem;
@@ -207,7 +212,7 @@
             text-align: center;
             text-decoration: none;
         }
-
+        
         .btn-share:hover {
             background-color: #928f8f;
         }
