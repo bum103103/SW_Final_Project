@@ -1,11 +1,11 @@
 ## 지금까지 작성한 모든 db문은 다음과 같다.
-```
+
 chat_db에 
 마커 테이블,
 메시지 테이블,
 유저 로그인 테이블이 만들어 질 것이다. 
-```
 
+```sql
 CREATE DATABASE chat_db;
 use chat_db;
 
@@ -20,6 +20,7 @@ create table markers (
     type varchar(30) not null,
     created_at timestamp default current_timestamp
 );
+
 drop table if exists messages;
 create table `messages` (
   `id` char(40) not null,
@@ -27,6 +28,7 @@ create table `messages` (
   `text` varchar(200) not null,
   `roomId` char(40) not null
 );
+
 drop table if exists user_login;
 create table user_login(
    id bigint primary key auto_increment,
@@ -34,3 +36,4 @@ create table user_login(
    password varchar(30) not null,
    status tinyint not null default 0
 );
+```
