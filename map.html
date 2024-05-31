@@ -1,12 +1,10 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <meta charset="utf-8">
     <title>Kakao Map</title>
     <style>
-        body,
-        html {
+        body, html {
             margin: 0;
             padding: 0;
             width: 100%;
@@ -113,27 +111,42 @@
             font-weight: bold;
         }
 
-        #close:hover,
-        #close:focus {
+        #close:hover, #close:focus {
             color: black;
             text-decoration: none;
             cursor: pointer;
         }
 
         .customoverlay {
-            position: relative;
+            position: absolute;
             bottom: 85px;
+            left: 50%;
+            transform: translateX(-50%);
             border-radius: 6px;
             border: 1px solid #ccc;
             border-bottom: 2px solid #ddd;
-            float: left;
-        }
-
-        .customoverlay:nth-of-type(n) {
-            border: 0;
+            transition: all 0.3s ease;
+            background: white;
             box-shadow: 0px 1px 2px #888;
+            width: 150px; /* 크기를 원래대로 복원 */
+            transform-origin: bottom center; /* 중앙 하단 기준으로 확장 */
         }
-
+        
+        .customoverlay.expanded {
+            width: 300px; /* 확장 시의 너비 */
+            height: auto;
+            bottom: 80px;
+        }
+        
+        .customoverlay.expanded .details {
+            display: block;
+        }
+        
+        .customoverlay .details {
+            display: none;
+            padding: 10px;
+        }
+        
         .customoverlay a {
             display: block;
             text-decoration: none;
@@ -143,20 +156,20 @@
             font-size: 14px;
             font-weight: bold;
             overflow: hidden;
-            background: #d95050;
-            background: #d95050 url(https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/arrow_white.png) no-repeat right 14px center;
+            background: #fff; /* 배경색 수정 */
+            padding: 10px;
         }
-
+        
         .customoverlay .title {
             display: block;
             text-align: center;
-            background: #fff;
+            background: #fff; /* 배경색 수정 */
             margin-right: 35px;
             padding: 10px 15px;
             font-size: 14px;
             font-weight: bold;
         }
-
+        
         .customoverlay:after {
             content: '';
             position: absolute;
@@ -167,10 +180,28 @@
             height: 12px;
             background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png')
         }
+        
+        .btn-share {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #000000;
+            background-color: #dbdbdb;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+        }
+        
+        .btn-share:hover {
+            background-color: #928f8f;
+        }
+        
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
-
 <body>
     <div id="map-container">
         <div id="map"></div>
@@ -178,6 +209,7 @@
     </div>
     <div id="buttons-container">
         <div id="buttons">
+            <button id="createMeetingBtn">모임 만들기</button> <!-- 모임 만들기 버튼 추가 -->
             <button id="taxiBtn">택시</button>
             <button id="libraryBtn">도서관</button>
             <button id="restaurantBtn">식당</button>
@@ -202,13 +234,12 @@
                 <input type="text" id="maxNumber" name="maxNumber" required><br>
                 <input type="hidden" id="latitude" name="latitude">
                 <input type="hidden" id="longitude" name="longitude"><br>
-                <button type="button" onclick="submitForm()">Create Marker</button>
+                <button type="button" class="btn" onclick="submitForm()">Create Marker</button>
             </form>
         </div>
     </div>
-    <button id="deleteMarkerBtn" onclick="deleteMarker()">Delete Marker</button> <!-- Always visible -->
-    <script type="text/javascript"
-        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=22c293b2277db520a282856b10771470"></script>
+    <button id="deleteMarkerBtn" class="btn" onclick="deleteMarker()">Delete Marker</button> <!-- Always visible -->
+    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=22c293b2277db520a282856b10771470"></script>
     <script>
         var container = document.getElementById('map');
         var options = {
@@ -218,7 +249,6 @@
         var map = new kakao.maps.Map(container, options);
 
         var mapTypeControl = new kakao.maps.MapTypeControl();
-
         map.addControl(mapTypeControl, kakao.maps.ControlPosition.TOPRIGHT);
 
         var socket = io();
@@ -241,6 +271,8 @@
         var imageOption = { offset: new kakao.maps.Point(27, 69) };
 
         let username = "";
+        let canCreateMarker = false; // 모임 만들기 버튼을 눌렀는지 여부
+
         document.addEventListener('DOMContentLoaded', function () {
             fetch('/get-username')
                 .then(response => response.json())
@@ -250,7 +282,12 @@
                     }
                 })
                 .catch(error => console.error('Error fetching username:', error));
-            });
+        });
+
+        document.getElementById('createMeetingBtn').addEventListener('click', function () {
+            canCreateMarker = true;
+            alert('이제 지도를 클릭하여 마커를 생성할 수 있습니다.');
+        });
 
         window.joinMarkerRoom = function (markerId) {
             socket.emit('joinMarkerRoom', markerId);
@@ -261,9 +298,15 @@
             const maxNumber = markerData.max_number || 0;
             userCount = markerData.userCount || 0;
             const content = `
-                <div class="customoverlay">
-                    <a href="javascript:void(0);" onclick="joinMarkerRoom('${markerData.id}')">
+                <div class="customoverlay" id="overlay_${markerData.id}">
+                    <a href="javascript:void(0);" onclick="toggleMarkerDetails('${markerData.id}')">
                         <span class="title">${context} (${userCount}/${maxNumber})</span>
+                        <div class="details">
+                            <p>Title: ${markerData.title}</p>
+                            <p>Max Number: ${markerData.max_number}</p>
+                            <p>Current Number: ${userCount}</p>
+                            <button class="btn-share" onclick="joinMarkerRoom('${markerData.id}')">참여하기</button>
+                        </div>
                     </a>
                 </div>
             `;
@@ -273,11 +316,31 @@
                 content: content,
                 yAnchor: 1
             });
-
+        
             return overlay;
         }
 
+        function toggleMarkerDetails(markerId) {
+            const overlay = document.getElementById(`overlay_${markerId}`);
+            if (overlay) {
+                const isExpanded = overlay.classList.toggle('expanded');
+                if (isExpanded) {
+                    document.addEventListener('click', function onClickOutside(event) {
+                        if (!overlay.contains(event.target)) {
+                            overlay.classList.remove('expanded');
+                            document.removeEventListener('click', onClickOutside);
+                        }
+                    });
+                }
+            }
+        }
+        
+
         function createMarker(latitude, longitude) {
+            if (!canCreateMarker) {
+                alert('모임 만들기 버튼을 눌러야 마커를 생성할 수 있습니다.');
+                return;
+            }
             if (markerCreated) {
                 alert('You have already created a marker.');
                 return;
@@ -287,7 +350,7 @@
             const markerData = {
                 id: markerId,
                 title: document.getElementById('title').value,
-                created_by: username, 
+                created_by: username,
                 context: document.getElementById('userText').value,
                 latitude: parseFloat(latitude),
                 longitude: parseFloat(longitude),
@@ -311,24 +374,32 @@
             markers[markerId] = {
                 marker: marker,
                 overlay: overlay,
+                markerData: markerData,
                 context: markerData.context,
                 maxNumber: markerData.max_number
             };
 
             kakao.maps.event.addListener(marker, 'click', function () {
-                socket.emit('joinMarkerRoom', markerData.id);
+                toggleMarkerDetails(markerId);
             });
 
             markerCreated = true;
+            canCreateMarker = false; // 마커 생성 후 다시 초기화
         }
 
         function updateOverlayContent(markerId, userCount, maxNumber) {
             if (markers[markerId]) {
                 const context = markers[markerId].context || 'No Context';
                 const overlayContent = `
-                    <div class="customoverlay">
-                        <a href="javascript:void(0);" onclick="joinMarkerRoom('${markerId}')">
+                    <div class="customoverlay" id="overlay_${markerId}">
+                        <a href="javascript:void(0);" onclick="toggleMarkerDetails('${markerId}')">
                             <span class="title">${context} (${userCount || 0}/${maxNumber || 0})</span>
+                            <div class="details">
+                                <p>Title: ${markers[markerId].markerData.title}</p>
+                                <p>Max Number: ${markers[markerId].markerData.max_number}</p>
+                                <p>Current Number: ${userCount}</p>
+                                <button class="btn-share" onclick="joinMarkerRoom('${markerId}')">참여하기</button>
+                            </div>
                         </a>
                     </div>
                 `;
@@ -353,12 +424,13 @@
             markers[markerData.id] = {
                 marker: marker,
                 overlay: overlay,
+                markerData: markerData,
                 context: markerData.context,
                 maxNumber: markerData.max_number
             };
 
             kakao.maps.event.addListener(marker, 'click', function () {
-                socket.emit('joinMarkerRoom', markerData.id);
+                toggleMarkerDetails(markerData.id);
             });
         });
 
@@ -385,17 +457,15 @@
                 alert(data.message);
             }
         });
-        socket.on('roomFull', function(data) {
-            if (!data.success) {
-                alert(data.message);
-            }
-        });
 
         document.getElementById('close').addEventListener('click', function () {
             document.getElementById('myModal').style.display = "none";
         });
 
         kakao.maps.event.addListener(map, 'click', function (mouseEvent) {
+            if (!canCreateMarker) {
+                return;
+            }
             var latlng = mouseEvent.latLng;
             document.getElementById('latitude').value = latlng.getLat();
             document.getElementById('longitude').value = latlng.getLng();
@@ -441,7 +511,6 @@
             markerCreated = false;
         }
 
-        
         document.getElementById('taxiBtn').addEventListener('click', function () {
             currentMarkerImage = markerImages.taxi;
             currentMarkerType = "택시";
@@ -504,5 +573,4 @@
         });
     </script>
 </body>
-
 </html>
