@@ -1,10 +1,12 @@
 <!DOCTYPE html>
 <html>
+
 <head>
     <meta charset="utf-8">
     <title>Kakao Map</title>
     <style>
-        body, html {
+        body,
+        html {
             margin: 0;
             padding: 0;
             width: 100%;
@@ -111,7 +113,8 @@
             font-weight: bold;
         }
 
-        #close:hover, #close:focus {
+        #close:hover,
+        #close:focus {
             color: black;
             text-decoration: none;
             cursor: pointer;
@@ -128,25 +131,35 @@
             transition: all 0.3s ease;
             background: white;
             box-shadow: 0px 1px 2px #888;
-            width: 150px; /* 크기를 원래대로 복원 */
-            transform-origin: bottom center; /* 중앙 하단 기준으로 확장 */
+            width: 150px;
+            /* 크기를 원래대로 복원 */
+            transform-origin: bottom center;
+            /* 중앙 하단 기준으로 확장 */
         }
-        
+
         .customoverlay.expanded {
-            width: 300px; /* 확장 시의 너비 */
+            width: 300px;
+            /* 확장 시의 너비 */
             height: auto;
             bottom: 80px;
         }
-        
-        .customoverlay.expanded .details {
-            display: block;
-        }
-        
+
         .customoverlay .details {
             display: none;
             padding: 10px;
+            text-align: center;
+            /* 가운데 정렬 추가 */
         }
-        
+
+        .customoverlay.expanded .details {
+            display: block;
+        }
+
+        .customoverlay.expanded .details p {
+            margin: 5px 0;
+            /* 간격 조정 */
+        }
+
         .customoverlay a {
             display: block;
             text-decoration: none;
@@ -156,20 +169,22 @@
             font-size: 14px;
             font-weight: bold;
             overflow: hidden;
-            background: #fff; /* 배경색 수정 */
+            background: #fff;
+            /* 배경색 수정 */
             padding: 10px;
         }
-        
+
         .customoverlay .title {
             display: block;
             text-align: center;
-            background: #fff; /* 배경색 수정 */
+            background: #fff;
+            /* 배경색 수정 */
             margin-right: 35px;
             padding: 10px 15px;
             font-size: 14px;
             font-weight: bold;
         }
-        
+
         .customoverlay:after {
             content: '';
             position: absolute;
@@ -180,7 +195,7 @@
             height: 12px;
             background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png')
         }
-        
+
         .btn-share {
             display: inline-block;
             padding: 0.5rem 1rem;
@@ -194,14 +209,14 @@
             text-align: center;
             text-decoration: none;
         }
-        
+
         .btn-share:hover {
             background-color: #928f8f;
         }
-        
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
+
 <body>
     <div id="map-container">
         <div id="map"></div>
@@ -239,7 +254,8 @@
         </div>
     </div>
     <button id="deleteMarkerBtn" class="btn" onclick="deleteMarker()">Delete Marker</button> <!-- Always visible -->
-    <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=22c293b2277db520a282856b10771470"></script>
+    <script type="text/javascript"
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=22c293b2277db520a282856b10771470"></script>
     <script>
         var container = document.getElementById('map');
         var options = {
@@ -294,17 +310,19 @@
         };
 
         function createOverlay(markerData, userCount = 0) {
+            const title = markerData.title || '';
             const context = markerData.context || '';
             const maxNumber = markerData.max_number || 0;
             userCount = markerData.userCount || 0;
             const content = `
                 <div class="customoverlay" id="overlay_${markerData.id}">
-                    <a href="javascript:void(0);" onclick="toggleMarkerDetails('${markerData.id}')">
-                        <span class="title">${context} (${userCount}/${maxNumber})</span>
+                    <a href="javascript:void(0);" class="overlay-link">
+                        <span class="title">${title}</span>
                         <div class="details">
-                            <p>Title: ${markerData.title}</p>
-                            <p>Max Number: ${markerData.max_number}</p>
-                            <p>Current Number: ${userCount}</p>
+                            <p>모임: ${title} </p>
+                            <p>세부내용: ${context}</p>
+                            <p>현재 인원: ${userCount}</p>
+                            <p>최대 인원: ${maxNumber}</p>
                             <button class="btn-share" onclick="joinMarkerRoom('${markerData.id}')">참여하기</button>
                         </div>
                     </a>
@@ -316,25 +334,64 @@
                 content: content,
                 yAnchor: 1
             });
-        
+
+            // Add event listeners based on the device type
+            const overlayLink = overlay.a.getElementsByClassName('overlay-link')[0];
+            if (isMobileDevice()) {
+                overlayLink.addEventListener('click', function (event) {
+                    toggleMarkerDetails(markerData.id, event);
+                });
+            } else {
+                overlayLink.addEventListener('mouseover', function () {
+                    expandOverlay(markerData.id);
+                });
+                overlayLink.addEventListener('mouseout', function () {
+                    collapseOverlay(markerData.id);
+                });
+            }
+
             return overlay;
         }
+        function isMobileDevice() {
+            return /Mobi|Android/i.test(navigator.userAgent);
+        }
 
-        function toggleMarkerDetails(markerId) {
+        function toggleMarkerDetails(markerId, event) {
             const overlay = document.getElementById(`overlay_${markerId}`);
             if (overlay) {
                 const isExpanded = overlay.classList.toggle('expanded');
                 if (isExpanded) {
-                    document.addEventListener('click', function onClickOutside(event) {
-                        if (!overlay.contains(event.target)) {
+                    overlay.querySelector('.title').style.display = 'none';
+                    document.addEventListener('click', function onClickOutside(e) {
+                        if (!overlay.contains(e.target) && e.target !== overlay) {
                             overlay.classList.remove('expanded');
+                            overlay.querySelector('.title').style.display = 'block';
                             document.removeEventListener('click', onClickOutside);
                         }
                     });
+                } else {
+                    overlay.querySelector('.title').style.display = 'block';
                 }
+                event.stopPropagation();
             }
         }
-        
+
+        function expandOverlay(markerId) {
+            const overlay = document.getElementById(`overlay_${markerId}`);
+            if (overlay) {
+                overlay.classList.add('expanded');
+                overlay.querySelector('.title').style.display = 'none';
+            }
+        }
+
+        function collapseOverlay(markerId) {
+            const overlay = document.getElementById(`overlay_${markerId}`);
+            if (overlay) {
+                overlay.classList.remove('expanded');
+                overlay.querySelector('.title').style.display = 'block';
+            }
+        }
+
 
         function createMarker(latitude, longitude) {
             if (!canCreateMarker) {
@@ -387,26 +444,42 @@
             canCreateMarker = false; // 마커 생성 후 다시 초기화
         }
 
+
         function updateOverlayContent(markerId, userCount, maxNumber) {
             if (markers[markerId]) {
+                const title = markers[markerId].markerData.title || 'No Title';
                 const context = markers[markerId].context || 'No Context';
                 const overlayContent = `
                     <div class="customoverlay" id="overlay_${markerId}">
-                        <a href="javascript:void(0);" onclick="toggleMarkerDetails('${markerId}')">
-                            <span class="title">${context} (${userCount || 0}/${maxNumber || 0})</span>
+                        <a href="javascript:void(0);" class="overlay-link">
+                            <span class="title">${title}</span>
                             <div class="details">
-                                <p>Title: ${markers[markerId].markerData.title}</p>
-                                <p>Max Number: ${markers[markerId].markerData.max_number}</p>
-                                <p>Current Number: ${userCount}</p>
+                                <p>모임: ${title}</p> 
+                                <p>세부내용: ${context}</p>
+                                <p>현재 인원: ${userCount || 0}</p>
+                                <p>최대 인원: ${maxNumber || 0}</p>
                                 <button class="btn-share" onclick="joinMarkerRoom('${markerId}')">참여하기</button>
                             </div>
                         </a>
                     </div>
                 `;
                 markers[markerId].overlay.setContent(overlayContent);
+
+                const overlayLink = document.querySelector(`#overlay_${markerId} .overlay-link`);
+                if (isMobileDevice()) {
+                    overlayLink.addEventListener('click', function (event) {
+                        toggleMarkerDetails(markerId, event);
+                    });
+                } else {
+                    overlayLink.addEventListener('mouseover', function () {
+                        expandOverlay(markerId);
+                    });
+                    overlayLink.addEventListener('mouseout', function () {
+                        collapseOverlay(markerId);
+                    });
+                }
             }
         }
-
         socket.on('newMarker', function (markerData) {
             if (markers[markerData.id]) {
                 return;
@@ -429,9 +502,18 @@
                 maxNumber: markerData.max_number
             };
 
-            kakao.maps.event.addListener(marker, 'click', function () {
-                toggleMarkerDetails(markerData.id);
-            });
+            if (isMobileDevice()) {
+                kakao.maps.event.addListener(marker, 'click', function (event) {
+                    toggleMarkerDetails(markerData.id, event);
+                });
+            } else {
+                kakao.maps.event.addListener(marker, 'mouseover', function () {
+                    expandOverlay(markerData.id);
+                });
+                kakao.maps.event.addListener(marker, 'mouseout', function () {
+                    collapseOverlay(markerData.id);
+                });
+            }
         });
 
         socket.on('updateUserCount', function (data) {
@@ -573,4 +655,5 @@
         });
     </script>
 </body>
+
 </html>
