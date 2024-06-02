@@ -96,6 +96,8 @@ function addMessageToChat(messageText, messageId, messageUsername) {
     if (userMarkers[messageUsername]) {
         const popupElement = document.getElementById(`${messageUsername}-popup`).querySelector('.messages');
         const newMessage = document.createElement('div');
+        newMessage.style.background = 'beige';
+        newMessage.style.marginBottom = '5px';
         newMessage.textContent = messageText;
         popupElement.appendChild(newMessage);
 
