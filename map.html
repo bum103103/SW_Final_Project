@@ -131,18 +131,24 @@
             transition: all 0.3s ease;
             background: white;
             box-shadow: 0px 1px 2px #888;
-            width: 180px; /* 크기 수정 */
-            transform-origin: bottom center; /* 중앙 하단 기준으로 확장 */
-            white-space: nowrap; /* 줄바꿈을 하지 않음 */
-            word-break: keep-all; /* 단어가 폭을 넘으면 줄바꿈 하지 않음 */
-            display: inline-flex; /* 인라인 플렉스 설정 */
+            width: 180px;
+            /* 크기 수정 */
+            transform-origin: bottom center;
+            /* 중앙 하단 기준으로 확장 */
+            white-space: nowrap;
+            /* 줄바꿈을 하지 않음 */
+            word-break: keep-all;
+            /* 단어가 폭을 넘으면 줄바꿈 하지 않음 */
+            display: inline-flex;
+            /* 인라인 플렉스 설정 */
             flex-direction: column;
             align-items: center;
             text-align: center;
             padding: 10px;
-            box-sizing: border-box; /* 패딩 포함한 너비 계산 */
+            box-sizing: border-box;
+            /* 패딩 포함한 너비 계산 */
         }
-        
+
         .customoverlay .count {
             position: absolute;
             top: 5px;
@@ -152,39 +158,44 @@
             background: #f1f1f1;
             padding: 2px 8px;
             border-radius: 12px;
-            z-index: 10; /* 오버레이 내용 위에 표시 */
+            z-index: 10;
+            /* 오버레이 내용 위에 표시 */
         }
-        
+
         .customoverlay.expanded {
             width: 300px;
             height: auto;
             bottom: 80px;
             text-align: left;
-            white-space: normal; /* 확장 시 줄바꿈 허용 */
+            white-space: normal;
+            /* 확장 시 줄바꿈 허용 */
         }
-        
+
         .customoverlay .details {
             display: none;
             padding: 10px;
-            text-align: left; /* 좌측 정렬 */
-            position: relative; /* 상대 위치 설정 */
+            text-align: left;
+            /* 좌측 정렬 */
+            position: relative;
+            /* 상대 위치 설정 */
         }
-        
+
         .customoverlay.expanded .details {
             display: block;
         }
-        
+
         .customoverlay.expanded .details p {
             margin: 5px 0;
         }
-        
+
         .customoverlay.expanded .btn-share {
-            position: static; 
-            display: block; 
-            width: 100%; 
-            box-sizing: border-box; 
-            text-align: center; 
+            position: static;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
         }
+
         .customoverlay a {
             display: block;
             text-decoration: none;
@@ -201,7 +212,7 @@
             width: 100%;
             box-sizing: border-box;
         }
-        
+
         .customoverlay .title {
             display: block;
             text-align: center;
@@ -210,13 +221,13 @@
             font-size: 14px;
             font-weight: bold;
             overflow: hidden;
-            text-overflow: ellipsis; 
-            white-space: normal; 
+            text-overflow: ellipsis;
+            white-space: normal;
             word-break: break-all;
             width: 100%;
             box-sizing: border-box;
         }
-        
+
         .customoverlay:after {
             content: '';
             position: absolute;
@@ -227,7 +238,7 @@
             height: 12px;
             background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png');
         }
-        
+
         .btn-share {
             display: inline-block;
             padding: 0.5rem 1rem;
@@ -241,7 +252,7 @@
             text-align: center;
             text-decoration: none;
         }
-        
+
         .btn-share:hover {
             background-color: #928f8f;
         }
@@ -387,21 +398,30 @@
             return /Mobi|Android/i.test(navigator.userAgent);
         }
 
+        let expandedOverlayId = null;
+
         function toggleMarkerDetails(markerId, event) {
             const overlay = document.getElementById(`overlay_${markerId}`);
             if (overlay) {
                 const isExpanded = overlay.classList.toggle('expanded');
                 if (isExpanded) {
+                    // 이전에 확장된 오버레이가 있으면 닫기
+                    if (expandedOverlayId && expandedOverlayId !== markerId) {
+                        collapseOverlay(expandedOverlayId);
+                    }
                     overlay.querySelector('.title').style.display = 'none';
                     document.addEventListener('click', function onClickOutside(e) {
                         if (!overlay.contains(e.target) && e.target !== overlay) {
                             overlay.classList.remove('expanded');
                             overlay.querySelector('.title').style.display = 'block';
                             document.removeEventListener('click', onClickOutside);
+                            expandedOverlayId = null; // 오버레이가 닫혔으므로 초기화
                         }
                     });
+                    expandedOverlayId = markerId; // 현재 확장된 오버레이 추적
                 } else {
                     overlay.querySelector('.title').style.display = 'block';
+                    expandedOverlayId = null; // 오버레이가 닫혔으므로 초기화
                 }
                 event.stopPropagation();
             }
@@ -410,8 +430,13 @@
         function expandOverlay(markerId) {
             const overlay = document.getElementById(`overlay_${markerId}`);
             if (overlay) {
+                // 이전에 확장된 오버레이가 있으면 닫기
+                if (expandedOverlayId && expandedOverlayId !== markerId) {
+                    collapseOverlay(expandedOverlayId);
+                }
                 overlay.classList.add('expanded');
                 overlay.querySelector('.title').style.display = 'none';
+                expandedOverlayId = markerId; // 현재 확장된 오버레이 추적
             }
         }
 
@@ -420,6 +445,7 @@
             if (overlay) {
                 overlay.classList.remove('expanded');
                 overlay.querySelector('.title').style.display = 'block';
+                expandedOverlayId = null; // 오버레이가 닫혔으므로 초기화
             }
         }
 
@@ -492,6 +518,8 @@
                 }
             }
         }
+
+
         socket.on('newMarker', function (markerData) {
             if (markers[markerData.id]) {
                 return;
