@@ -1,0 +1,69 @@
+<!--처음 로고 띄우는 페이지 -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intro Page</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #000428 0%, #004e92 70%, #b21f1f 100%);
+            flex-direction: column;
+        }
+        .intro-container {
+            text-align: center;
+            padding: 20px;
+        }
+        .intro-container h1 {
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: white;
+        }
+        .intro-container button {
+            padding: 15px 30px;
+            font-size: 18px;
+            cursor: pointer;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            border-radius: 5px;
+        }
+        .intro-container button:hover {
+            background-color: #0056b3;
+        }
+        #image {
+            opacity: 1;
+            transition: opacity 2s;
+            width: 80%;
+            max-width: 600px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="intro-container">
+        <img id="image" src="/images/star.jpg" alt="Star Image">
+        <h1>Welcome to Our Application</h1>
+        <button onclick="location.href='login.html'">Go to Login</button>
+    </div>
+    <script>
+        window.onload = function() {
+            setTimeout(() => {
+                document.getElementById('image').style.opacity = '0';
+            }, 1000);
+            setTimeout(() => {
+                location.href = 'login.html';      
+            }, 5000);  
+        };
+
+
+    </script>
+</body>
+</html>

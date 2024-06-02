@@ -1,48 +1,63 @@
-var username = null;
 document.addEventListener('DOMContentLoaded', function() {
+    const urlParams = new URLSearchParams(window.location.search);
+    roomId = urlParams.get('roomId');  // URL에서 roomId 추출
+
     fetch('/get-username')
     .then(response => response.json())
     .then(data => {
         if (data.username) {
             console.log("Logged in as:", data.username);
-            username = data.username;
-            initializeChat();
+            username = data.username; // 전역 변수로 username 설정
+            initializeChat(roomId);
         }
     })
     .catch(error => console.error('Error fetching username:', error));
 });
 
-const ws = new WebSocket('ws://localhost:8080');
+
 
 const chat = document.getElementById('chat');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
 const fontSizeRange = document.getElementById('fontSizeRange');
 const userCount = document.getElementById('userCount');
+const userList = document.getElementById('userList');
 
 let users = [];
+let isAdmin = false;
+let username = '';
 
-function initializeChat(){
-    ws.onmessage = function (event) { //이거를 이용해서 여러명 통신한다고 함
-        const data = JSON.parse(event.data);
+function initializeChat(roomId) {
+    socket.emit('joinRoom', roomId);
+    console.log(`Joined room ${roomId}`);
 
-        if (data.action === 'delete') {
-            document.querySelectorAll(`p[data-id='${data.messageId}']`).forEach(el => el.remove());
-        } else if (data.action === 'updateUsers') {
-            users = data.users;
-            updateUserList();
-        } else if (data.action === 'updateUserLocations') {
-            updateUserMarkers(data.userLocations);
-        } else {
-            addMessageToChat(data.text, data.messageId, data.username);
-            scrollToBottom();
+    socket.on('message', (data) => {
+        addMessageToChat(data.text, data.messageId, data.username);
+        scrollToBottom();
+    });
+
+    socket.on('delete', (data) => {
+        document.querySelectorAll(`p[data-id='${data.messageId}']`).forEach(el => el.remove());
+    });
+
+    socket.on('updateUserLocations', (data) => {
+        updateUserMarkers(data.userLocations);
+        users = data.users;
+        updateUserList();
+    });
+    socket.on('joinedRoom', (roomId, markerData, adminStatus) => {
+        isAdmin = adminStatus;
+        updateUserList();
+    });
+    socket.on('kicked', (data) => {
+        alert(data.message);
+        window.location.href = '/map.html';
+    });
+
+    socket.on('banned', (data) => {
+        if (!data.success) {
+            alert(data.message);
         }
-    };
-}
-
-function updateUserMarkers(userLocations) {
-    userLocations.forEach(userLocation => {
-        addOrUpdateUserMarker(userLocation.username, userLocation.latitude, userLocation.longitude);
     });
 }
 
@@ -67,7 +82,7 @@ function addMessageToChat(messageText, messageId, messageUsername) {
         message.classList.add('self');
         const deleteButton = document.createElement('button');
         deleteButton.onclick = function () {
-            ws.send(JSON.stringify({ action: 'delete', messageId: message.dataset.id }));
+            socket.emit('delete', message.dataset.id);
         };
         deleteButton.classList.add('delete-button');
         deleteButton.appendChild(icon);
@@ -78,11 +93,11 @@ function addMessageToChat(messageText, messageId, messageUsername) {
 
     messageContainer.appendChild(message);
     chat.appendChild(messageContainer);
-
-    // 채팅 메시지를 마커 팝업에 업데이트
     if (userMarkers[messageUsername]) {
         const popupElement = document.getElementById(`${messageUsername}-popup`).querySelector('.messages');
         const newMessage = document.createElement('div');
+        newMessage.style.background = 'beige';
+        newMessage.style.marginBottom = '5px';
         newMessage.textContent = messageText;
         popupElement.appendChild(newMessage);
 
@@ -104,9 +119,10 @@ function sendMessage() {
         const messageData = {
             text: messageText,
             messageId: messageId,
-            username: username
+            username: username,
+            roomId: roomId
         };
-        ws.send(JSON.stringify(messageData));
+        socket.emit('message', messageData);
         messageInput.value = '';
     }
     scrollToBottom();
@@ -131,17 +147,45 @@ function setTextColor(element, messageText) {
     }
 }
 
-function changeFontSize(size) {
-    const chatMessages = document.querySelectorAll('.chat-message');
-    chatMessages.forEach(function (message) {
-        message.style.fontSize = size + 'px';
-    });
-}
-
 function scrollToBottom() {
     chat.scrollTop = chat.scrollHeight;
 }
 
 function updateUserList() {
-    userCount.textContent = `Users: ${users.length}`;
+    if (users && Array.isArray(users)) {
+        userCount.textContent = `Users: ${users.length}`;
+        userList.innerHTML = '';
+        users.forEach(user => {
+            const userItem = document.createElement('div');
+            userItem.textContent = user;
+            userItem.classList.add('user-list-item');
+
+            // 강퇴 버튼 추가
+            if (isAdmin && user !== username) { // 현재 사용자가 방 관리자일 때, 본인이 아닌 경우에만 버튼을 추가
+                const kickButton = document.createElement('button');
+                kickButton.textContent = 'Kick';
+                kickButton.classList.add('kick-button');
+                kickButton.onclick = () => kickUser(user);
+                userItem.appendChild(kickButton);
+            }
+
+            userList.appendChild(userItem);
+        });
+    } else {
+        userCount.textContent = 'Users: 0';
+        userList.innerHTML = '';
+    }
+}
+
+function kickUser(user) {
+    socket.emit('kickUser', { roomId: roomId, username: user });
+}
+
+function toggleUserList() {
+    const userListElement = document.getElementById('userList');
+    if (userListElement.style.display === 'none' || userListElement.style.display === '') {
+        userListElement.style.display = 'block';
+    } else {
+        userListElement.style.display = 'none';
+    }
 }

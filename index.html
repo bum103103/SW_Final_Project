@@ -2,9 +2,6 @@
 <html>
 <head>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
-     crossorigin=""/>
   <link rel="stylesheet" href="style.css">
   <script src="/socket.io/socket.io.js"></script>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
@@ -14,50 +11,102 @@
   </script>
   <meta charset="utf-8">
   <title>Chat App</title>
-  <!--USERNAME-->
   <style>
     #map { height: 100vh; }
     .custom-popup {
-        background: white;
-        border: 1px solid black;
-        padding: 5px;
-        border-radius: 5px;
-        max-width: 150px;
-        text-align: center;
-        white-space: nowrap;
+      padding: 5px;
+      border-radius: 5px;
+      max-width: 150px;
+      text-align: center;
+      white-space: nowrap;
+      position: relative;
+      transform: translateY(-100%);
     }
+  
     .fade-out {
         animation: fadeOut 1s forwards;
     }
     @keyframes fadeOut {
-        0% { opacity: 1; }
-        100% { opacity: 0; }
+      0% { opacity: 1; }
+      100% { opacity: 0; }
     }
+
+    .kick-button {
+      margin-left: 10px;
+      color: red;
+      cursor: pointer;
+    }
+    .button {
+      position: absolute;
+      z-index: 1;
+      background-color: white;
+      border: 1px solid #ccc;
+      padding: 5px;
+    }
+    #linkButton {
+      top: 10px;
+      left: 10px;
+    }
+    #toggleChatBtn {
+      width: 150px;  /* 너비 설정 */
+      height: 50px;  /* 높이 설정 */
+      font-size: 24px;  /* 글자 크기 설정 */
+      padding: 10px;  /* 내부 여백 추가 */
+      background-color: #aa4caf;  /* 배경색 설정 */
+      color: white;  /* 글자 색상 설정 */
+      border: none;  /* 테두리 제거 */
+      border-radius: 5px;  /* 모서리 둥글게 */
+      cursor: pointer;  /* 마우스 오버시 커서 변경 */
+    }
+    #messageInput {
+      width: 300px; /* 너비를 부모 요소에 맞춤 */
+      padding: 10px; /* 입력 필드 내부 여백 */
+      font-size: 24px; /* 폰트 크기 */
+      border: 2px solid #ddd; /* 테두리 스타일 */
+      border-radius: 4px; /* 테두리 둥글게 처리 */
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); /* 내부 그림자 효과 */
+      transition: border-color 0.3s; /* 테두리 색상 변경 애니메이션 */
+    }
+    #sendButton {
+      width: 110px;
+      height: 50px;
+      padding: 10px 20px; /* 내부 여백 설정 */
+      font-size: 24px; /* 글자 크기 설정 */
+      font-weight: bold; /* 글자 두께 */
+      color: white; /* 글자 색상 */
+      background-color: #4CAF50; /* 배경색 */
+      border: none; /* 테두리 제거 */
+      border-radius: 5px; /* 모서리 둥글게 처리 */
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* 그림자 효과 */
+      cursor: pointer; /* 마우스 오버 시 커서 변경 */
+      transition: background-color 0.3s, box-shadow 0.3s; /* 색상 및 그림자 변화 애니메이션 */
+  }
   </style>
 </head>
-<body>
-  <!--USERNAME-->
-  <div class="main-container">
-    <div class="map-container">
-      <div id="map"></div>
-    </div>
-    <div class="chat-container">
-      <div class="header">
-        <div class="user-count" id="userCount">Users: 0</div>
-      </div>
-      <div id="chat" class="chat-content"></div>
-      <div class="input-container">
-        <input type="text" id="messageInput" placeholder="Type a message...">
-        <button id="sendButton" onclick="sendMessage()">Send</button>
-        <label for="fontSizeRange">Adjust Font Size</label>
-        <input type="range" id="fontSizeRange" min="10" max="60" value="16" onchange="changeFontSize(this.value)">
-      </div>
+<div id="main-container">
+  <div id="map"></div> <!-- Ensure map is not nested inside any container for full coverage -->
+  <button id="linkButton" class="button" onclick="location.href='map.html'">back</button>
+  <div class="input-container">
+    <button id="toggleChatBtn" onclick="toggleChat()">toggle</button>
+    <input type="text" id="messageInput" placeholder="Type a message...">
+    <button id="sendButton" onclick="sendMessage()">Send</button>
+    <label for="fontSizeRange">Adjust Font Size</label>
+    <input type="range" id="fontSizeRange" min="10" max="60" value="16" onchange="changeFontSize(this.value)">
+  </div>
+</div>
+
+<div class="chat-container">
+  <div class="header">
+    <div class="user-count" id="userCount">Users: 0</div>
+    <div class="user-list-container">
+      <button class="user-list-button" onclick="toggleUserList()">접속자 목록</button>
+      <div id="userList" class="user-list"></div>
     </div>
   </div>
-  <script src="gps_set.js"></script>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-     crossorigin=""></script>
-  <script src="script.js"></script>
+  <div id="chat" class="chat-content"></div>
+</div>
+
+<script src="gps_set.js"></script>
+<script src="script.js"></script>
 </body>
 </html>

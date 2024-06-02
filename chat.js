@@ -28,14 +28,16 @@ const pool = mysql.createPool({
 });
 
 let markers = {}; // 마커 정보를 저장할 객체
+let userMarkers = {}; // 사용자별 마커 ID 저장
 let roomUserLocations = {}; // 방별로 사용자 위치를 저장하는 객체
 let roomUsers = {}; // 방별 사용자 목록
+let bannedUsers = {}; // 방별 강퇴된 사용자 목록
+const roomUserCounts = {}; // 방별 유저 수를 저장하는 객체
+
+
 
 app.use(sessionParser);
-
-// 여기에 마커 이미지를 추가하는 경로를 넣어주면됨
 app.use('/images', express.static(path.join(__dirname, 'images')));
-
 
 function calculateCenter(locations) {
     let latSum = 0;
@@ -50,23 +52,68 @@ function calculateCenter(locations) {
     };
 }
 
+function loadMarkersFromDB() {
+    pool.query('SELECT * FROM markers', (err, results) => {
+        if (err) {
+            console.error('Error loading markers from MySQL:', err);
+            return;
+        }
+        results.forEach(marker => {
+            markers[marker.id] = marker;
+
+            // 유저 수 정보를 포함시켜서 클라이언트로 전송
+            const userCount = roomUsers[marker.id] ? roomUsers[marker.id].length : 0;
+            const maxNumber = marker.max_number || 0;
+
+            io.emit('newMarker', {
+                ...marker,
+                userCount: userCount,
+                maxNumber: maxNumber
+            });
+        });
+    });
+}
 io.use((socket, next) => {
     sessionParser(socket.request, {}, next);
 });
 
 io.on('connection', (socket) => {
+
     const req = socket.request;
     if (req.session.username) {
         socket.username = req.session.username;
         console.log(`Session user: ${req.session.username}`);
     }
 
+    // 기존 마커 정보를 클라이언트에 전송
+    Object.values(markers).forEach(marker => {
+        const userCount = roomUsers[marker.id] ? roomUsers[marker.id].length : 0;
+        const maxNumber = marker.max_number || 0;
+
+        socket.emit('newMarker', {
+            ...marker,
+            userCount: userCount,
+            maxNumber: maxNumber
+        });
+    });
     socket.on('joinRoom', (roomId) => {
+        if (bannedUsers[roomId] && bannedUsers[roomId].includes(socket.username)) {
+            socket.emit('banned', { success: false, message: 'You are banned from this room.' });
+            return;
+        }
+
+        const currentUsersCount = roomUsers[roomId] ? roomUsers[roomId].length : 0;
+        const maxNumber = markers[roomId] ? markers[roomId].max_number : 0;
+
+        if (currentUsersCount >= maxNumber) {
+            socket.emit('roomFull', { success: false, message: 'Room is full' });
+            return;
+        }
+
         socket.join(roomId);
         socket.room = roomId;
         console.log(`${socket.username} joined room ${roomId}`);
 
-        // 방별 사용자 위치 초기화
         if (!roomUserLocations[roomId]) {
             roomUserLocations[roomId] = [];
         }
@@ -74,16 +121,28 @@ io.on('connection', (socket) => {
             roomUsers[roomId] = [];
         }
 
-        // 사용자 목록에 추가
         if (!roomUsers[roomId].includes(socket.username)) {
             roomUsers[roomId].push(socket.username);
         }
 
-        // 사용자 목록 업데이트
+        roomUserCounts[roomId] = {
+            userCount: roomUsers[roomId].length,
+            maxNumber: markers[roomId] ? markers[roomId].max_number : 0
+        };
+
+        const isAdmin = markers[roomId].created_by === socket.username;
+        socket.emit('joinedRoom', roomId, markers[roomId], isAdmin);
+
         io.to(roomId).emit('updateUserLocations', {
             userLocations: roomUserLocations[roomId],
             center: calculateCenter(roomUserLocations[roomId]),
             users: roomUsers[roomId]
+        });
+
+        io.emit('updateUserCount', {
+            roomId: roomId,
+            userCount: roomUserCounts[roomId].userCount,
+            maxNumber: roomUserCounts[roomId].maxNumber
         });
     });
 
@@ -113,26 +172,122 @@ io.on('connection', (socket) => {
     });
 
     socket.on('createMarker', (markerData) => {
-        // 마커 생성자 정보 추가
+        if (userMarkers[socket.username]) {
+            socket.emit('markerExists', { success: false, message: 'Marker already exists' });
+            return;
+        }
+    
         markerData.admin = socket.id;
-        // 방 생성 (마커 ID를 방 ID로 사용)
         const roomId = markerData.id;
         socket.join(roomId);
         socket.room = roomId;
         console.log(`${socket.username} created and joined room ${roomId}`);
-        // 마커 정보 저장 및 브로드캐스트
-        markers[roomId] = markerData;
+    
+        markers[roomId] = markerData; // Store the full marker data
+        userMarkers[socket.username] = roomId;
         io.emit('newMarker', markerData);
+    
+        pool.query('INSERT INTO markers (id, title, created_by, context, latitude, longitude, max_number, type, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+            [markerData.id, markerData.title, markerData.created_by, markerData.context, markerData.latitude, markerData.longitude, markerData.max_number, markerData.type, markerData.image], 
+            (err) => {
+                if (err) {
+                    console.error('Error saving marker to MySQL:', err);
+                } else {
+                    console.log('Marker saved to MySQL');
+                }
+            });
+    });
+
+    socket.on('deleteMarker', () => {
+        if (!userMarkers[socket.username]) {
+            socket.emit('markerDeleteError', { success: false, message: 'No marker to delete' });
+            return;
+        }
+
+        const markerId = userMarkers[socket.username];
+        delete markers[markerId];
+        delete userMarkers[socket.username];
+
+        io.emit('removeMarker', { id: markerId });
+        pool.query('DELETE FROM markers WHERE id = ?', [markerId], (err) => {
+            if (err) {
+                console.error('Error deleting marker from MySQL:', err);
+                socket.emit('markerDeleteError', { success: false, message: 'Error deleting marker from database' });
+            } else {
+                console.log('Marker deleted from MySQL');
+                socket.emit('markerDeleted', { success: true, message: 'Marker deleted' });
+            }
+        });
     });
 
     socket.on('joinMarkerRoom', (markerId) => {
         const roomId = markerId;
         if (markers[roomId]) {
-            socket.join(roomId);
-            socket.room = roomId;
-            console.log(`${socket.username} joined marker room ${roomId}`);
-            // 해당 방의 마커 정보를 전송하여 사용자 이동
-            socket.emit('joinedRoom', roomId, markers[roomId]);
+            const currentUsersCount = roomUsers[roomId] ? roomUsers[roomId].length : 0;
+            const maxNumber = markers[roomId].max_number;
+    
+            // 사용자가 강퇴된 목록에 있는지 확인
+            if (bannedUsers[roomId] && bannedUsers[roomId].includes(socket.username)) {
+                socket.emit('banned', { success: false, message: 'You are banned from this room.' });
+                return;
+            }
+    
+            if (currentUsersCount < maxNumber) {
+                socket.join(roomId);
+                socket.room = roomId;
+                console.log(`${socket.username} joined marker room ${roomId}`);
+                
+                // 사용자 목록에 추가
+                if (!roomUsers[roomId]) {
+                    roomUsers[roomId] = [];
+                }
+                if (!roomUsers[roomId].includes(socket.username)) {
+                    roomUsers[roomId].push(socket.username);
+                }
+                socket.emit('joinedRoom', roomId, markers[roomId]);
+            } else {
+                socket.emit('roomFull', { success: false, message: 'Room is full' });
+            }
+        }
+    });
+
+    socket.on('kickUser', (data) => {
+        const { roomId, username } = data;
+
+        if (socket.username === markers[roomId].created_by) {
+            if (!bannedUsers[roomId]) {
+                bannedUsers[roomId] = [];
+            }
+            if (!bannedUsers[roomId].includes(username)) {
+                bannedUsers[roomId].push(username);
+            }
+
+            io.sockets.sockets.forEach(s => {
+                if (s.username === username && s.room === roomId) {
+                    s.leave(roomId);
+                    s.emit('kicked', { message: 'You have been kicked from the room.' });
+                    io.to(roomId).emit('updateUserLocations', {
+                        userLocations: roomUserLocations[roomId].filter(loc => loc.username !== username),
+                        users: roomUsers[roomId].filter(user => user !== username)
+                    });
+                }
+            });
+
+            roomUserLocations[roomId] = roomUserLocations[roomId].filter(loc => loc.username !== username);
+            roomUsers[roomId] = roomUsers[roomId].filter(user => user !== username);
+
+            roomUserCounts[roomId] = {
+                userCount: roomUsers[roomId].length,
+                maxNumber: markers[roomId] ? markers[roomId].max_number : 0
+            };
+
+            io.emit('updateUserCount', {
+                roomId: roomId,
+                userCount: roomUserCounts[roomId].userCount,
+                maxNumber: roomUserCounts[roomId].maxNumber
+            });
+
+            console.log(`${username} was kicked from room ${roomId} by ${socket.username}`);
         }
     });
 
@@ -150,7 +305,7 @@ io.on('connection', (socket) => {
     socket.on('message', (message) => {
         io.to(message.roomId).emit('message', { text: message.text, messageId: message.messageId, username: message.username });
 
-        pool.query('INSERT INTO messages (id, username, text) VALUES (?, ?, ?)', [message.messageId, message.username, message.text], (err) => {
+        pool.query('INSERT INTO messages (id, username, text, roomId) VALUES (?, ?, ?, ?)', [message.messageId, message.username, message.text, message.roomId], (err) => {
             if (err) {
                 console.error('Error saving message to MySQL:', err);
             } else {
@@ -180,8 +335,24 @@ io.on('connection', (socket) => {
                 userLocations: roomUserLocations[socket.room],
                 users: roomUsers[socket.room]
             });
+
             io.to(socket.room).emit('removeMarker', { username: socket.username });
         }
+        if (socket.room) {
+            const roomId = socket.room;
+            roomUsers[roomId] = roomUsers[roomId].filter(user => user !== socket.username);
+    
+            roomUserCounts[roomId] = {
+                userCount: roomUsers[roomId].length,
+                maxNumber: markers[roomId] ? markers[roomId].max_number : 0
+            };
+
+            // 유저 수 업데이트 이벤트 전송
+            io.emit('updateUserCount', {
+                roomId: roomId,
+                userCount: roomUserCounts[roomId].userCount,
+                maxNumber: roomUserCounts[roomId].maxNumber
+            });}
     });
 });
 
@@ -196,7 +367,7 @@ app.use(session({
     cookie: { secure: false }
 }));
 
-['/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html' ].forEach(file => {
+['/intro.html','/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html' ].forEach(file => {
     app.get(file, (req, res) => {
         const filePath = path.join(__dirname, file);
         fs.readFile(filePath, (err, data) => {
@@ -217,6 +388,10 @@ app.use(session({
 });
 
 app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'intro.html'));
+});
+
+app.get('/login.html', (req, res) => {
     if (req.session.loggedin) {
         res.sendFile(path.join(__dirname, 'login.html'));
     } else {
@@ -313,21 +488,18 @@ app.post('/getMarkers', (req, res) => {
     });
 });
 
-app.post('/createMarkers', (req, res)=>{
-    const marker = req.body;
-    console.log(`Received data: ${marker}`);
-    pool.execute('INSERT INTO markers (title, created_by, context, latitude, longitude, max_number, type) values (?, ?, ?, ?, ?, ?, ?)',
-    [marker.title, marker.created_by, marker.context, marker.latitude, marker.longitude, marker.max_number, marker.type], (err, results) => {
-        if(err) {
-            console.error('Error fetching markers:', err);
-            res.status(500).send('Database error');
-            return;
-        }
-        else {
-            console.log('create marker success.');
-        }
-    })
-})
+app.get('/getUserCounts', (req, res) => {
+    const userCounts = {};
+
+    for (const roomId in roomUsers) {
+        userCounts[roomId] = {
+            userCount: roomUsers[roomId].length,
+            maxNumber: markers[roomId] ? markers[roomId].max_number : 0
+        };
+    }
+
+    res.json(userCounts);
+});
 
 
 app.get('/map.html', (req, res) => {
@@ -336,4 +508,5 @@ app.get('/map.html', (req, res) => {
 
 server.listen(8080, () => {
     console.log('Server is listening on http://localhost:8080');
+    loadMarkersFromDB(); // 서버 시작 시 마커 로드
 });
