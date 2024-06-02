@@ -135,6 +135,10 @@
             transform-origin: bottom center; /* 중앙 하단 기준으로 확장 */
             white-space: normal; /* 줄바꿈을 허용 */
             word-break: break-all; /* 단어가 폭을 넘으면 줄바꿈 */
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* 중앙 정렬 */
+            text-align: center;
         }
         
         .customoverlay.expanded {
@@ -161,7 +165,6 @@
             display: block;
             text-decoration: none;
             color: #000;
-            text-align: justify; /* 추가 */
             border-radius: 6px;
             font-size: 14px;
             font-weight: bold;
@@ -170,13 +173,15 @@
             padding: 10px;
             white-space: normal;
             word-break: break-all;
-          }
-          
-          .customoverlay .title {
+            text-align: center; /* 중앙 정렬 */
+            width: 100%; /* 부모 요소 너비에 맞게 조정 */
+           box-sizing: border-box;
+        }
+        
+        .customoverlay .title {
             display: block;
-            text-align: justify; /* 추가 */
+            text-align: center; /* 중앙 정렬 */
             background: #fff;
-            margin-right: 35px;
             padding: 10px 15px;
             font-size: 14px;
             font-weight: bold;
@@ -186,9 +191,10 @@
             -webkit-box-orient: vertical;
             text-overflow: ellipsis;
             word-break: break-all;
-          }
-        
-        .customoverlay:after {
+            width: 100%; /* 부모 요소 너비에 맞게 조정 */
+            box-sizing: border-box;
+        }
+        .customoverlay:after{
             content: '';
             position: absolute;
             margin-left: -12px;
