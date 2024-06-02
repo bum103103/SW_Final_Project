@@ -16,6 +16,18 @@ document.addEventListener('DOMContentLoaded', function() {
     .catch(error => console.error('Error fetching username:', error));
 });
 
+function toggleChat() {
+    let chat = document.getElementsByClassName('chat-container')[0];
+    
+    if (chat.style.display === 'none') {
+        chat.style.display = 'flex';
+        hideControls();
+    }
+    else {
+        chat.style.display = 'none';
+        showControls();
+    }
+}
 
 function getUserGeoData() {
     return new Promise((resolve, reject) => {
@@ -76,10 +88,31 @@ function initializeMap(roomId) {
         });
 }
 
+function hideControls() {
+    let mapContainer = document.getElementById('map');
+    // 지도의 오른쪽 위 컨트롤을 찾아서 숨깁니다.
+    let header = mapContainer.children[2];
+    let topRightControls = header.firstChild;
+    if (topRightControls) {
+        topRightControls.style.display = 'none'; // 모든 오른쪽 상단 컨트롤 숨기기
+    }
+}
+
+function showControls() {
+    let mapContainer = document.getElementById('map');
+    // 지도의 오른쪽 위 컨트롤을 찾아서 숨깁니다.
+    let header = mapContainer.children[2];
+    let topRightControls = header.firstChild;
+    if (topRightControls) {
+        topRightControls.style.display = 'block'; // 모든 오른쪽 상단 컨트롤 숨기기
+    }
+}
+
 function addOrUpdateUserMarker(username, latitude, longitude) {
     if (userMarkers[username]) {
-        // Update existing marker's position
+        // Update existing marker and popup position
         userMarkers[username].marker.setPosition(new kakao.maps.LatLng(latitude, longitude));
+        userMarkers[username].overlay.setPosition(new kakao.maps.LatLng(latitude, longitude));
     } else {
         // Create a new marker
         var markerPosition = new kakao.maps.LatLng(latitude, longitude); 

@@ -9,9 +9,10 @@ body {
     background-color: #f7d1d1;
 }
 
-.main-container {
+#main-container {
     display: flex;
-    width: 100%;
+    flex-direction: column;
+    width:100%;
     height: 100%;
 }
 
@@ -29,12 +30,19 @@ body {
 }
 
 .chat-container {
-    flex: 1;
-    display: flex;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%; /* Width of the chat container */
+    height: 90%; /* Height of the chat container */
+    display: none;
     flex-direction: column;
-    background-color: #ffff00;
-    overflow: hidden;
-}
+    background-color: #ffff00; /* Yellow background */
+    z-index: 1; /* Ensure it is above the map */
+    border-radius: 10px; /* Optional: for rounded corners */
+    box-shadow: 0px -1px 10px rgba(0,0,0,0.5); /* Optional: shadow for better visibility */
+  }
 
 .header {
     background-color: #FFD700;
@@ -49,6 +57,8 @@ body {
 }
 
 .chat-content {
+    display: flex;
+    flex-direction: column;
     flex: 1;
     padding: 10px;
     overflow-y: auto;
@@ -60,10 +70,12 @@ body {
 
 .input-container {
     display: flex;
-    justify-content: center;
+    justify-content: space-around;
     align-items: center;
     padding: 10px;
     background-color: #f0f0f0;
+    height: 200px;
+    width: 100%;
 }
 
 .chat-message-container {

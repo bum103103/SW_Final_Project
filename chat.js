@@ -32,6 +32,8 @@ let userMarkers = {}; // 사용자별 마커 ID 저장
 let roomUserLocations = {}; // 방별로 사용자 위치를 저장하는 객체
 let roomUsers = {}; // 방별 사용자 목록
 let bannedUsers = {}; // 방별 강퇴된 사용자 목록
+const roomUserCounts = {}; // 방별 유저 수를 저장하는 객체
+
 
 
 app.use(sessionParser);
@@ -58,16 +60,25 @@ function loadMarkersFromDB() {
         }
         results.forEach(marker => {
             markers[marker.id] = marker;
-            io.emit('newMarker', marker);
+
+            // 유저 수 정보를 포함시켜서 클라이언트로 전송
+            const userCount = roomUsers[marker.id] ? roomUsers[marker.id].length : 0;
+            const maxNumber = marker.max_number || 0;
+
+            io.emit('newMarker', {
+                ...marker,
+                userCount: userCount,
+                maxNumber: maxNumber
+            });
         });
     });
 }
-
 io.use((socket, next) => {
     sessionParser(socket.request, {}, next);
 });
 
 io.on('connection', (socket) => {
+
     const req = socket.request;
     if (req.session.username) {
         socket.username = req.session.username;
@@ -76,39 +87,62 @@ io.on('connection', (socket) => {
 
     // 기존 마커 정보를 클라이언트에 전송
     Object.values(markers).forEach(marker => {
-        socket.emit('newMarker', marker);
-        // 사용자가 이미 마커를 생성한 경우 삭제 버튼을 표시하기 위해 이벤트를 전송
-        if (marker.created_by === socket.username) {
-            socket.emit('markerExists', { success: true, markerId: marker.id });
-        }
-    });
+        const userCount = roomUsers[marker.id] ? roomUsers[marker.id].length : 0;
+        const maxNumber = marker.max_number || 0;
 
+        socket.emit('newMarker', {
+            ...marker,
+            userCount: userCount,
+            maxNumber: maxNumber
+        });
+    });
     socket.on('joinRoom', (roomId) => {
+        if (bannedUsers[roomId] && bannedUsers[roomId].includes(socket.username)) {
+            socket.emit('banned', { success: false, message: 'You are banned from this room.' });
+            return;
+        }
+
+        const currentUsersCount = roomUsers[roomId] ? roomUsers[roomId].length : 0;
+        const maxNumber = markers[roomId] ? markers[roomId].max_number : 0;
+
+        if (currentUsersCount >= maxNumber) {
+            socket.emit('roomFull', { success: false, message: 'Room is full' });
+            return;
+        }
+
         socket.join(roomId);
         socket.room = roomId;
         console.log(`${socket.username} joined room ${roomId}`);
-    
-        // 방별 사용자 위치 초기화
+
         if (!roomUserLocations[roomId]) {
             roomUserLocations[roomId] = [];
         }
         if (!roomUsers[roomId]) {
             roomUsers[roomId] = [];
         }
-    
-        // 사용자 목록에 추가
+
         if (!roomUsers[roomId].includes(socket.username)) {
             roomUsers[roomId].push(socket.username);
         }
-    
+
+        roomUserCounts[roomId] = {
+            userCount: roomUsers[roomId].length,
+            maxNumber: markers[roomId] ? markers[roomId].max_number : 0
+        };
+
         const isAdmin = markers[roomId].created_by === socket.username;
         socket.emit('joinedRoom', roomId, markers[roomId], isAdmin);
-    
-        // 사용자 목록 업데이트
+
         io.to(roomId).emit('updateUserLocations', {
             userLocations: roomUserLocations[roomId],
             center: calculateCenter(roomUserLocations[roomId]),
             users: roomUsers[roomId]
+        });
+
+        io.emit('updateUserCount', {
+            roomId: roomId,
+            userCount: roomUserCounts[roomId].userCount,
+            maxNumber: roomUserCounts[roomId].maxNumber
         });
     });
 
@@ -142,19 +176,19 @@ io.on('connection', (socket) => {
             socket.emit('markerExists', { success: false, message: 'Marker already exists' });
             return;
         }
-    
+
         markerData.admin = socket.id;
         const roomId = markerData.id;
         socket.join(roomId);
         socket.room = roomId;
         console.log(`${socket.username} created and joined room ${roomId}`);
-    
+
         markers[roomId] = markerData; // Store the full marker data
         userMarkers[socket.username] = roomId;
         io.emit('newMarker', markerData);
-    
-        pool.query('INSERT INTO markers (id, title, created_by, context, latitude, longitude, max_number, type, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
-            [markerData.id, markerData.title, markerData.created_by, markerData.context, markerData.latitude, markerData.longitude, markerData.max_number, markerData.type, markerData.image], 
+
+        pool.query('INSERT INTO markers (id, title, created_by, context, latitude, longitude, max_number, type, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [markerData.id, markerData.title, markerData.created_by, markerData.context, markerData.latitude, markerData.longitude, markerData.max_number, markerData.type, markerData.image],
             (err) => {
                 if (err) {
                     console.error('Error saving marker to MySQL:', err);
@@ -191,18 +225,18 @@ io.on('connection', (socket) => {
         if (markers[roomId]) {
             const currentUsersCount = roomUsers[roomId] ? roomUsers[roomId].length : 0;
             const maxNumber = markers[roomId].max_number;
-    
+
             // 사용자가 강퇴된 목록에 있는지 확인
             if (bannedUsers[roomId] && bannedUsers[roomId].includes(socket.username)) {
                 socket.emit('banned', { success: false, message: 'You are banned from this room.' });
                 return;
             }
-    
+
             if (currentUsersCount < maxNumber) {
                 socket.join(roomId);
                 socket.room = roomId;
                 console.log(`${socket.username} joined marker room ${roomId}`);
-                
+
                 // 사용자 목록에 추가
                 if (!roomUsers[roomId]) {
                     roomUsers[roomId] = [];
@@ -219,16 +253,15 @@ io.on('connection', (socket) => {
 
     socket.on('kickUser', (data) => {
         const { roomId, username } = data;
-    
-        if (socket.username === markers[roomId].created_by) { // 방 관리자인지 확인
+
+        if (socket.username === markers[roomId].created_by) {
             if (!bannedUsers[roomId]) {
                 bannedUsers[roomId] = [];
             }
             if (!bannedUsers[roomId].includes(username)) {
                 bannedUsers[roomId].push(username);
             }
-    
-            // 강퇴된 사용자 소켓 연결 끊기
+
             io.sockets.sockets.forEach(s => {
                 if (s.username === username && s.room === roomId) {
                     s.leave(roomId);
@@ -239,18 +272,24 @@ io.on('connection', (socket) => {
                     });
                 }
             });
-    
-            // 사용자 목록에서 제거
+
             roomUserLocations[roomId] = roomUserLocations[roomId].filter(loc => loc.username !== username);
             roomUsers[roomId] = roomUsers[roomId].filter(user => user !== username);
-    
+
+            roomUserCounts[roomId] = {
+                userCount: roomUsers[roomId].length,
+                maxNumber: markers[roomId] ? markers[roomId].max_number : 0
+            };
+
+            io.emit('updateUserCount', {
+                roomId: roomId,
+                userCount: roomUserCounts[roomId].userCount,
+                maxNumber: roomUserCounts[roomId].maxNumber
+            });
+
             console.log(`${username} was kicked from room ${roomId} by ${socket.username}`);
         }
     });
-
-
-
-    
 
     socket.on('delete', (messageId) => {
         pool.query('DELETE FROM messages WHERE id = ?', [messageId], (err) => {
@@ -299,6 +338,22 @@ io.on('connection', (socket) => {
 
             io.to(socket.room).emit('removeMarker', { username: socket.username });
         }
+        if (socket.room) {
+            const roomId = socket.room;
+            roomUsers[roomId] = roomUsers[roomId].filter(user => user !== socket.username);
+
+            roomUserCounts[roomId] = {
+                userCount: roomUsers[roomId].length,
+                maxNumber: markers[roomId] ? markers[roomId].max_number : 0
+            };
+
+            // 유저 수 업데이트 이벤트 전송
+            io.emit('updateUserCount', {
+                roomId: roomId,
+                userCount: roomUserCounts[roomId].userCount,
+                maxNumber: roomUserCounts[roomId].maxNumber
+            });
+        }
     });
 });
 
@@ -313,7 +368,7 @@ app.use(session({
     cookie: { secure: false }
 }));
 
-['/intro.html','/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html' ].forEach(file => {
+['/intro.html', '/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html'].forEach(file => {
     app.get(file, (req, res) => {
         const filePath = path.join(__dirname, file);
         fs.readFile(filePath, (err, data) => {
