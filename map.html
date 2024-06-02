@@ -256,6 +256,61 @@
         .btn-share:hover {
             background-color: #928f8f;
         }
+
+        .custom_categorycontrol {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            overflow: hidden;
+            width: 300px;
+            height: 30px;
+            margin: 0;
+            padding: 0;
+            z-index: 1;
+            font-size: 12px;
+            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+        }
+
+        .custom_categorycontrol span {
+            display: block;
+            width: 60px;
+            height: 30px;
+            float: left;
+            text-align: center;
+            line-height: 30px;
+            cursor: pointer;
+        }
+
+        .custom_categorycontrol .btn {
+            background: #fff;
+            background: linear-gradient(#fff, #e6e6e6);
+        }
+
+        .custom_categorycontrol .btn:hover {
+            background: #f5f5f5;
+            background: linear-gradient(#f5f5f5, #e3e3e3);
+        }
+
+        .custom_categorycontrol .btn:active {
+            background: #e6e6e6;
+            background: linear-gradient(#e6e6e6, #fff);
+        }
+
+        .custom_categorycontrol .selected_btn {
+            color: #fff;
+            background: #425470;
+            background: linear-gradient(#425470, #5b6d8a);
+        }
+
+        .custom_categorycontrol .selected_btn:hover {
+            color: #fff;
+        }
+
+        .selected {
+            box-shadow: inset 0px 0px 10px rgba(0, 0, 0, 0.5);
+            background-color: #ccc;
+        }
+        
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -263,6 +318,13 @@
 <body>
     <div id="map-container">
         <div id="map"></div>
+        <div class="custom_categorycontrol radius_border">
+            <span class="btn" data-category="택시" onclick="toggleCategoryMarkers('택시', this)">택시</span>
+            <span class="btn" data-category="도서관" onclick="toggleCategoryMarkers('도서관', this)">도서관</span>
+            <span class="btn" data-category="식당" onclick="toggleCategoryMarkers('식당', this)">식당</span>
+            <span class="btn" data-category="만남" onclick="toggleCategoryMarkers('만남', this)">만남</span>
+            <span class="btn" data-category="기타" onclick="toggleCategoryMarkers('기타', this)">기타</span>
+        </div>
         <div id="right-sidebar"></div>
     </div>
     <div id="buttons-container">
@@ -354,9 +416,9 @@
                         alert("원하는 곳을 클릭해 마커를 만드세요.")
                     }
                 })
-                .catch(error => console.error('Error checking marker:', error));        
-                
-            });
+                .catch(error => console.error('Error checking marker:', error));
+
+        });
 
         window.joinMarkerRoom = function (markerId) {
             socket.emit('joinMarkerRoom', markerId);
@@ -677,6 +739,80 @@
         function deleteMarker() {
             socket.emit('deleteMarker');
             markerCreated = false;
+        }
+        var currentCategory = null;
+        var markersByCategory = {}; // 카테고리별 마커를 저장할 객체
+
+        function toggleCategoryMarkers(category, buttonElement) {
+            var buttons = document.querySelectorAll('.custom_categorycontrol .btn');
+            
+            // 모든 버튼의 selected 클래스 제거
+            buttons.forEach(function(button) {
+                button.classList.remove('selected');
+            });
+        
+            // 동일 카테고리를 다시 클릭한 경우 모든 마커 표시
+            if (currentCategory === category) {
+                currentCategory = null;
+                buttonElement.classList.remove('selected');
+                for (var key in markers) {
+                    if (markers.hasOwnProperty(key)) {
+                        markers[key].marker.setMap(map);
+                        markers[key].overlay.setMap(map);
+                    }
+                }
+            } else {
+                currentCategory = category;
+                buttonElement.classList.add('selected');
+        
+                // 모든 마커 숨김 처리
+                for (var key in markers) {
+                    if (markers.hasOwnProperty(key)) {
+                        markers[key].marker.setMap(null);
+                        markers[key].overlay.setMap(null);
+                    }
+                }
+        
+                // 해당 카테고리의 마커만 보이도록 설정
+                fetch('/getMarkers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ type: category })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(markerData => {
+                        var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
+                        var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption);
+                        var marker = new kakao.maps.Marker({
+                            position: markerPosition,
+                            map: map,
+                            image: markerImage
+                        });
+        
+                        var overlay = createOverlay(markerData);
+        
+                        markers[markerData.id] = {
+                            marker: marker,
+                            overlay: overlay,
+                            markerData: markerData,
+                            context: markerData.context,
+                            maxNumber: markerData.max_number
+                        };
+        
+                        // 카테고리별로 마커 저장
+                        if (!markersByCategory[category]) {
+                            markersByCategory[category] = [];
+                        }
+                        markersByCategory[category].push(markerData.id);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching markers:', error);
+                });
+            }
         }
 
         document.getElementById('taxiBtn').addEventListener('click', function () {
