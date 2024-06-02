@@ -133,24 +133,41 @@
             box-shadow: 0px 1px 2px #888;
             width: 180px; /* 크기 수정 */
             transform-origin: bottom center; /* 중앙 하단 기준으로 확장 */
-            white-space: normal; /* 줄바꿈을 허용 */
-            word-break: break-all; /* 단어가 폭을 넘으면 줄바꿈 */
-            display: flex;
+            white-space: nowrap; /* 줄바꿈을 하지 않음 */
+            word-break: keep-all; /* 단어가 폭을 넘으면 줄바꿈 하지 않음 */
+            display: inline-flex; /* 인라인 플렉스 설정 */
             flex-direction: column;
-            align-items: center; /* 중앙 정렬 */
+            align-items: center;
             text-align: center;
+            padding: 10px;
+            box-sizing: border-box; /* 패딩 포함한 너비 계산 */
+        }
+        
+        .customoverlay .count {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 15px;
+            color: #666;
+            background: #f1f1f1;
+            padding: 2px 8px;
+            border-radius: 12px;
+            z-index: 10; /* 오버레이 내용 위에 표시 */
         }
         
         .customoverlay.expanded {
-            width: 300px; /* 확장 시의 너비 */
+            width: 300px;
             height: auto;
             bottom: 80px;
+            text-align: left;
+            white-space: normal; /* 확장 시 줄바꿈 허용 */
         }
         
         .customoverlay .details {
             display: none;
             padding: 10px;
-            text-align: center; /* 가운데 정렬 추가 */
+            text-align: left; /* 좌측 정렬 */
+            position: relative; /* 상대 위치 설정 */
         }
         
         .customoverlay.expanded .details {
@@ -158,9 +175,16 @@
         }
         
         .customoverlay.expanded .details p {
-            margin: 5px 0; /* 간격 조정 */
+            margin: 5px 0;
         }
         
+        .customoverlay.expanded .btn-share {
+            position: static; 
+            display: block; 
+            width: 100%; 
+            box-sizing: border-box; 
+            text-align: center; 
+        }
         .customoverlay a {
             display: block;
             text-decoration: none;
@@ -173,28 +197,27 @@
             padding: 10px;
             white-space: normal;
             word-break: break-all;
-            text-align: center; /* 중앙 정렬 */
-            width: 100%; /* 부모 요소 너비에 맞게 조정 */
-           box-sizing: border-box;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
         }
         
         .customoverlay .title {
             display: block;
-            text-align: center; /* 중앙 정렬 */
+            text-align: center;
             background: #fff;
             padding: 10px 15px;
             font-size: 14px;
             font-weight: bold;
             overflow: hidden;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            text-overflow: ellipsis;
+            text-overflow: ellipsis; 
+            white-space: normal; 
             word-break: break-all;
-            width: 100%; /* 부모 요소 너비에 맞게 조정 */
+            width: 100%;
             box-sizing: border-box;
         }
-        .customoverlay:after{
+        
+        .customoverlay:after {
             content: '';
             position: absolute;
             margin-left: -12px;
@@ -202,7 +225,7 @@
             bottom: -12px;
             width: 22px;
             height: 12px;
-            background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png')
+            background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png');
         }
         
         .btn-share {
@@ -322,15 +345,16 @@
             const title = markerData.title || '';
             const maxNumber = markerData.max_number || 0;
             userCount = markerData.userCount || 0;
+            const countText = `${userCount}/${maxNumber}`;
             const content = `
                 <div class="customoverlay" id="overlay_${markerData.id}">
+                    <span class="count">${countText}</span>
                     <a href="javascript:void(0);" class="overlay-link">
-                        <span class="title">${title} (${userCount}/${maxNumber})</span>
+                        <span class="title">${title}</span>
                         <div class="details">
                             <p>모임: ${title}</p>
                             <p>세부내용: ${markerData.context}</p>
-                            <p>현재 인원: ${userCount}</p>
-                            <p>최대 인원: ${maxNumber}</p>
+                            <p></p>
                             <button class="btn-share" onclick="joinMarkerRoom('${markerData.id}')">참여하기</button>
                         </div>
                     </a>
@@ -342,8 +366,7 @@
                 content: content,
                 yAnchor: 1
             });
-        
-            // Add event listeners based on the device type
+
             const overlayLink = overlay.a.getElementsByClassName('overlay-link')[0];
             if (isMobileDevice()) {
                 overlayLink.addEventListener('click', function (event) {
@@ -357,7 +380,7 @@
                     collapseOverlay(markerData.id);
                 });
             }
-        
+
             return overlay;
         }
         function isMobileDevice() {
@@ -459,20 +482,12 @@
                 if (overlay) {
                     const title = markers[markerId].markerData.title || 'No Title';
                     const context = markers[markerId].context || 'No Context';
-        
-                    // 업데이트된 인원 정보를 설정
-                    const titleElement = overlay.querySelector('.title');
-                    const userCountElement = overlay.querySelector('.details p:nth-child(3)'); // 현재 인원
-                    const maxNumberElement = overlay.querySelector('.details p:nth-child(4)'); // 최대 인원
-        
-                    if (titleElement) {
-                        titleElement.textContent = `${title} (${userCount}/${maxNumber})`;
-                    }
-                    if (userCountElement) {
-                        userCountElement.textContent = `현재 인원: ${userCount}`;
-                    }
-                    if (maxNumberElement) {
-                        maxNumberElement.textContent = `최대 인원: ${maxNumber}`;
+
+                    const countText = `${userCount}/${maxNumber}`;
+
+                    const countElement = overlay.querySelector('.count');
+                    if (countElement) {
+                        countElement.textContent = countText;
                     }
                 }
             }
