@@ -296,8 +296,9 @@
             </form>
         </div>
     </div>
-  <button id="deleteMarkerBtn" class="btn" onclick="deleteMarker()">Delete Marker</button> <!-- Always visible -->
-  <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=bd2fcd69a2beb433b8b026c2d381f957"></script>
+    <button id="deleteMarkerBtn" class="btn" onclick="deleteMarker()">Delete Marker</button> <!-- Always visible -->
+    <script type="text/javascript"
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=bd2fcd69a2beb433b8b026c2d381f957"></script>
     <script>
         var container = document.getElementById('map');
         var options = {
@@ -343,9 +344,19 @@
         });
 
         document.getElementById('createMeetingBtn').addEventListener('click', function () {
-            canCreateMarker = true;
-            alert('이제 지도를 클릭하여 마커를 생성할 수 있습니다.');
-        });
+            fetch('/hasMarker')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.hasMarker) {
+                        alert('You have already created a marker.');
+                    } else {
+                        canCreateMarker = true;
+                        alert("원하는 곳을 클릭해 마커를 만드세요.")
+                    }
+                })
+                .catch(error => console.error('Error checking marker:', error));        
+                
+            });
 
         window.joinMarkerRoom = function (markerId) {
             socket.emit('joinMarkerRoom', markerId);
@@ -555,6 +566,10 @@
             }
         });
 
+        socket.on('markerExists', function (data) {
+            alert(data.message);
+        });
+
         socket.on('updateUserCount', function (data) {
             if (markers[data.roomId]) {
                 updateOverlayContent(data.roomId, data.userCount, data.maxNumber);
@@ -638,16 +653,17 @@
                     latitude: latitude,
                     longitude: longitude,
                     max_number: maxNumber,
-                    type: currentMarkerType })
+                    type: currentMarkerType
+                })
             })
-            .then(response => response.json())
-            .then(data => {
-                console.log('create marker!'); 
+                .then(response => response.json())
+                .then(data => {
+                    console.log('create marker!');
 
-            })
-            .catch(error => {
-                console.error('Error fetching markers:', error);
-            });
+                })
+                .catch(error => {
+                    console.error('Error fetching markers:', error);
+                });
             // 세부내용 박스 생성
             addSidebar(title, username, context, maxNumber);
             document.getElementById('myModal').style.display = "none";

@@ -34,8 +34,6 @@ let roomUsers = {}; // 방별 사용자 목록
 let bannedUsers = {}; // 방별 강퇴된 사용자 목록
 const roomUserCounts = {}; // 방별 유저 수를 저장하는 객체
 
-
-
 app.use(sessionParser);
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
@@ -85,7 +83,7 @@ io.on('connection', (socket) => {
         console.log(`Session user: ${req.session.username}`);
     }
 
-    // 기존 마커 정보를 클라이언트에 전송
+   
     Object.values(markers).forEach(marker => {
         const userCount = roomUsers[marker.id] ? roomUsers[marker.id].length : 0;
         const maxNumber = marker.max_number || 0;
@@ -96,6 +94,7 @@ io.on('connection', (socket) => {
             maxNumber: maxNumber
         });
     });
+
     socket.on('joinRoom', (roomId) => {
         if (bannedUsers[roomId] && bannedUsers[roomId].includes(socket.username)) {
             socket.emit('banned', { success: false, message: 'You are banned from this room.' });
@@ -172,51 +171,57 @@ io.on('connection', (socket) => {
     });
 
     socket.on('createMarker', (markerData) => {
-        if (userMarkers[socket.username]) {
-            socket.emit('markerExists', { success: false, message: 'Marker already exists' });
-            return;
-        }
+            markerData.admin = socket.id;
+            const roomId = markerData.id;
+            socket.join(roomId);
+            socket.room = roomId;
+            console.log(`${socket.username} created and joined room ${roomId}`);
 
-        markerData.admin = socket.id;
-        const roomId = markerData.id;
-        socket.join(roomId);
-        socket.room = roomId;
-        console.log(`${socket.username} created and joined room ${roomId}`);
+            markers[roomId] = markerData; 
+            userMarkers[socket.username] = roomId;
+            io.emit('newMarker', markerData);
 
-        markers[roomId] = markerData; // Store the full marker data
-        userMarkers[socket.username] = roomId;
-        io.emit('newMarker', markerData);
-
-        pool.query('INSERT INTO markers (id, title, created_by, context, latitude, longitude, max_number, type, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [markerData.id, markerData.title, markerData.created_by, markerData.context, markerData.latitude, markerData.longitude, markerData.max_number, markerData.type, markerData.image],
-            (err) => {
-                if (err) {
-                    console.error('Error saving marker to MySQL:', err);
-                } else {
-                    console.log('Marker saved to MySQL');
-                }
-            });
-    });
+            pool.query('INSERT INTO markers (id, title, created_by, context, latitude, longitude, max_number, type, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                [markerData.id, markerData.title, markerData.created_by, markerData.context, markerData.latitude, markerData.longitude, markerData.max_number, markerData.type, markerData.image],
+                (err) => {
+                    if (err) {
+                        console.error('Error saving marker to MySQL:', err);
+                    } else {
+                        console.log('Marker saved to MySQL');
+                    }
+                });
+        });
 
     socket.on('deleteMarker', () => {
-        if (!userMarkers[socket.username]) {
-            socket.emit('markerDeleteError', { success: false, message: 'No marker to delete' });
-            return;
-        }
-
-        const markerId = userMarkers[socket.username];
-        delete markers[markerId];
-        delete userMarkers[socket.username];
-
-        io.emit('removeMarker', { id: markerId });
-        pool.query('DELETE FROM markers WHERE id = ?', [markerId], (err) => {
+        const username = socket.username;
+    
+        pool.query('SELECT * FROM markers WHERE created_by = ?', [username], (err, results) => {
             if (err) {
-                console.error('Error deleting marker from MySQL:', err);
-                socket.emit('markerDeleteError', { success: false, message: 'Error deleting marker from database' });
-            } else {
-                console.log('Marker deleted from MySQL');
-                socket.emit('markerDeleted', { success: true, message: 'Marker deleted' });
+                console.error('Error checking existing marker:', err);
+                socket.emit('markerDeleteError', { success: false, message: 'Database error' });
+                return;
             }
+    
+            if (results.length === 0) {
+                socket.emit('markerDeleteError', { success: false, message: 'No marker to delete' });
+                return;
+            }
+    
+            const markerId = results[0].id;
+    
+            delete markers[markerId];
+            delete userMarkers[username];
+    
+            io.emit('removeMarker', { id: markerId });
+            pool.query('DELETE FROM markers WHERE id = ?', [markerId], (err) => {
+                if (err) {
+                    console.error('Error deleting marker from MySQL:', err);
+                    socket.emit('markerDeleteError', { success: false, message: 'Error deleting marker from database' });
+                } else {
+                    console.log('Marker deleted from MySQL');
+                    socket.emit('markerDeleted', { success: true, message: 'Marker deleted' });
+                }
+            });
         });
     });
 
@@ -476,22 +481,6 @@ app.post('/login', (req, res) => {
     }
 });
 
-app.post('/createMarkers', (req, res)=>{
-    const marker = req.body;
-    console.log(`Received data: ${marker}`);
-    pool.execute('INSERT INTO markers (title, created_by, context, latitude, longitude, max_number, type) values (?, ?, ?, ?, ?, ?, ?)',
-    [marker.title, marker.created_by, marker.context, marker.latitude, marker.longitude, marker.max_number, marker.type], (err, results) => {
-        if(err) {
-            console.error('Error fetching markers:', err);
-            res.status(500).send('Database error');
-            return;
-        }
-        else {
-            console.log('create marker success.');
-        }
-    })
-});
-
 app.post('/getMarkers', (req, res) => {
     const markerType = req.body.type;
 
@@ -517,6 +506,28 @@ app.get('/getUserCounts', (req, res) => {
 
     res.json(userCounts);
 });
+
+app.get('/hasMarker', (req, res) => {
+    if (!req.session.username) {
+        return res.status(401).json({ error: 'Not logged in' });
+    }
+
+    const username = req.session.username;
+
+    pool.query('SELECT * FROM markers WHERE created_by = ?', [username], (err, results) => {
+        if (err) {
+            console.error('Error checking existing marker:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        if (results.length > 0) {
+            return res.json({ hasMarker: true, marker: results[0] });
+        }
+
+        res.json({ hasMarker: false });
+    });
+});
+
 
 
 app.get('/map.html', (req, res) => {
