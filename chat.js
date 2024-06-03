@@ -176,19 +176,19 @@ io.on('connection', (socket) => {
             socket.emit('markerExists', { success: false, message: 'Marker already exists' });
             return;
         }
-
+    
         markerData.admin = socket.id;
         const roomId = markerData.id;
         socket.join(roomId);
         socket.room = roomId;
         console.log(`${socket.username} created and joined room ${roomId}`);
-
+    
         markers[roomId] = markerData; // Store the full marker data
         userMarkers[socket.username] = roomId;
         io.emit('newMarker', markerData);
-
-        pool.query('INSERT INTO markers (id, title, created_by, context, latitude, longitude, max_number, type, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            [markerData.id, markerData.title, markerData.created_by, markerData.context, markerData.latitude, markerData.longitude, markerData.max_number, markerData.type, markerData.image],
+    
+        pool.query('INSERT INTO markers (id, title, created_by, context, latitude, longitude, max_number, type, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)', 
+            [markerData.id, markerData.title, markerData.created_by, markerData.context, markerData.latitude, markerData.longitude, markerData.max_number, markerData.type, markerData.image], 
             (err) => {
                 if (err) {
                     console.error('Error saving marker to MySQL:', err);
@@ -225,18 +225,18 @@ io.on('connection', (socket) => {
         if (markers[roomId]) {
             const currentUsersCount = roomUsers[roomId] ? roomUsers[roomId].length : 0;
             const maxNumber = markers[roomId].max_number;
-
+    
             // 사용자가 강퇴된 목록에 있는지 확인
             if (bannedUsers[roomId] && bannedUsers[roomId].includes(socket.username)) {
                 socket.emit('banned', { success: false, message: 'You are banned from this room.' });
                 return;
             }
-
+    
             if (currentUsersCount < maxNumber) {
                 socket.join(roomId);
                 socket.room = roomId;
                 console.log(`${socket.username} joined marker room ${roomId}`);
-
+                
                 // 사용자 목록에 추가
                 if (!roomUsers[roomId]) {
                     roomUsers[roomId] = [];
@@ -341,7 +341,7 @@ io.on('connection', (socket) => {
         if (socket.room) {
             const roomId = socket.room;
             roomUsers[roomId] = roomUsers[roomId].filter(user => user !== socket.username);
-
+    
             roomUserCounts[roomId] = {
                 userCount: roomUsers[roomId].length,
                 maxNumber: markers[roomId] ? markers[roomId].max_number : 0
@@ -352,8 +352,7 @@ io.on('connection', (socket) => {
                 roomId: roomId,
                 userCount: roomUserCounts[roomId].userCount,
                 maxNumber: roomUserCounts[roomId].maxNumber
-            });
-        }
+            });}
     });
 });
 
@@ -368,7 +367,7 @@ app.use(session({
     cookie: { secure: false }
 }));
 
-['/intro.html', '/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html'].forEach(file => {
+['/intro.html','/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html' ].forEach(file => {
     app.get(file, (req, res) => {
         const filePath = path.join(__dirname, file);
         fs.readFile(filePath, (err, data) => {
@@ -474,22 +473,6 @@ app.post('/login', (req, res) => {
     } else {
         res.status(400).send('Username and Password are required');
     }
-});
-
-app.post('/createMarkers', (req, res)=>{
-    const marker = req.body;
-    console.log(`Received data: ${marker}`);
-    pool.execute('INSERT INTO markers (title, created_by, context, latitude, longitude, max_number, type) values (?, ?, ?, ?, ?, ?, ?)',
-    [marker.title, marker.created_by, marker.context, marker.latitude, marker.longitude, marker.max_number, marker.type], (err, results) => {
-        if(err) {
-            console.error('Error fetching markers:', err);
-            res.status(500).send('Database error');
-            return;
-        }
-        else {
-            console.log('create marker success.');
-        }
-    })
 });
 
 app.post('/getMarkers', (req, res) => {
