@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Kakao Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background: url('/images/star1.avif') no-repeat center center fixed; /* 배경 이미지 추가 */
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            font-family: Arial, sans-serif;
+        }
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #map-container {
+            display: flex;
+            width: 100%;
+            height: 70vh;
+        }
+
+        #map {
+            width: calc(100% - 30px); /* 전체 너비에서 좌우 10px씩 간격 */
+            height: 80vh;
+            margin: 15px 15px 0 15px; /* 위쪽과 좌우에 10px 간격 */
+            border-radius: 15px; /* 둥근 모서리 */
+            overflow: hidden; /* 내용이 둥근 모서리를 넘어가지 않도록 */
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            position: absolute;
+            bottom: 20px;
+            gap: 20px; /* 버튼 간격 */
+        }
+
+        .btn {
+            flex: 1;
+            padding: 5px 50px; /* 버튼 크기 늘리기 */
+            text-align: center;
+            background-color: #fafc95;
+            border: 1px solid #ccc;
+            border-radius: 15px; /* 둥근 모서리 */
+            font-size: 26px;
+        }
+        .left-btn {
+            border-right: none;
+        }
+        .right-btn {
+            border-left: none;
+        }
+
+        #buttons-container {
+            display: flex;
+            width: 70%;
+            flex-direction: column;
+            background-color: #f8f8f8;
+            box-shadow: 0 -4px 8px rgba(0, 0, 0, 0.1);
+            margin-left: 0;
+            padding: 10px;
+        }
+
+        #buttons {
+            display: flex;
+            width: 100%;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        #buttons button {
+            flex: 1;
+            padding: 10px 0;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        
+        .modal-content {
+        background: url('/images/star1.avif') no-repeat center center; /* 모달 배경 이미지 */
+        background-size: cover; /* 배경 이미지 크기 조절 */
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        border-radius: 15px; /* 모달 끝을 둥글게 */
+        color: rgb(247, 247, 247); /* 글자색 흰색 */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .modal-content label,
+    .modal-content input,
+    .modal-content select,
+    .modal-content button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    .modal-content button {
+        background-color: #333;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 10px;
+        cursor: pointer;
+    }
+    .modal-content button:hover {
+        background-color: #555;
+    }
+
+
+        #input-container {
+            display: flex;
+            width: 100%;
+            justify-content: center;
+        }
+
+        #input-container input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            margin: 0 5px;
+        }
+
+        #marker-details {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #fff;
+        }
+
+        #marker-details h3 {
+            margin: 0 0 10px 0;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgb(0, 0, 0);
+            background-color: rgba(0, 0, 0, 0.4);
+            padding-top: 60px;
+        }
+
+        .modal-content {
+            background-color: #fefefe;
+            margin: 5% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 80%;
+        }
+
+        #close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        #close:hover,
+        #close:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+
+        .customoverlay {
+            position: absolute;
+            bottom: 85px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 6px;
+            border: 1px solid #ccc;
+            border-bottom: 2px solid #ddd;
+            transition: all 0.3s ease;
+            background: white;
+            box-shadow: 0px 1px 2px #888;
+            width: 180px; /* 크기 수정 */
+            transform-origin: bottom center; /* 중앙 하단 기준으로 확장 */
+            white-space: normal; /* 줄바꿈을 허용 */
+            word-break: break-all; /* 단어가 폭을 넘으면 줄바꿈 */
+        }
+        
+        .customoverlay.expanded {
+            width: 300px; /* 확장 시의 너비 */
+            height: auto;
+            bottom: 80px;
+        }
+        
+        .customoverlay .details {
+            display: none;
+            padding: 10px;
+            text-align: center; /* 가운데 정렬 추가 */
+        }
+        
+        .customoverlay.expanded .details {
+            display: block;
+        }
+        
+        .customoverlay.expanded .details p {
+            margin: 5px 0; /* 간격 조정 */
+        }
+        
+        .customoverlay a {
+            display: block;
+            text-decoration: none;
+            color: #000;
+            text-align: justify; /* 추가 */
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+            overflow: hidden;
+            background: #fff;
+            padding: 10px;
+            white-space: normal;
+            word-break: break-all;
+          }
+          
+          .customoverlay .title {
+            display: block;
+            text-align: justify; /* 추가 */
+            background: #fff;
+            margin-right: 35px;
+            padding: 10px 15px;
+            font-size: 14px;
+            font-weight: bold;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            text-overflow: ellipsis;
+            word-break: break-all;
+          }
+        
+        .customoverlay:after {
+            content: '';
+            position: absolute;
+            margin-left: -12px;
+            left: 50%;
+            bottom: -12px;
+            width: 22px;
+            height: 12px;
+            background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png')
+        }
+        
+        .btn-share {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #000000;
+            background-color: #dbdbdb;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+        }
+        
+        .btn-share:hover {
+            background-color: #928f8f;
+        }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+
+<body>
+    <div id="map-container">
+        <div id="map"></div>
+    </div>
+    
+    <!---->
+    <div class="buttons">
+        <button class="btn left-btn" id="createMeetingBtn">모임 만들기</button>
+        <script>
+            document.getElementById('createMeetingBtn').innerHTML = "모임<br>만들기";
+        </script>
+        <button class="btn right-btn" id="deleteMarkerBtn" onclick="deleteMarker()">Delete Marker</button>
+    </div>
+
+
+    <!-- 모달 구조 -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span id="close">&times;</span>
+            <form id="markerForm" onsubmit="return false;">
+                <label for="title">Title:</label>
+                <input type="text" id="title" name="title" required><br>
+                <label for="userText">Text:</label>
+                <input type="text" id="userText" name="userText" required><br>
+                <label for="maxNumber">Max Number:</label>
+                <input type="text" id="maxNumber" name="maxNumber" required><br>
+                <label for="category">Category:</label>
+                <select id="category" name="category" required>
+                    <option value="taxi">택시</option>
+                    <option value="library">도서관</option>
+                    <option value="restaurant">식당</option>
+                    <option value="school">학교</option>
+                    <option value="meeting">만남</option>
+                    <option value="etc">기타</option>
+                </select><br>
+                <input type="hidden" id="latitude" name="latitude">
+                <input type="hidden" id="longitude" name="longitude"><br>
+                <button type="button" class="btn" onclick="submitForm()">Create Marker</button>
+            </form>
+        </div>
+    </div>
+
+    
+
+
+    
+    <script type="text/javascript"
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=ce088c9e60f0aa7b15b277e55acb4149"></script>
+    <script>
+        var container = document.getElementById('map');
+        var options = {
+            center: new kakao.maps.LatLng(35.1152, 128.9684),
+            level: 2
+        };
+        var map = new kakao.maps.Map(container, options);
+
+        var mapTypeControl = new kakao.maps.MapTypeControl();
+        map.addControl(mapTypeControl, kakao.maps.ControlPosition.TOPRIGHT);
+
+        var socket = io();
+
+        var markerImages = {
+            taxi: '/images/taxi_marker.png',
+            library: '/images/study_marker.png',
+            restaurant: '/images/restaurant_marker.png',
+            meeting: '/images/meet_marker.png',
+            school: '/images/school_marker.png',
+            etc: '/images/etc_marker.png'
+        };
+
+        var currentMarkerImage = markerImages.taxi;
+        var currentMarkerType = "택시";
+        var markerCreated = false;
+        var markers = {}; // 마커를 저장할 객체
+
+        var imageSize = new kakao.maps.Size(64, 69);
+        var imageOption = { offset: new kakao.maps.Point(27, 69) };
+
+        let username = "";
+        let canCreateMarker = false; // 모임 만들기 버튼을 눌렀는지 여부
+
+        document.addEventListener('DOMContentLoaded', function () {
+            fetch('/get-username')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.username) {
+                        username = data.username;
+                    }
+                })
+                .catch(error => console.error('Error fetching username:', error));
+        });
+
+        document.getElementById('createMeetingBtn').addEventListener('click', function () {
+            canCreateMarker = true;
+            alert('이제 지도를 클릭하여 마커를 생성할 수 있습니다.');
+        });
+
+        window.joinMarkerRoom = function (markerId) {
+            socket.emit('joinMarkerRoom', markerId);
+        };
+
+        function createOverlay(markerData, userCount = 0) {
+            const title = markerData.title || '';
+            const maxNumber = markerData.max_number || 0;
+            userCount = markerData.userCount || 0;
+            const content = `
+                <div class="customoverlay" id="overlay_${markerData.id}">
+                    <a href="javascript:void(0);" class="overlay-link">
+                        <span class="title">${title} (${userCount}/${maxNumber})</span>
+                        <div class="details">
+                            <p>모임: ${title}</p>
+                            <p>세부내용: ${markerData.context}</p>
+                            <p>현재 인원: ${userCount}</p>
+                            <p>최대 인원: ${maxNumber}</p>
+                            <button class="btn-share" onclick="joinMarkerRoom('${markerData.id}')">참여하기</button>
+                        </div>
+                    </a>
+                </div>
+            `;
+            var overlay = new kakao.maps.CustomOverlay({
+                map: map,
+                position: new kakao.maps.LatLng(markerData.latitude, markerData.longitude),
+                content: content,
+                yAnchor: 1
+            });
+        
+            // Add event listeners based on the device type
+            const overlayLink = overlay.a.getElementsByClassName('overlay-link')[0];
+            if (isMobileDevice()) {
+                overlayLink.addEventListener('click', function (event) {
+                    toggleMarkerDetails(markerData.id, event);
+                });
+            } else {
+                overlayLink.addEventListener('mouseover', function () {
+                    expandOverlay(markerData.id);
+                });
+                overlayLink.addEventListener('mouseout', function () {
+                    collapseOverlay(markerData.id);
+                });
+            }
+        
+            return overlay;
+        }
+        function isMobileDevice() {
+            return /Mobi|Android/i.test(navigator.userAgent);
+        }
+
+        function toggleMarkerDetails(markerId, event) {
+            const overlay = document.getElementById(`overlay_${markerId}`);
+            if (overlay) {
+                const isExpanded = overlay.classList.toggle('expanded');
+                if (isExpanded) {
+                    overlay.querySelector('.title').style.display = 'none';
+                    document.addEventListener('click', function onClickOutside(e) {
+                        if (!overlay.contains(e.target) && e.target !== overlay) {
+                            overlay.classList.remove('expanded');
+                            overlay.querySelector('.title').style.display = 'block';
+                            document.removeEventListener('click', onClickOutside);
+                        }
+                    });
+                } else {
+                    overlay.querySelector('.title').style.display = 'block';
+                }
+                event.stopPropagation();
+            }
+        }
+
+        function expandOverlay(markerId) {
+            const overlay = document.getElementById(`overlay_${markerId}`);
+            if (overlay) {
+                overlay.classList.add('expanded');
+                overlay.querySelector('.title').style.display = 'none';
+            }
+        }
+
+        function collapseOverlay(markerId) {
+            const overlay = document.getElementById(`overlay_${markerId}`);
+            if (overlay) {
+                overlay.classList.remove('expanded');
+                overlay.querySelector('.title').style.display = 'block';
+            }
+        }
+
+
+        function createMarker(latitude, longitude) {
+            if (!canCreateMarker) {
+                alert('모임 만들기 버튼을 눌러야 마커를 생성할 수 있습니다.');
+                return;
+            }
+            if (markerCreated) {
+                alert('You have already created a marker.');
+                return;
+            }
+            const markerId = 'marker_' + new Date().getTime();
+            const markerDetails = document.getElementById('userText').value;
+            const markerData = {
+                id: markerId,
+                title: document.getElementById('title').value,
+                created_by: username,
+                context: document.getElementById('userText').value,
+                latitude: parseFloat(latitude),
+                longitude: parseFloat(longitude),
+                max_number: parseInt(document.getElementById('maxNumber').value, 10),
+                type: currentMarkerType,
+                image: currentMarkerImage,
+                details: markerDetails
+            };
+            socket.emit('createMarker', markerData);
+
+            var markerPosition = new kakao.maps.LatLng(latitude, longitude);
+            var markerImage = new kakao.maps.MarkerImage(currentMarkerImage, imageSize, imageOption);
+            var marker = new kakao.maps.Marker({
+                position: markerPosition,
+                map: map,
+                image: markerImage
+            });
+
+            var overlay = createOverlay(markerData);
+
+            markers[markerId] = {
+                marker: marker,
+                overlay: overlay,
+                markerData: markerData,
+                context: markerData.context,
+                maxNumber: markerData.max_number
+            };
+
+            kakao.maps.event.addListener(marker, 'click', function () {
+                toggleMarkerDetails(markerId);
+            });
+
+            markerCreated = true;
+            canCreateMarker = false; // 마커 생성 후 다시 초기화
+        }
+
+
+        function updateOverlayContent(markerId, userCount, maxNumber) {
+            if (markers[markerId]) {
+                const overlay = document.getElementById(`overlay_${markerId}`);
+                if (overlay) {
+                    const title = markers[markerId].markerData.title || 'No Title';
+                    const context = markers[markerId].context || 'No Context';
+        
+                    // 업데이트된 인원 정보를 설정
+                    const titleElement = overlay.querySelector('.title');
+                    const userCountElement = overlay.querySelector('.details p:nth-child(3)'); // 현재 인원
+                    const maxNumberElement = overlay.querySelector('.details p:nth-child(4)'); // 최대 인원
+        
+                    if (titleElement) {
+                        titleElement.textContent = `${title} (${userCount}/${maxNumber})`;
+                    }
+                    if (userCountElement) {
+                        userCountElement.textContent = `현재 인원: ${userCount}`;
+                    }
+                    if (maxNumberElement) {
+                        maxNumberElement.textContent = `최대 인원: ${maxNumber}`;
+                    }
+                }
+            }
+        }
+        socket.on('newMarker', function (markerData) {
+            if (markers[markerData.id]) {
+                return;
+            }
+            var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
+            var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption);
+            var marker = new kakao.maps.Marker({
+                position: markerPosition,
+                map: map,
+                image: markerImage
+            });
+
+            var overlay = createOverlay(markerData);
+
+            markers[markerData.id] = {
+                marker: marker,
+                overlay: overlay,
+                markerData: markerData,
+                context: markerData.context,
+                maxNumber: markerData.max_number
+            };
+
+            if (isMobileDevice()) {
+                kakao.maps.event.addListener(marker, 'click', function (event) {
+                    toggleMarkerDetails(markerData.id, event);
+                });
+            } else {
+                kakao.maps.event.addListener(marker, 'mouseover', function () {
+                    expandOverlay(markerData.id);
+                });
+                kakao.maps.event.addListener(marker, 'mouseout', function () {
+                    collapseOverlay(markerData.id);
+                });
+            }
+        });
+
+        socket.on('updateUserCount', function (data) {
+            if (markers[data.roomId]) {
+                updateOverlayContent(data.roomId, data.userCount, data.maxNumber);
+            }
+        });
+
+        socket.on('removeMarker', function (data) {
+            var markerObj = markers[data.id];
+            if (markerObj) {
+                markerObj.marker.setMap(null);
+                markerObj.overlay.setMap(null);
+                delete markers[data.id];
+            }
+        });
+
+        socket.on('joinedRoom', function (roomId, markerData) {
+            window.location.href = `/index.html?roomId=${roomId}`;
+        });
+        socket.on('banned', function (data) {
+            if (!data.success) {
+                alert(data.message);
+            }
+        });
+
+        document.getElementById('close').addEventListener('click', function () {
+            document.getElementById('myModal').style.display = "none";
+        });
+
+        kakao.maps.event.addListener(map, 'click', function (mouseEvent) {
+            if (!canCreateMarker) {
+                return;
+            }
+            var latlng = mouseEvent.latLng;
+            document.getElementById('latitude').value = latlng.getLat();
+            document.getElementById('longitude').value = latlng.getLng();
+            document.getElementById('myModal').style.display = "block";
+        });
+
+        function addSidebar(title, markerType, userText, maxNumber) {
+            var newDiv = document.createElement('div');
+            newDiv.innerHTML = `
+            <div id="marker-details">
+                <h3>${title}</h3>
+                <p id="marker-type">타입: ${markerType}</p>
+                <p id="marker-desc">내용: ${userText}</p>
+                <p id="marker-num">최대 인원수: ${maxNumber}</p>
+            </div>`;
+            var markerDetails = document.getElementById('right-sidebar');
+            markerDetails.appendChild(newDiv);
+        }
+
+        function clearSidebar() {
+            const rightSidebar = document.getElementById('right-sidebar');
+            while (rightSidebar.firstChild) {
+                rightSidebar.removeChild(rightSidebar.firstChild);
+            }
+        }
+
+        function submitForm() {
+            var title = document.getElementById('title').value;
+            var context = document.getElementById('userText').value;
+            var latitude = document.getElementById('latitude').value;
+            var longitude = document.getElementById('longitude').value;
+            var maxNumber = document.getElementById('maxNumber').value;
+
+            if (!title || !context || !latitude || !longitude || !maxNumber) {
+                alert('모든 필드를 채워주세요.');
+                return;
+            }
+            createMarker(latitude, longitude);
+            document.getElementById('myModal').style.display = "none";
+        }
+
+        function deleteMarker() {
+            socket.emit('deleteMarker');
+            markerCreated = false;
+        }
+
+        document.getElementById('taxiBtn').addEventListener('click', function () {
+            currentMarkerImage = markerImages.taxi;
+            currentMarkerType = "택시";
+            fetch('/getMarkers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ type: "택시" })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    clearSidebar();
+                    data.forEach(marker => {
+                        addSidebar(marker.title, marker.type, marker.context, marker.max_number);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching markers:', error);
+                });
+        });
+
+        document.getElementById('libraryBtn').addEventListener('click', function () {
+            currentMarkerImage = markerImages.library;
+            currentMarkerType = "도서관";
+            fetch('/getMarkers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ type: "도서관" })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    clearSidebar();
+                    data.forEach(marker => {
+                        addSidebar(marker.title, marker.type, marker.context, marker.max_number);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching markers:', error);
+                });
+        });
+
+        document.getElementById('restaurantBtn').addEventListener('click', function () {
+            currentMarkerImage = markerImages.restaurant;
+            currentMarkerType = "식당";
+        });
+        document.getElementById('meetingBtn').addEventListener('click', function () {
+            currentMarkerImage = markerImages.meeting;
+            currentMarkerType = "만남";
+        });
+        document.getElementById('schoolBtn').addEventListener('click', function () {
+            currentMarkerImage = markerImages.school;
+            currentMarkerType = "등교/하교";
+        });
+        document.getElementById('etcBtn').addEventListener('click', function () {
+            currentMarkerImage = markerImages.etc;
+            currentMarkerType = "기타";
+        });
+    </script>
+</body>
+
+</html>

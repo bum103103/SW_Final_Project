@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <script src="/socket.io/socket.io.js"></script>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=ce088c9e60f0aa7b15b277e55acb4149&libraries=services,clusterer,drawing"></script>
+  <script>
+    const socket = io(); // 전역으로 socket 객체를 정의
+  </script>
+  <meta charset="utf-8">
+  <title>Chat App</title>
+  
+  <style>
+    body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background: url('/images/star1.avif') no-repeat center center fixed; /* 배경 이미지 추가 */
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            font-family: Arial, sans-serif;
+        }
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+    #map { 
+          position: relative;
+          height: 85vh; 
+          width: calc(100% - 40px);;
+          border-radius: 15px;
+          margin: 30px 20px 0 20px;;
+        }
+    .custom-popup {
+      padding: 5px;
+      border-radius: 5px;
+      max-width: 150px;
+      text-align: center;
+      white-space: nowrap;
+      position: relative;
+      transform: translateY(-100%);
+    }
+  
+    .fade-out {
+        animation: fadeOut 1s forwards;
+    }
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    .kick-button {
+      margin-left: 10px;
+      color: red;
+      cursor: pointer;
+    }
+    .button {
+      position: absolute;
+      width: 70px; /* 버튼 너비 */
+      height: 60px; /* 버튼 높이 */
+      z-index: 5;
+      background-color: white;
+      border: 1px solid #ccc;
+      padding: 5px;
+      background-image: url('images/back.jfif'); /* 배경 이미지 설정 */
+      background-size: cover; /* 이미지 크기 조정 */
+      background-position: center;
+      border-radius: 5px;
+      border: 2px solid #000;
+    }
+    #linkButton {
+      top: 0px;
+      left: 0px;
+    }
+    #toggleChatBtn {
+      width: 180px;  /* 너비 설정 */
+      height: 100px;  /* 높이 설정 */
+      font-size: 24px;  /* 글자 크기 설정 */
+      padding: 10px;  /* 내부 여백 추가 */
+      background-image: url('images/chat.png');
+      background-size: 40%; /* 이미지 크기 조정 */
+      background-repeat: no-repeat;
+      background-position: center;
+      background-color: #ffffff;  /* 배경색 설정 */
+      color: white;  /* 글자 색상 설정 */
+      border: none;  /* 테두리 제거 */
+      border-radius: 15px;  /* 모서리 둥글게 */
+      cursor: pointer;  /* 마우스 오버시 커서 변경 */
+      border: 10px solid #2d9ae2;
+    }
+    #messageInput {
+      height: 100px;
+      width: 500px; /* 너비를 부모 요소에 맞춤 */
+      padding: 10px; /* 입력 필드 내부 여백 */
+      font-size: 38px; /* 폰트 크기 */
+      border: 2px solid #ddd; /* 테두리 스타일 */
+      border-radius: 15px; /* 테두리 둥글게 처리 */
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); /* 내부 그림자 효과 */
+      transition: border-color 0.3s; /* 테두리 색상 변경 애니메이션 */
+    }
+    #sendButton {
+      width: 180px;
+      height: 100px;
+      padding: 10px 20px; /* 내부 여백 설정 */
+      font-size: 40px; /* 글자 크기 설정 */
+      font-weight: bold; /* 글자 두께 */
+      color: white; /* 글자 색상 */
+      background-image: url('images/send.png');
+      background-size: 60%; /* 이미지 크기 조정 */
+      background-repeat: no-repeat;
+      background-position: center;
+      background-color: #fffc5b; /* 배경색 */
+      border: none; /* 테두리 제거 */
+      border-radius: 15px; /* 모서리 둥글게 처리 */
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2); /* 그림자 효과 */
+      cursor: pointer; /* 마우스 오버 시 커서 변경 */
+      transition: background-color 0.3s, box-shadow 0.3s; /* 색상 및 그림자 변화 애니메이션 */
+  }
+  .input-container{
+    position: absolute;
+      bottom: 0; /* 화면 바닥에 붙이기 위해 추가 */
+      width: 100%;
+      height: 10vh;
+      background-color: rgba(255, 255, 255, 0.5); /* 회색 배경 */
+      padding: 25px; /* 내부 여백 */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 25px; /* 요소 간 간격 */
+      z-index: 3;
+
+  }
+  .chat-container {
+      position: absolute;
+      z-index: 5; /* input-container보다 뒤에 오도록 설정 */
+      bottom: 30px;
+      height: 90vh;
+      background: url('/images/constellation6.jpg') no-repeat center center; /* 배경 이미지 설정 */
+      background-size: cover;
+      background-position: bottom;
+    }
+    .header {
+      background-color: #faef8b; /* 명시적으로 배경색 설정 */
+      padding: 15px;
+      border-bottom: 1px solid #ccc;
+    }
+    .user-list-button{
+      padding: 15px;
+    }
+  </style>
+</head>
+<div id="main-container">
+  <div id="map"> <!-- Ensure map is not nested inside any container for full coverage -->
+    <button id="linkButton" class="button" onclick="location.href='map.html'"></button>
+  </div>
+  <div class="input-container">
+    <button id="toggleChatBtn" onclick="toggleChat()"></button>
+    <input type="text" id="messageInput" placeholder="Type a message...">
+    <button id="sendButton" onclick="sendMessage()"></button>
+  </div>
+</div>
+
+<div class="chat-container">
+  <div class="header">
+    <div class="user-count" id="userCount">Users: 0</div>
+    <div class="user-list-container">
+      <button class="user-list-button" onclick="toggleUserList()">접속자 목록</button>
+      <div id="userList" class="user-list"></div>
+    </div>
+  </div>
+  <div id="chat" class="chat-content"></div>
+</div>
+
+<script src="gps_set.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
