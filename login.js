@@ -1,5 +1,5 @@
 document.getElementById('loginForm').addEventListener('submit', function(event) {
-    event.preventDefault(); // ÆûÀÇ ±âº» Á¦Ãâ µ¿ÀÛ ¹æÁö
+    event.preventDefault(); // ï¿½ï¿½ï¿½ï¿½ ï¿½âº» ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;

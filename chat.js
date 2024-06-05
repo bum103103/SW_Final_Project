@@ -5,6 +5,9 @@ const mysql = require('mysql2');
 const fs = require('fs');
 const path = require('path');
 const session = require('express-session');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const bcrypt = require('bcryptjs');
 
 const sessionParser = session({
     secret: 'your_secret_key',
@@ -367,7 +370,7 @@ app.use(session({
     cookie: { secure: false }
 }));
 
-['/intro.html','/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html' ].forEach(file => {
+['/intro.html','/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html','/admin.html'].forEach(file => {
     app.get(file, (req, res) => {
         const filePath = path.join(__dirname, file);
         fs.readFile(filePath, (err, data) => {
@@ -458,13 +461,23 @@ app.post('/login', (req, res) => {
                 if (results.length > 0) {
                     req.session.loggedin = true;
                     req.session.username = username;
+
+                    // 관리자 확인을 위한 추가 코드
+                    const isAdmin = results[0].is_admin; // 데이터베이스에 is_admin 필드가 있다고 가정
+                    req.session.isAdmin = isAdmin;
+
                     pool.query('UPDATE user_login SET status = 1 WHERE username = ?', [username], (err, result) => {
                         if (err) {
                             console.error('Failed to update user status:', err);
                             return;
                         }
                     });
-                    res.redirect('/map.html');
+
+                    if (isAdmin) {
+                        res.redirect('/admin.html');
+                    } else {
+                        res.redirect('/index.html');
+                    }
                 } else {
                     res.send('Incorrect Username and/or Password!');
                 }
