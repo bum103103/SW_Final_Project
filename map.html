@@ -194,37 +194,70 @@
             transition: all 0.3s ease;
             background: white;
             box-shadow: 0px 1px 2px #888;
-            width: 180px; /* 크기 수정 */
-            transform-origin: bottom center; /* 중앙 하단 기준으로 확장 */
-            white-space: normal; /* 줄바꿈을 허용 */
-            word-break: break-all; /* 단어가 폭을 넘으면 줄바꿈 */
+            width: 200px;
+            height: 80px;
+            transform-origin: bottom center;
+            white-space: nowrap;
+            word-break: keep-all;
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 10px;
+            box-sizing: border-box;
         }
-        
+
+        .customoverlay .count {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 15px;
+            color: #666;
+            background: #f1f1f1;
+            padding: 2px 8px;
+            border-radius: 12px;
+            z-index: 10;
+            /* 오버레이 내용 위에 표시 */
+        }
+
         .customoverlay.expanded {
-            width: 300px; /* 확장 시의 너비 */
+            width: 300px;
             height: auto;
             bottom: 80px;
+            text-align: left;
+            white-space: normal;
+            /* 확장 시 줄바꿈 허용 */
         }
-        
+
         .customoverlay .details {
             display: none;
             padding: 10px;
-            text-align: center; /* 가운데 정렬 추가 */
+            text-align: left;
+            /* 좌측 정렬 */
+            position: relative;
+            /* 상대 위치 설정 */
         }
-        
+
         .customoverlay.expanded .details {
             display: block;
         }
-        
+
         .customoverlay.expanded .details p {
-            margin: 5px 0; /* 간격 조정 */
+            margin: 5px 0;
         }
-        
+
+        .customoverlay.expanded .btn-share {
+            position: static;
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
         .customoverlay a {
             display: block;
             text-decoration: none;
             color: #000;
-            text-align: justify; /* 추가 */
             border-radius: 6px;
             font-size: 14px;
             font-weight: bold;
@@ -233,24 +266,26 @@
             padding: 10px;
             white-space: normal;
             word-break: break-all;
-          }
-          
-          .customoverlay .title {
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .customoverlay .title {
             display: block;
-            text-align: justify; /* 추가 */
+            text-align: center;
             background: #fff;
-            margin-right: 35px;
             padding: 10px 15px;
             font-size: 14px;
             font-weight: bold;
             overflow: hidden;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
             text-overflow: ellipsis;
+            white-space: normal;
             word-break: break-all;
-          }
-        
+            width: 100%;
+            box-sizing: border-box;
+        }
+
         .customoverlay:after {
             content: '';
             position: absolute;
@@ -259,9 +294,9 @@
             bottom: -12px;
             width: 22px;
             height: 12px;
-            background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png')
+            background: url('https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/vertex_white.png');
         }
-        
+
         .btn-share {
             display: inline-block;
             padding: 0.5rem 1rem;
@@ -275,10 +310,63 @@
             text-align: center;
             text-decoration: none;
         }
-        
+
         .btn-share:hover {
             background-color: #928f8f;
         }
+        .custom_categorycontrol {
+    position: absolute;
+    top: 30px;
+    left: 20px;
+    overflow: hidden;
+    width: auto;
+    height: 30px; /* 높이 줄이기 */
+    margin: 0;
+    padding: 0;
+    z-index: 1000;
+    font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+    background: none; /* 회색 배경 제거 */
+}
+
+.custom_categorycontrol span {
+    display: inline-block;
+    width: auto;
+    padding: 0 8px; /* 패딩 줄이기 */
+    height: 20px; /* 높이 줄이기 */
+    text-align: center;
+    line-height: 20px; /* 높이에 맞게 조정 */
+    cursor: pointer;
+    background: #fff;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 12px; /* 둥근 모서리 */
+    margin-right: 5px;
+    font-size: 10px; /* 글자 크기 줄이기 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background 0.3s ease, color 0.3s ease, transform 0.3s;
+}
+
+.custom_categorycontrol .btn:hover {
+    background: #f5f5f5;
+    border-color: #bbb;
+    transform: scale(1.05);
+}
+
+.custom_categorycontrol .btn:active,
+.custom_categorycontrol .selected_btn {
+    background: #777468; /* 클릭된 버튼 색상 */
+    color: #fff;
+    border-color: #ff9900;
+}
+
+.custom_categorycontrol .selected_btn {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 눌린 버튼 음영 효과 */
+}
+
+.custom_categorycontrol .selected_btn:hover {
+    background: #9e988a;
+    border-color: #998d7f;
+}
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -286,6 +374,13 @@
 <body>
     <div id="map-container">
         <div id="map"></div>
+        <div class="custom_categorycontrol radius_border">
+            <span class="btn" data-category="택시" onclick="toggleCategoryMarkers('택시', this)">택시</span>
+            <span class="btn" data-category="도서관" onclick="toggleCategoryMarkers('도서관', this)">도서관</span>
+            <span class="btn" data-category="식당" onclick="toggleCategoryMarkers('식당', this)">식당</span>
+            <span class="btn" data-category="만남" onclick="toggleCategoryMarkers('만남', this)">만남</span>
+            <span class="btn" data-category="기타" onclick="toggleCategoryMarkers('기타', this)">기타</span>
+        </div>
     </div>
     
     <!---->
@@ -330,7 +425,7 @@
 
     
     <script type="text/javascript"
-        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=ce088c9e60f0aa7b15b277e55acb4149"></script>
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=22c293b2277db520a282856b10771470"></script>
     <script>
         var container = document.getElementById('map');
         var options = {
@@ -340,7 +435,7 @@
         var map = new kakao.maps.Map(container, options);
 
         var mapTypeControl = new kakao.maps.MapTypeControl();
-        map.addControl(mapTypeControl, kakao.maps.ControlPosition.TOPRIGHT);
+        map.addControl(mapTypeControl, kakao.maps.ControlPosition.BOTTOMRIGHT);
 
         var socket = io();
 
@@ -376,8 +471,18 @@
         });
 
         document.getElementById('createMeetingBtn').addEventListener('click', function () {
-            canCreateMarker = true;
-            alert('이제 지도를 클릭하여 마커를 생성할 수 있습니다.');
+            fetch('/hasMarker')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.hasMarker) {
+                        alert('새 마커를 만드려면 기존 마커를 삭제하세요.');
+                    } else {
+                        canCreateMarker = true;
+                        alert("원하는 곳을 클릭해 마커를 만드세요.")
+                    }
+                })
+                .catch(error => console.error('Error checking marker:', error));
+
         });
 
         window.joinMarkerRoom = function (markerId) {
@@ -388,15 +493,16 @@
             const title = markerData.title || '';
             const maxNumber = markerData.max_number || 0;
             userCount = markerData.userCount || 0;
+            const countText = `${userCount}/${maxNumber}`;
             const content = `
                 <div class="customoverlay" id="overlay_${markerData.id}">
+                    <span class="count">${countText}</span>
                     <a href="javascript:void(0);" class="overlay-link">
-                        <span class="title">${title} (${userCount}/${maxNumber})</span>
+                        <span class="title">${title}</span>
                         <div class="details">
                             <p>모임: ${title}</p>
                             <p>세부내용: ${markerData.context}</p>
-                            <p>현재 인원: ${userCount}</p>
-                            <p>최대 인원: ${maxNumber}</p>
+                            <p></p>
                             <button class="btn-share" onclick="joinMarkerRoom('${markerData.id}')">참여하기</button>
                         </div>
                     </a>
@@ -409,7 +515,6 @@
                 yAnchor: 1
             });
         
-            // Add event listeners based on the device type
             const overlayLink = overlay.a.getElementsByClassName('overlay-link')[0];
             if (isMobileDevice()) {
                 overlayLink.addEventListener('click', function (event) {
@@ -426,25 +531,35 @@
         
             return overlay;
         }
+
         function isMobileDevice() {
             return /Mobi|Android/i.test(navigator.userAgent);
         }
+
+        let expandedOverlayId = null;
 
         function toggleMarkerDetails(markerId, event) {
             const overlay = document.getElementById(`overlay_${markerId}`);
             if (overlay) {
                 const isExpanded = overlay.classList.toggle('expanded');
                 if (isExpanded) {
+                    // 이전에 확장된 오버레이가 있으면 닫기
+                    if (expandedOverlayId && expandedOverlayId !== markerId) {
+                        collapseOverlay(expandedOverlayId);
+                    }
                     overlay.querySelector('.title').style.display = 'none';
                     document.addEventListener('click', function onClickOutside(e) {
                         if (!overlay.contains(e.target) && e.target !== overlay) {
                             overlay.classList.remove('expanded');
                             overlay.querySelector('.title').style.display = 'block';
                             document.removeEventListener('click', onClickOutside);
+                            expandedOverlayId = null; // 오버레이가 닫혔으므로 초기화
                         }
                     });
+                    expandedOverlayId = markerId; // 현재 확장된 오버레이 추적
                 } else {
                     overlay.querySelector('.title').style.display = 'block';
+                    expandedOverlayId = null; // 오버레이가 닫혔으므로 초기화
                 }
                 event.stopPropagation();
             }
@@ -453,8 +568,13 @@
         function expandOverlay(markerId) {
             const overlay = document.getElementById(`overlay_${markerId}`);
             if (overlay) {
+                // 이전에 확장된 오버레이가 있으면 닫기
+                if (expandedOverlayId && expandedOverlayId !== markerId) {
+                    collapseOverlay(expandedOverlayId);
+                }
                 overlay.classList.add('expanded');
                 overlay.querySelector('.title').style.display = 'none';
+                expandedOverlayId = markerId; // 현재 확장된 오버레이 추적
             }
         }
 
@@ -463,6 +583,7 @@
             if (overlay) {
                 overlay.classList.remove('expanded');
                 overlay.querySelector('.title').style.display = 'block';
+                expandedOverlayId = null; // 오버레이가 닫혔으므로 초기화
             }
         }
 
@@ -518,6 +639,79 @@
             canCreateMarker = false; // 마커 생성 후 다시 초기화
         }
 
+        var currentCategory = null;
+        var markersByCategory = {}; // 카테고리별 마커를 저장할 객체
+
+        function toggleCategoryMarkers(category, buttonElement) {
+    var buttons = document.querySelectorAll('.custom_categorycontrol .btn');
+    
+    // 동일 카테고리를 다시 클릭한 경우 모든 마커 표시
+    if (currentCategory === category) {
+        currentCategory = null;
+        buttonElement.classList.remove('selected_btn');
+        for (var key in markers) {
+            if (markers.hasOwnProperty(key)) {
+                markers[key].marker.setMap(map);
+                markers[key].overlay.setMap(map);
+            }
+        }
+    } else {
+        currentCategory = category;
+        buttons.forEach(function(button) {
+            button.classList.remove('selected_btn');
+        });
+        buttonElement.classList.add('selected_btn');
+        
+        // 모든 마커 숨김 처리
+        for (var key in markers) {
+            if (markers.hasOwnProperty(key)) {
+                markers[key].marker.setMap(null);
+                markers[key].overlay.setMap(null);
+            }
+        }
+
+        // 해당 카테고리의 마커만 보이도록 설정
+        fetch('/getMarkers', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ type: category })
+        })
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(markerData => {
+                var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
+                var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption);
+                var marker = new kakao.maps.Marker({
+                    position: markerPosition,
+                    map: map,
+                    image: markerImage
+                });
+
+                var overlay = createOverlay(markerData);
+
+                markers[markerData.id] = {
+                    marker: marker,
+                    overlay: overlay,
+                    markerData: markerData,
+                    context: markerData.context,
+                    maxNumber: markerData.max_number
+                };
+
+                // 카테고리별로 마커 저장
+                if (!markersByCategory[category]) {
+                    markersByCategory[category] = [];
+                }
+                markersByCategory[category].push(markerData.id);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching markers:', error);
+        });
+    }
+}
+
 
         function updateOverlayContent(markerId, userCount, maxNumber) {
             if (markers[markerId]) {
@@ -525,20 +719,12 @@
                 if (overlay) {
                     const title = markers[markerId].markerData.title || 'No Title';
                     const context = markers[markerId].context || 'No Context';
-        
-                    // 업데이트된 인원 정보를 설정
-                    const titleElement = overlay.querySelector('.title');
-                    const userCountElement = overlay.querySelector('.details p:nth-child(3)'); // 현재 인원
-                    const maxNumberElement = overlay.querySelector('.details p:nth-child(4)'); // 최대 인원
-        
-                    if (titleElement) {
-                        titleElement.textContent = `${title} (${userCount}/${maxNumber})`;
-                    }
-                    if (userCountElement) {
-                        userCountElement.textContent = `현재 인원: ${userCount}`;
-                    }
-                    if (maxNumberElement) {
-                        maxNumberElement.textContent = `최대 인원: ${maxNumber}`;
+
+                    const countText = `${userCount}/${maxNumber}`;
+
+                    const countElement = overlay.querySelector('.count');
+                    if (countElement) {
+                        countElement.textContent = countText;
                     }
                 }
             }
@@ -578,6 +764,11 @@
                 });
             }
         });
+
+        socket.on('markerExists', function (data) {
+            alert(data.message);
+        });
+
 
         socket.on('updateUserCount', function (data) {
             if (markers[data.roomId]) {
