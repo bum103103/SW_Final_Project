@@ -71,7 +71,7 @@ function addMessageToChat(messageText, messageId, messageUsername) {
     const message = document.createElement('p');
     message.dataset.id = messageId;
     message.classList.add('chat-message');
-    message.style.fontSize = fontSizeRange.value + 'px';
+    message.style.fontSize = '40px';
 
     const formattedMessageText = `${messageUsername}: ${messageText}`;
     message.textContent = formattedMessageText;

@@ -34,6 +34,17 @@ create table user_login(
    id bigint primary key auto_increment,
    username varchar(255) not null,
    password varchar(30) not null,
+   is_admin BOOLEAN DEFAULT FALSE,
    status tinyint not null default 0
 );
+
+user_login에 관리자 구분 컬럼인 is_admin(boolean 타입) 추가
+ALTER TABLE user_login ADD COLUMN is_admin BOOLEAN DEFAULT FALSE;
+
+초기 관리자 설정
+-새로운 관리자 설정
+INSERT INTO user_login (username, password, is_admin) VALUES ('admin_username', 'admin_password', TRUE);
+-기존 사용자 계정을 관리자로 설정
+UPDATE user_login SET is_admin = TRUE WHERE username = 'existing_username';
+
 ```

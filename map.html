@@ -4,8 +4,20 @@
 <head>
     <meta charset="utf-8">
     <title>Kakao Map</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <style>
-        body,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            background: url('/images/star1.avif') no-repeat center center fixed; /* 배경 이미지 추가 */
+            background-size: cover;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            font-family: Arial, sans-serif;
+        }
         html {
             margin: 0;
             padding: 0;
@@ -22,17 +34,36 @@
         }
 
         #map {
-            flex: 1;
-            height: 100%;
+            width: calc(100% - 30px); /* 전체 너비에서 좌우 10px씩 간격 */
+            height: 80vh;
+            margin: 15px 15px 0 15px; /* 위쪽과 좌우에 10px 간격 */
+            border-radius: 15px; /* 둥근 모서리 */
+            overflow: hidden; /* 내용이 둥근 모서리를 넘어가지 않도록 */
         }
 
-        #right-sidebar {
-            width: 30%;
-            background-color: #f0f0f0;
-            padding: 10px;
-            overflow-y: auto;
-            border-left: 1px solid #ddd;
-            box-sizing: border-box;
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            position: absolute;
+            bottom: 20px;
+            gap: 20px; /* 버튼 간격 */
+        }
+
+        .btn {
+            flex: 1;
+            padding: 5px 50px; /* 버튼 크기 늘리기 */
+            text-align: center;
+            background-color: #fafc95;
+            border: 1px solid #ccc;
+            border-radius: 15px; /* 둥근 모서리 */
+            font-size: 26px;
+        }
+        .left-btn {
+            border-right: none;
+        }
+        .right-btn {
+            border-left: none;
         }
 
         #buttons-container {
@@ -59,6 +90,38 @@
             cursor: pointer;
             margin: 0 5px;
         }
+        
+        .modal-content {
+        background: url('/images/star1.avif') no-repeat center center; /* 모달 배경 이미지 */
+        background-size: cover; /* 배경 이미지 크기 조절 */
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        border-radius: 15px; /* 모달 끝을 둥글게 */
+        color: rgb(247, 247, 247); /* 글자색 흰색 */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .modal-content label,
+    .modal-content input,
+    .modal-content select,
+    .modal-content button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    .modal-content button {
+        background-color: #333;
+        color: white;
+        border: none;
+        padding: 10px;
+        border-radius: 10px;
+        cursor: pointer;
+    }
+    .modal-content button:hover {
+        background-color: #555;
+    }
+
 
         #input-container {
             display: flex;
@@ -131,22 +194,17 @@
             transition: all 0.3s ease;
             background: white;
             box-shadow: 0px 1px 2px #888;
-            width: 180px;
-            /* 크기 수정 */
+            width: 200px;
+            height: 80px;
             transform-origin: bottom center;
-            /* 중앙 하단 기준으로 확장 */
             white-space: nowrap;
-            /* 줄바꿈을 하지 않음 */
             word-break: keep-all;
-            /* 단어가 폭을 넘으면 줄바꿈 하지 않음 */
             display: inline-flex;
-            /* 인라인 플렉스 설정 */
             flex-direction: column;
             align-items: center;
             text-align: center;
             padding: 10px;
             box-sizing: border-box;
-            /* 패딩 포함한 너비 계산 */
         }
 
         .customoverlay .count {
@@ -256,61 +314,59 @@
         .btn-share:hover {
             background-color: #928f8f;
         }
-
         .custom_categorycontrol {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            overflow: hidden;
-            width: 300px;
-            height: 30px;
-            margin: 0;
-            padding: 0;
-            z-index: 1;
-            font-size: 12px;
-            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
-        }
+    position: absolute;
+    top: 30px;
+    left: 20px;
+    overflow: hidden;
+    width: auto;
+    height: 30px; /* 높이 줄이기 */
+    margin: 0;
+    padding: 0;
+    z-index: 1000;
+    font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+    background: none; /* 회색 배경 제거 */
+}
 
-        .custom_categorycontrol span {
-            display: block;
-            width: 60px;
-            height: 30px;
-            float: left;
-            text-align: center;
-            line-height: 30px;
-            cursor: pointer;
-        }
+.custom_categorycontrol span {
+    display: inline-block;
+    width: auto;
+    padding: 0 8px; /* 패딩 줄이기 */
+    height: 20px; /* 높이 줄이기 */
+    text-align: center;
+    line-height: 20px; /* 높이에 맞게 조정 */
+    cursor: pointer;
+    background: #fff;
+    color: #333;
+    border: 1px solid #ccc;
+    border-radius: 12px; /* 둥근 모서리 */
+    margin-right: 5px;
+    font-size: 10px; /* 글자 크기 줄이기 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background 0.3s ease, color 0.3s ease, transform 0.3s;
+}
 
-        .custom_categorycontrol .btn {
-            background: #fff;
-            background: linear-gradient(#fff, #e6e6e6);
-        }
+.custom_categorycontrol .btn:hover {
+    background: #f5f5f5;
+    border-color: #bbb;
+    transform: scale(1.05);
+}
 
-        .custom_categorycontrol .btn:hover {
-            background: #f5f5f5;
-            background: linear-gradient(#f5f5f5, #e3e3e3);
-        }
+.custom_categorycontrol .btn:active,
+.custom_categorycontrol .selected_btn {
+    background: #777468; /* 클릭된 버튼 색상 */
+    color: #fff;
+    border-color: #ff9900;
+}
 
-        .custom_categorycontrol .btn:active {
-            background: #e6e6e6;
-            background: linear-gradient(#e6e6e6, #fff);
-        }
+.custom_categorycontrol .selected_btn {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 눌린 버튼 음영 효과 */
+}
 
-        .custom_categorycontrol .selected_btn {
-            color: #fff;
-            background: #425470;
-            background: linear-gradient(#425470, #5b6d8a);
-        }
-
-        .custom_categorycontrol .selected_btn:hover {
-            color: #fff;
-        }
-
-        .selected {
-            box-shadow: inset 0px 0px 10px rgba(0, 0, 0, 0.5);
-            background-color: #ccc;
-        }
-        
+.custom_categorycontrol .selected_btn:hover {
+    background: #9e988a;
+    border-color: #998d7f;
+}
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -325,22 +381,18 @@
             <span class="btn" data-category="만남" onclick="toggleCategoryMarkers('만남', this)">만남</span>
             <span class="btn" data-category="기타" onclick="toggleCategoryMarkers('기타', this)">기타</span>
         </div>
-        <div id="right-sidebar"></div>
     </div>
-    <div id="buttons-container">
-        <div id="buttons">
-            <button id="createMeetingBtn">모임 만들기</button> <!-- 모임 만들기 버튼 추가 -->
-            <button id="taxiBtn">택시</button>
-            <button id="libraryBtn">도서관</button>
-            <button id="restaurantBtn">식당</button>
-            <button id="meetingBtn">만남</button>
-            <button id="schoolBtn">등교/하교</button>
-            <button id="etcBtn">기타</button>
-        </div>
-        <div id="input-container">
-            <input type="text" id="markerDetails" placeholder="세부 내용: ~~~으로 간다">
-        </div>
+    
+    <!---->
+    <div class="buttons">
+        <button class="btn left-btn" id="createMeetingBtn">모임 만들기</button>
+        <script>
+            document.getElementById('createMeetingBtn').innerHTML = "모임<br>만들기";
+        </script>
+        <button class="btn right-btn" id="deleteMarkerBtn" onclick="deleteMarker()">Delete Marker</button>
     </div>
+
+
     <!-- 모달 구조 -->
     <div id="myModal" class="modal">
         <div class="modal-content">
@@ -352,15 +404,28 @@
                 <input type="text" id="userText" name="userText" required><br>
                 <label for="maxNumber">Max Number:</label>
                 <input type="text" id="maxNumber" name="maxNumber" required><br>
+                <label for="category">Category:</label>
+                <select id="category" name="category" required>
+                    <option value="taxi">택시</option>
+                    <option value="library">도서관</option>
+                    <option value="restaurant">식당</option>
+                    <option value="school">학교</option>
+                    <option value="meeting">만남</option>
+                    <option value="etc">기타</option>
+                </select><br>
                 <input type="hidden" id="latitude" name="latitude">
                 <input type="hidden" id="longitude" name="longitude"><br>
                 <button type="button" class="btn" onclick="submitForm()">Create Marker</button>
             </form>
         </div>
     </div>
-    <button id="deleteMarkerBtn" class="btn" onclick="deleteMarker()">Delete Marker</button> <!-- Always visible -->
+
+    
+
+
+    
     <script type="text/javascript"
-        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=bd2fcd69a2beb433b8b026c2d381f957"></script>
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=22c293b2277db520a282856b10771470"></script>
     <script>
         var container = document.getElementById('map');
         var options = {
@@ -370,17 +435,17 @@
         var map = new kakao.maps.Map(container, options);
 
         var mapTypeControl = new kakao.maps.MapTypeControl();
-        map.addControl(mapTypeControl, kakao.maps.ControlPosition.TOPRIGHT);
+        map.addControl(mapTypeControl, kakao.maps.ControlPosition.BOTTOMRIGHT);
 
         var socket = io();
 
         var markerImages = {
-            taxi: '/images/taxi.jpg',
-            library: '/images/library.jpg',
-            restaurant: '/images/restaurant.jpg',
-            meeting: '/images/meeting.jpg',
-            school: '/images/school.jpg',
-            etc: '/images/etc.jpg'
+            taxi: '/images/taxi_marker.png',
+            library: '/images/study_marker.png',
+            restaurant: '/images/restaurant_marker.png',
+            meeting: '/images/meet_marker.png',
+            school: '/images/school_marker.png',
+            etc: '/images/etc_marker.png'
         };
 
         var currentMarkerImage = markerImages.taxi;
@@ -410,7 +475,7 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.hasMarker) {
-                        alert('You have already created a marker.');
+                        alert('새 마커를 만드려면 기존 마커를 삭제하세요.');
                     } else {
                         canCreateMarker = true;
                         alert("원하는 곳을 클릭해 마커를 만드세요.")
@@ -449,7 +514,7 @@
                 content: content,
                 yAnchor: 1
             });
-
+        
             const overlayLink = overlay.a.getElementsByClassName('overlay-link')[0];
             if (isMobileDevice()) {
                 overlayLink.addEventListener('click', function (event) {
@@ -463,9 +528,10 @@
                     collapseOverlay(markerData.id);
                 });
             }
-
+        
             return overlay;
         }
+
         function isMobileDevice() {
             return /Mobi|Android/i.test(navigator.userAgent);
         }
@@ -532,7 +598,7 @@
                 return;
             }
             const markerId = 'marker_' + new Date().getTime();
-            const markerDetails = document.getElementById('markerDetails').value;
+            const markerDetails = document.getElementById('userText').value;
             const markerData = {
                 id: markerId,
                 title: document.getElementById('title').value,
@@ -573,6 +639,79 @@
             canCreateMarker = false; // 마커 생성 후 다시 초기화
         }
 
+        var currentCategory = null;
+        var markersByCategory = {}; // 카테고리별 마커를 저장할 객체
+
+        function toggleCategoryMarkers(category, buttonElement) {
+    var buttons = document.querySelectorAll('.custom_categorycontrol .btn');
+    
+    // 동일 카테고리를 다시 클릭한 경우 모든 마커 표시
+    if (currentCategory === category) {
+        currentCategory = null;
+        buttonElement.classList.remove('selected_btn');
+        for (var key in markers) {
+            if (markers.hasOwnProperty(key)) {
+                markers[key].marker.setMap(map);
+                markers[key].overlay.setMap(map);
+            }
+        }
+    } else {
+        currentCategory = category;
+        buttons.forEach(function(button) {
+            button.classList.remove('selected_btn');
+        });
+        buttonElement.classList.add('selected_btn');
+        
+        // 모든 마커 숨김 처리
+        for (var key in markers) {
+            if (markers.hasOwnProperty(key)) {
+                markers[key].marker.setMap(null);
+                markers[key].overlay.setMap(null);
+            }
+        }
+
+        // 해당 카테고리의 마커만 보이도록 설정
+        fetch('/getMarkers', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ type: category })
+        })
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(markerData => {
+                var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
+                var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption);
+                var marker = new kakao.maps.Marker({
+                    position: markerPosition,
+                    map: map,
+                    image: markerImage
+                });
+
+                var overlay = createOverlay(markerData);
+
+                markers[markerData.id] = {
+                    marker: marker,
+                    overlay: overlay,
+                    markerData: markerData,
+                    context: markerData.context,
+                    maxNumber: markerData.max_number
+                };
+
+                // 카테고리별로 마커 저장
+                if (!markersByCategory[category]) {
+                    markersByCategory[category] = [];
+                }
+                markersByCategory[category].push(markerData.id);
+            });
+        })
+        .catch(error => {
+            console.error('Error fetching markers:', error);
+        });
+    }
+}
+
 
         function updateOverlayContent(markerId, userCount, maxNumber) {
             if (markers[markerId]) {
@@ -590,8 +729,6 @@
                 }
             }
         }
-
-
         socket.on('newMarker', function (markerData) {
             if (markers[markerData.id]) {
                 return;
@@ -702,38 +839,7 @@
                 return;
             }
             createMarker(latitude, longitude);
-            // markers 테이블에 새로운 약속 데이터 넣기
-            fetch('/createMarkers', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    title: title,
-                    created_by: username,
-                    context: context,
-                    latitude: latitude,
-                    longitude: longitude,
-                    max_number: maxNumber,
-                    type: currentMarkerType
-                })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('create marker!');
-
-                })
-                .catch(error => {
-                    console.error('Error fetching markers:', error);
-                });
-            // 세부내용 박스 생성
-            addSidebar(title, username, context, maxNumber);
             document.getElementById('myModal').style.display = "none";
-
-            document.getElementById('title').value = "";
-            document.getElementById('username').value = "";
-            document.getElementById('userText').value = "";
-            document.getElementById('maxNumber').value = "";
         }
 
         function deleteMarker() {

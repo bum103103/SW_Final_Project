@@ -5,6 +5,9 @@ const mysql = require('mysql2');
 const fs = require('fs');
 const path = require('path');
 const session = require('express-session');
+const bodyParser = require('body-parser');
+const cors = require('cors');
+const bcrypt = require('bcryptjs');
 
 const sessionParser = session({
     secret: 'your_secret_key',
@@ -230,18 +233,18 @@ io.on('connection', (socket) => {
         if (markers[roomId]) {
             const currentUsersCount = roomUsers[roomId] ? roomUsers[roomId].length : 0;
             const maxNumber = markers[roomId].max_number;
-
+    
             // 사용자가 강퇴된 목록에 있는지 확인
             if (bannedUsers[roomId] && bannedUsers[roomId].includes(socket.username)) {
                 socket.emit('banned', { success: false, message: 'You are banned from this room.' });
                 return;
             }
-
+    
             if (currentUsersCount < maxNumber) {
                 socket.join(roomId);
                 socket.room = roomId;
                 console.log(`${socket.username} joined marker room ${roomId}`);
-
+                
                 // 사용자 목록에 추가
                 if (!roomUsers[roomId]) {
                     roomUsers[roomId] = [];
@@ -346,7 +349,7 @@ io.on('connection', (socket) => {
         if (socket.room) {
             const roomId = socket.room;
             roomUsers[roomId] = roomUsers[roomId].filter(user => user !== socket.username);
-
+    
             roomUserCounts[roomId] = {
                 userCount: roomUsers[roomId].length,
                 maxNumber: markers[roomId] ? markers[roomId].max_number : 0
@@ -357,8 +360,7 @@ io.on('connection', (socket) => {
                 roomId: roomId,
                 userCount: roomUserCounts[roomId].userCount,
                 maxNumber: roomUserCounts[roomId].maxNumber
-            });
-        }
+            });}
     });
 });
 
@@ -373,7 +375,7 @@ app.use(session({
     cookie: { secure: false }
 }));
 
-['/intro.html', '/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html'].forEach(file => {
+['/intro.html','/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html','/admin.html'].forEach(file => {
     app.get(file, (req, res) => {
         const filePath = path.join(__dirname, file);
         fs.readFile(filePath, (err, data) => {
@@ -464,18 +466,27 @@ app.post('/login', (req, res) => {
                 if (results.length > 0) {
                     if (results[0].status === 1) {
                         res.send('This account is already logged in.');
+                    }else{
+                    req.session.loggedin = true;
+                    req.session.username = username;
+
+                    // 관리자 확인을 위한 추가 코드
+                    const isAdmin = results[0].is_admin; // 데이터베이스에 is_admin 필드가 있다고 가정
+                    req.session.isAdmin = isAdmin;
+
+                    pool.query('UPDATE user_login SET status = 1 WHERE username = ?', [username], (err, result) => {
+                        if (err) {
+                            console.error('Failed to update user status:', err);
+                            return;
+                        }
+                    });
+
+                    if (isAdmin) {
+                        res.redirect('/admin.html');
                     } else {
-                        req.session.loggedin = true;
-                        req.session.username = username;
-                        pool.query('UPDATE user_login SET status = 1 WHERE username = ?', [username], (err, result) => {
-                            if (err) {
-                                console.error('Failed to update user status:', err);
-                                return;
-                            }
-                        });
                         res.redirect('/map.html');
                     }
-                } else {
+                } }else {
                     res.send('Incorrect Username and/or Password!');
                 }
             }
@@ -495,6 +506,27 @@ app.post('/getMarkers', (req, res) => {
             return;
         }
         res.json(results);
+    });
+});
+
+app.get('/hasMarker', (req, res) => {
+    if (!req.session.username) {
+        return res.status(401).json({ error: 'Not logged in' });
+    }
+
+    const username = req.session.username;
+
+    pool.query('SELECT * FROM markers WHERE created_by = ?', [username], (err, results) => {
+        if (err) {
+            console.error('Error checking existing marker:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        if (results.length > 0) {
+            return res.json({ hasMarker: true, marker: results[0] });
+        }
+
+        res.json({ hasMarker: false });
     });
 });
 

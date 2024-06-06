@@ -125,7 +125,7 @@ function addOrUpdateUserMarker(username, latitude, longitude) {
         <div id="${username}-popup" class="custom-popup">
             <div class="leaflet-popup-content-wrapper">
                 <div class="leaflet-popup-content">
-                    <strong>${username}'s location</strong><br>
+                    <strong>${username}</strong><br>
                     <div class="messages"></div>
                 </div>
             </div>
