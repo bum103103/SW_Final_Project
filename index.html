@@ -9,6 +9,12 @@
   <script>
     const socket = io(); // 전역으로 socket 객체를 정의
   </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      setScreenSize();
+      window.addEventListener('resize', setScreenSize);
+    });
+  </script>
   <meta charset="utf-8">
   <title>Chat App</title>
   
@@ -16,7 +22,8 @@
     body {
             margin: 0;
             padding: 0;
-            height: 100vh;
+            height: 100%;
+            width: 100%;
             background: url('/images/star1.avif') no-repeat center center fixed; /* 배경 이미지 추가 */
             background-size: cover;
             display: flex;
@@ -35,7 +42,7 @@
         }
     #map { 
           position: relative;
-          height: 85vh; 
+          height: calc(85 * var(--vh, 1vh)); 
           width: calc(100% - 40px);;
           border-radius: 15px;
           margin: 30px 20px 0 20px;;
@@ -129,7 +136,7 @@
     position: absolute;
       bottom: 0; /* 화면 바닥에 붙이기 위해 추가 */
       width: 100%;
-      height: 10vh;
+      height: calc(10 * var(--vh, 1vh));
       background-color: rgba(255, 255, 255, 0.5); /* 회색 배경 */
       padding: 25px; /* 내부 여백 */
       display: flex;
@@ -142,8 +149,8 @@
   .chat-container {
       position: absolute;
       z-index: 5; /* input-container보다 뒤에 오도록 설정 */
-      bottom: 30px;
-      height: 90vh;
+      bottom: calc(10 * var(--vh, 1vh));
+      height: calc(90 * var(--vh, 1vh));
       background: url('/images/constellation6.jpg') no-repeat center center; /* 배경 이미지 설정 */
       background-size: cover;
       background-position: bottom;
