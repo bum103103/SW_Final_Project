@@ -212,3 +212,13 @@ function toggleUserList() {
         userListElement.style.display = 'none';
     }
 }
+
+function setScreenSize() {
+    let vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+  }
+  
+  document.addEventListener('DOMContentLoaded', () => {
+    setScreenSize();
+    window.addEventListener('resize', setScreenSize);
+  });
