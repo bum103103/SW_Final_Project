@@ -10,16 +10,18 @@ CREATE DATABASE chat_db;
 use chat_db;
 
 drop table if exists markers;
-create table markers (
-    title varchar(255) not null,
-    created_by varchar(255),
-    context text,
-    latitude double NOT NULL,
-    longitude double NOT NULL,
-    max_number int not null default 4,
-    type varchar(30) not null,
-    created_at timestamp default current_timestamp
-);
+CREATE TABLE `markers` (
+  `id` varchar(255) NOT NULL,
+  `title` varchar(255) NOT NULL,
+  `created_by` varchar(255) NOT NULL,
+  `context` text NOT NULL,
+  `latitude` double NOT NULL,
+  `longitude` double NOT NULL,
+  `max_number` int NOT NULL,
+  `type` varchar(255) NOT NULL,
+  `image` char(40) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 drop table if exists messages;
 create table `messages` (
