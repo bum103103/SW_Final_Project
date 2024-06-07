@@ -94,20 +94,43 @@ function addMessageToChat(messageText, messageId, messageUsername) {
     messageContainer.appendChild(message);
     chat.appendChild(messageContainer);
     if (userMarkers[messageUsername]) {
-        const popupElement = document.getElementById(`${messageUsername}-popup`).querySelector('.messages');
-        const newMessage = document.createElement('div');
-        newMessage.style.background = 'beige';
-        newMessage.style.marginBottom = '5px';
-        newMessage.textContent = messageText;
-        popupElement.appendChild(newMessage);
+        // 이 메시지가 클러스터 된 마커의 메시지라면
+        if(userMarkers[messageUsername].clusteredBy !== messageUsername ||
+             userMarkers[messageUsername].isCluster) {
+            let clusteredBy = userMarkers[messageUsername].clusteredBy;
+            // 부모 클러스터의 개인 메시지에 자신의 이름을 덧붙여서 보내기
+            const popupElement = document.getElementById(`${clusteredBy}-popup`).querySelector('.messages');
+            const newMessage = document.createElement('div');
+            newMessage.style.background = 'beige';
+            newMessage.style.marginBottom = '5px';
+            newMessage.textContent = `${messageUsername} : ${messageText}`;
+            popupElement.appendChild(newMessage);
 
-        // 3개 이상의 메시지가 있는 경우, 가장 오래된 메시지를 서서히 제거
-        if (popupElement.children.length > 3) {
-            const oldestMessage = popupElement.children[0];
-            oldestMessage.classList.add('fade-out');
-            setTimeout(() => {
-                oldestMessage.remove();
-            }, 1000); // 애니메이션 시간 (1초)과 일치시킵니다.
+            // 3개 이상의 메시지가 있는 경우, 가장 오래된 메시지를 서서히 제거
+            if (popupElement.children.length > 5) {
+                const oldestMessage = popupElement.children[0];
+                oldestMessage.classList.add('fade-out');
+                setTimeout(() => {
+                    oldestMessage.remove();
+                }, 1000); // 애니메이션 시간 (1초)과 일치시킵니다.
+            }
+        }
+        else{
+            const popupElement = document.getElementById(`${messageUsername}-popup`).querySelector('.messages');
+            const newMessage = document.createElement('div');
+            newMessage.style.background = 'beige';
+            newMessage.style.marginBottom = '5px';
+            newMessage.textContent = messageText;
+            popupElement.appendChild(newMessage);
+
+            // 3개 이상의 메시지가 있는 경우, 가장 오래된 메시지를 서서히 제거
+            if (popupElement.children.length > 3) {
+                const oldestMessage = popupElement.children[0];
+                oldestMessage.classList.add('fade-out');
+                setTimeout(() => {
+                    oldestMessage.remove();
+                }, 1000); // 애니메이션 시간 (1초)과 일치시킵니다.
+            }
         }
     }
 }
