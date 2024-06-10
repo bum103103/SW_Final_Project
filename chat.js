@@ -37,8 +37,6 @@ let roomUsers = {}; // 방별 사용자 목록
 let bannedUsers = {}; // 방별 강퇴된 사용자 목록
 const roomUserCounts = {}; // 방별 유저 수를 저장하는 객체
 
-
-
 app.use(sessionParser);
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
@@ -88,7 +86,7 @@ io.on('connection', (socket) => {
         console.log(`Session user: ${req.session.username}`);
     }
 
-    // 기존 마커 정보를 클라이언트에 전송
+
     Object.values(markers).forEach(marker => {
         const userCount = roomUsers[marker.id] ? roomUsers[marker.id].length : 0;
         const maxNumber = marker.max_number || 0;
@@ -99,6 +97,7 @@ io.on('connection', (socket) => {
             maxNumber: maxNumber
         });
     });
+
     socket.on('joinRoom', (roomId) => {
         if (bannedUsers[roomId] && bannedUsers[roomId].includes(socket.username)) {
             socket.emit('banned', { success: false, message: 'You are banned from this room.' });
@@ -543,6 +542,28 @@ app.get('/getUserCounts', (req, res) => {
 
     res.json(userCounts);
 });
+
+app.get('/hasMarker', (req, res) => {
+    if (!req.session.username) {
+        return res.status(401).json({ error: 'Not logged in' });
+    }
+
+    const username = req.session.username;
+
+    pool.query('SELECT * FROM markers WHERE created_by = ?', [username], (err, results) => {
+        if (err) {
+            console.error('Error checking existing marker:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        if (results.length > 0) {
+            return res.json({ hasMarker: true, marker: results[0] });
+        }
+
+        res.json({ hasMarker: false });
+    });
+});
+
 
 
 app.get('/map.html', (req, res) => {
