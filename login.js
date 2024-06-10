@@ -1,5 +1,5 @@
 document.getElementById('loginForm').addEventListener('submit', function(event) {
-    event.preventDefault(); // ���� �⺻ ���� ���� ����
+    event.preventDefault();
 
     const username = document.getElementById('username').value;
     const password = document.getElementById('password').value;
@@ -15,10 +15,16 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
         if (response.ok) {
             window.location.href = '/';
         } else {
-            return response.text().then(text => { throw new Error(text); });
+            return response.json();
+        }
+    })
+    .then(data => {
+        if (data && data.error) {
+            document.getElementById('errorMessage').textContent = data.error;
+            document.getElementById('errorMessage').style.display = 'block';
         }
     })
     .catch(error => {
-        document.getElementById('errorMessage').textContent = error.message;
+        console.error('Error:', error);
     });
 });
