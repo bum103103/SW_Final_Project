@@ -385,11 +385,11 @@
     <div id="map-container">
         <div id="map"></div>
         <div class="custom_categorycontrol radius_border">
-            <span class="btn" data-category="택시" onclick="toggleCategoryMarkers('택시', this)">택시</span>
-            <span class="btn" data-category="도서관" onclick="toggleCategoryMarkers('도서관', this)">도서관</span>
-            <span class="btn" data-category="식당" onclick="toggleCategoryMarkers('식당', this)">식당</span>
-            <span class="btn" data-category="만남" onclick="toggleCategoryMarkers('만남', this)">만남</span>
-            <span class="btn" data-category="기타" onclick="toggleCategoryMarkers('기타', this)">기타</span>
+            <span class="btn" data-category="택시" onclick="toggleCategoryMarkers('taxi', this)">택시</span>
+            <span class="btn" data-category="도서관" onclick="toggleCategoryMarkers('library', this)">도서관</span>
+            <span class="btn" data-category="식당" onclick="toggleCategoryMarkers('restaurant', this)">식당</span>
+            <span class="btn" data-category="만남" onclick="toggleCategoryMarkers('meeting', this)">만남</span>
+            <span class="btn" data-category="기타" onclick="toggleCategoryMarkers('etc', this)">기타</span>
         </div>
     </div>
     
@@ -415,13 +415,13 @@
                 <label for="maxNumber">Max Number:</label>
                 <input type="text" id="maxNumber" name="maxNumber" required><br>
                 <label for="category">Category:</label>
-                <select id="category" name="category" required>
-                    <option value="taxi">택시</option>
-                    <option value="library">도서관</option>
-                    <option value="restaurant">식당</option>
-                    <option value="school">학교</option>
-                    <option value="meeting">만남</option>
-                    <option value="etc">기타</option>
+                <select id="category" name="category" required onchange="updateMarkerTypeAndImage(this.value)">
+                <option value="taxi">택시</option>
+                <option value="library">도서관</option>
+                <option value="restaurant">식당</option>
+                <option value="meeting">만남</option>
+                <option value="school">학교</option>
+                <option value="etc">기타</option>
                 </select><br>
                 <input type="hidden" id="latitude" name="latitude">
                 <input type="hidden" id="longitude" name="longitude"><br>
@@ -435,7 +435,7 @@
 
     
     <script type="text/javascript"
-        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=ce088c9e60f0aa7b15b277e55acb4149"></script>
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=22c293b2277db520a282856b10771470"></script>
     <script>
         var container = document.getElementById('map');
         var options = {
@@ -459,7 +459,7 @@
         };
 
         var currentMarkerImage = markerImages.taxi;
-        var currentMarkerType = "택시";
+        var currentMarkerType = "taxi";
         var markerCreated = false;
         var markers = {}; // 마커를 저장할 객체
 
@@ -837,6 +837,11 @@
                 rightSidebar.removeChild(rightSidebar.firstChild);
             }
         }
+
+        function updateMarkerTypeAndImage(category) {
+        currentMarkerImage = markerImages[category];
+        currentMarkerType = category;
+    }
 
         function submitForm() {
             var title = document.getElementById('title').value;
