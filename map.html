@@ -5,11 +5,21 @@
     <meta charset="utf-8">
     <title>Kakao Map</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <script>
+        function setScreenSize() {
+            let vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${vh}px`);
+        }
+        document.addEventListener('DOMContentLoaded', () => {
+            setScreenSize();
+            window.addEventListener('resize', setScreenSize);
+        });
+    </script>
     <style>
         body {
             margin: 0;
             padding: 0;
-            height: 100vh;
+            height: calc(100 * var(--vh, 1vh));
             background: url('/images/star1.avif') no-repeat center center fixed; /* 배경 이미지 추가 */
             background-size: cover;
             display: flex;
@@ -22,7 +32,7 @@
             margin: 0;
             padding: 0;
             width: 100%;
-            height: 100%;
+            height: calc(100 * var(--vh, 1vh));
             display: flex;
             flex-direction: column;
         }
@@ -30,12 +40,12 @@
         #map-container {
             display: flex;
             width: 100%;
-            height: 70vh;
+            height: calc(70 * var(--vh, 1vh));
         }
 
         #map {
             width: calc(100% - 30px); /* 전체 너비에서 좌우 10px씩 간격 */
-            height: 80vh;
+            height: calc(80 * var(--vh, 1vh));
             margin: 15px 15px 0 15px; /* 위쪽과 좌우에 10px 간격 */
             border-radius: 15px; /* 둥근 모서리 */
             overflow: hidden; /* 내용이 둥근 모서리를 넘어가지 않도록 */
@@ -375,11 +385,11 @@
     <div id="map-container">
         <div id="map"></div>
         <div class="custom_categorycontrol radius_border">
-            <span class="btn" data-category="택시" onclick="toggleCategoryMarkers('택시', this)">택시</span>
-            <span class="btn" data-category="도서관" onclick="toggleCategoryMarkers('도서관', this)">도서관</span>
-            <span class="btn" data-category="식당" onclick="toggleCategoryMarkers('식당', this)">식당</span>
-            <span class="btn" data-category="만남" onclick="toggleCategoryMarkers('만남', this)">만남</span>
-            <span class="btn" data-category="기타" onclick="toggleCategoryMarkers('기타', this)">기타</span>
+            <span class="btn" data-category="택시" onclick="toggleCategoryMarkers('taxi', this)">택시</span>
+            <span class="btn" data-category="도서관" onclick="toggleCategoryMarkers('library', this)">도서관</span>
+            <span class="btn" data-category="식당" onclick="toggleCategoryMarkers('restaurant', this)">식당</span>
+            <span class="btn" data-category="만남" onclick="toggleCategoryMarkers('meeting', this)">만남</span>
+            <span class="btn" data-category="기타" onclick="toggleCategoryMarkers('etc', this)">기타</span>
         </div>
     </div>
     
@@ -405,13 +415,13 @@
                 <label for="maxNumber">Max Number:</label>
                 <input type="text" id="maxNumber" name="maxNumber" required><br>
                 <label for="category">Category:</label>
-                <select id="category" name="category" required>
-                    <option value="taxi">택시</option>
-                    <option value="library">도서관</option>
-                    <option value="restaurant">식당</option>
-                    <option value="school">학교</option>
-                    <option value="meeting">만남</option>
-                    <option value="etc">기타</option>
+                <select id="category" name="category" required onchange="updateMarkerTypeAndImage(this.value)">
+                <option value="taxi">택시</option>
+                <option value="library">도서관</option>
+                <option value="restaurant">식당</option>
+                <option value="meeting">만남</option>
+                <option value="school">학교</option>
+                <option value="etc">기타</option>
                 </select><br>
                 <input type="hidden" id="latitude" name="latitude">
                 <input type="hidden" id="longitude" name="longitude"><br>
@@ -449,7 +459,7 @@
         };
 
         var currentMarkerImage = markerImages.taxi;
-        var currentMarkerType = "택시";
+        var currentMarkerType = "taxi";
         var markerCreated = false;
         var markers = {}; // 마커를 저장할 객체
 
@@ -826,6 +836,11 @@
                 rightSidebar.removeChild(rightSidebar.firstChild);
             }
         }
+
+        function updateMarkerTypeAndImage(category) {
+        currentMarkerImage = markerImages[category];
+        currentMarkerType = category;
+    }
 
         function submitForm() {
             var title = document.getElementById('title').value;

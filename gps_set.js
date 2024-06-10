@@ -68,7 +68,7 @@ function initializeMap(roomId) {
             var container = document.getElementById('map'); 
             var options = { 
                 center: new kakao.maps.LatLng(userLatitude, userLongitude), 
-                level: 3 
+                level: 2 
             };
 
             map = new kakao.maps.Map(container, options);
@@ -113,9 +113,19 @@ function addOrUpdateUserMarker(username, latitude, longitude) {
         // Update existing marker and popup position
         userMarkers[username].marker.setPosition(new kakao.maps.LatLng(latitude, longitude));
         userMarkers[username].overlay.setPosition(new kakao.maps.LatLng(latitude, longitude));
+        userMarkers[username].clusterOverlay.setPosition(new kakao.maps.LatLng(latitude, longitude));
+        if(userMarkers[username].clusteredBy !== username || userMarkers[username].isCluster) {
+            if(!userMarkers[username].isCluster) {
+                userMarkers[username].marker.setMap(map);
+            }
+            userMarkers[username].overlay.setMap(map);
+            userMarkers[username].clusterOverlay.setMap(null);
+            userMarkers[username].clusteredBy = username;
+            userMarkers[username].isCluster = false;
+        }
     } else {
         // Create a new marker
-        var markerPosition = new kakao.maps.LatLng(latitude, longitude); 
+        var markerPosition = new kakao.maps.LatLng(latitude, longitude);
         var marker = new kakao.maps.Marker({
             position: markerPosition
         });
@@ -142,16 +152,102 @@ function addOrUpdateUserMarker(username, latitude, longitude) {
         });
         overlay.setMap(map);
 
+        var clusterContent = `
+        <div id="${username}-popup" class="custom-popup">
+            <div class="leaflet-popup-content-wrapper-cluster">
+                <div class="leaflet-popup-content">
+                    <strong>단체 채팅방</strong><br>
+                    <div class="messages"></div>
+                </div>
+            </div>
+            <div class="leaflet-popup-tip-container">
+                <div class="leaflet-popup-tip"></div>
+            </div>
+        </div>`;
+        var clusterOverlay = new kakao.maps.CustomOverlay({
+            position: markerPosition,
+            content: clusterContent,
+            yAnchor: 0.6, // 팝업을 마커에 더 가깝게 위치시킴
+            xAnchor: 0.5 // Center the overlay horizontally on the marker
+        });
+
         userMarkers[username] = {
             marker: marker,
-            overlay: overlay
+            overlay: overlay,
+            cluster : [],
+            clusterOverlay : clusterOverlay,
+            clusteredBy : username,
+            isCluster : false
         };
     }
 }
 
+// 두 개의 위도, 경도 간의 거리를 구하기
+function haversineDistance(lat1, lon1, lat2, lon2) {
+    const EARTH_RADIUS = 6371000; // 지구 반경 (미터)
+
+    // 라디안 단위로 변환
+    const toRadians = (degrees) => degrees * (Math.PI / 180);
+
+    const dLat = toRadians(lat2 - lat1);
+    const dLon = toRadians(lon2 - lon1);
+
+    const rLat1 = toRadians(lat1);
+    const rLat2 = toRadians(lat2);
+
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(rLat1) * Math.cos(rLat2); 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+
+    return EARTH_RADIUS * c; // 거리 반환 (미터 단위)
+}
+
 function updateUserMarkers(userLocations) {
+    // 마커 최신화
     userLocations.forEach(userLocation => {
         addOrUpdateUserMarker(userLocation.username, userLocation.latitude, userLocation.longitude);
+    });
+    
+    // 클러스터될 거리를 정하기
+    let level = map.getLevel();
+    let dist = 10 * level;
+
+    // 각 마커에서 서로 거리가 클러스터될 거리에 포함되는지 확인하기
+    userLocations.forEach(userLocation => {
+        if(userMarkers[userLocation.username].clusteredBy !== userLocation.username) {
+            return;
+        }
+        let username = userLocation.username;
+        let latlng = userMarkers[userLocation.username].marker.getPosition();
+        
+        // 클러스터 리스트 초기화
+        userMarkers[username].cluster = [];
+
+        userLocations.forEach(userLocation_sub => {
+            if(userLocation_sub.username !== username && 
+                userMarkers[userLocation_sub.username].clusteredBy === userLocation_sub.username && 
+                !userMarkers[userLocation_sub.username].isCluster) {
+                let lat = userLocation_sub.latitude;
+                let lng = userLocation_sub.longitude;
+                let dist_between = haversineDistance(latlng.getLat(), latlng.getLng(), lat, lng);
+                // 포함되면 해당 마커 json을 리스트에 넣기
+                if(dist >= dist_between) {
+                    userMarkers[username].cluster.push(userMarkers[userLocation_sub.username]);
+                }
+            }
+        });
+        if(userMarkers[username].cluster.length > 0) {
+            userMarkers[username].overlay.setMap(null);
+            userMarkers[username].clusterOverlay.setMap(map);
+            userMarkers[username].isCluster = true;
+            userMarkers[username].cluster.forEach(marker => {
+                marker.marker.setMap(null);
+                marker.overlay.setMap(null);
+                marker.clusteredBy = userLocation.username;
+            });
+            
+            console.log('clustered');
+        }
     });
 }
 
