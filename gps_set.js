@@ -288,6 +288,7 @@ function removeUserMarker(username) {
     if (userMarkers[username]) {
         userMarkers[username].marker.setMap(null); // 마커 제거
         userMarkers[username].overlay.setMap(null); // 오버레이 제거
+        userMarkers[username].clusterOverlay.setMap(null); // 전체 채팅창 제거
         delete userMarkers[username];
     }
 }
