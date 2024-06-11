@@ -40,62 +40,39 @@
         #map-container {
             display: flex;
             width: 100%;
-            height: calc(80 * var(--vh, 1vh)); /* 지도 크기 늘리기 */
-            margin: 0 20px; /* 테두리와의 간격 조정 */
-            box-sizing: border-box; /* 패딩과 보더를 포함한 크기 계산 */
+            height: calc(70 * var(--vh, 1vh));
         }
 
         #map {
             width: calc(100% - 30px); /* 전체 너비에서 좌우 10px씩 간격 */
-            height: calc(85 * var(--vh, 1vh));
-            margin: 15px 0 0 15px; /* 위쪽과 좌우에 10px 간격 */
-            border-radius: 10px; /* 둥근 모서리 */
+            height: calc(80 * var(--vh, 1vh));
+            margin: 15px 15px 0 15px; /* 위쪽과 좌우에 10px 간격 */
+            border-radius: 15px; /* 둥근 모서리 */
             overflow: hidden; /* 내용이 둥근 모서리를 넘어가지 않도록 */
         }
 
         .buttons {
-        display: flex;
-        justify-content: space-between;
-        width: calc(100% - 31px); /* 지도와 동일한 간격 */
-        position: absolute;
-        bottom: 20px;
-        left: 15px; /* 좌측 테두리와 동일한 간격 */
-        gap: 10px; /* 버튼 간격 */
-        box-sizing: border-box; /* 패딩과 보더를 포함한 크기 계산 */
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            position: absolute;
+            bottom: 20px;
+            gap: 20px; /* 버튼 간격 */
         }
 
         .btn {
             flex: 1;
-            padding: 5px 20px; /* 버튼 크기 늘리기 */
+            padding: 5px 50px; /* 버튼 크기 늘리기 */
             text-align: center;
             background-color: #fafc95;
             border: 1px solid #ccc;
-            border-radius: 10px; /* 둥근 모서리 */
-            font-size: 16px;
-
-
-            
-
-
+            border-radius: 15px; /* 둥근 모서리 */
+            font-size: 26px;
         }
         .left-btn {
-            background-image: url('/images/group_making_button.png'); /* 배경 이미지 경로 */
-            background-position: left 10px center; /* 왼쪽 정렬 */
-            background-repeat: no-repeat; /* 이미지 반복 안 함 */
-            background-size: 40px 40px; /* 이미지가 요소에 맞게 조정 */
-            background-color: #fafc95; /* 기존 배경색 유지 */
-            padding-left: 30px; /* 필요한 경우 이미지와 텍스트 사이 간격 조정 */
-
             border-right: none;
         }
         .right-btn {
-            background-image: url('/images/trash2.png'); /* 배경 이미지 경로 */
-            background-position: left 5px center; /* 왼쪽 정렬 */
-            background-repeat: no-repeat; /* 이미지 반복 안 함 */
-            background-size: 30px 30px; /* 이미지가 요소에 맞게 조정 */
-            background-color: #fafc95; /* 기존 배경색 유지 */
-            padding-left: 30px; /* 필요한 경우 이미지와 텍스트 사이 간격 조정 */
-
             border-left: none;
         }
 
@@ -125,37 +102,77 @@
         }
         
         .modal-content {
-        background: url('/images/star1.avif') no-repeat center center; /* 모달 배경 이미지 */
-        background-size: cover; /* 배경 이미지 크기 조절 */
+        position: relative;
         padding: 20px;
-        border: 1px solid #888;
-        width: 80%;
-        border-radius: 15px; /* 모달 끝을 둥글게 */
-        color: rgb(247, 247, 247); /* 글자색 흰색 */
+        border: none;
+        width: 50%; /* 폼 크기 고정 */
+        border-radius: 15px;
+        background: #fff; /* 배경색 변경 */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 그림자 추가 */
         display: flex;
         flex-direction: column;
         align-items: center;
+        overflow: hidden;
+        height: 400px; /* 폼 크기 고정 */
+        background: url('/images/star1.avif') no-repeat center center; /* 배경 이미지 추가 */
+        background-size: cover;
     }
-    .modal-content label,
-    .modal-content input,
-    .modal-content select,
-    .modal-content button {
-        width: 100%;
+
+    .modal-content label {
+        display: block;
+        text-align: center;
+        font-size: 20px; /* 글자 크기 키움 */
         margin-bottom: 10px;
+        color: #fff; /* 글자 색상 변경 */
     }
+
+    .modal-content input,
+    .modal-content select {
+        width: 80%; /* 입력창 크기 조절 */
+        box-sizing: border-box;
+        padding: 10px;
+        margin-bottom: 20px;
+        font-size: 18px; /* 글자 크기 키움 */
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        text-align: center; /* 입력창 가운데 정렬 */
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* 내부 그림자 추가 */
+        transition: border-color 0.3s, box-shadow 0.3s; /* 전환 효과 추가 */
+    }
+
+    .modal-content input:focus,
+    .modal-content select:focus {
+        border-color: #007BFF; /* 포커스 시 테두리 색상 변경 */
+        box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* 포커스 시 그림자 효과 추가 */
+        outline: none; /* 포커스 시 기본 아웃라인 제거 */
+    }
+
     .modal-content button {
-        background-color: #333;
-        color: white;
-        border: none;
+        width: 45%; /* 버튼 너비 조절 */
+        background-color: #fafc95; /* 버튼 배경색 변경 */
+        color: #333; /* 버튼 글자 색상 변경 */
+        border: 1px solid #ccc;
         padding: 10px;
         border-radius: 10px;
         cursor: pointer;
+        font-size: 18px; /* 버튼 글자 크기 키움 */
+        transition: background-color 0.3s ease;
     }
+
     .modal-content button:hover {
-        background-color: #555;
+        background-color: #e2e684; /* 버튼 호버 색상 변경 */
     }
 
+   
 
+    .form-navigation {
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between; /* 버튼 간격 조정 */
+        width: 80%;
+    }
+
+    
         #input-container {
             display: flex;
             width: 100%;
@@ -202,20 +219,36 @@
             width: 80%;
         }
 
-        #close {
+        /*
+        .close {
             color: #aaa;
             float: right;
-            font-size: 28px;
+            font-size: 50px;
             font-weight: bold;
         }
 
-        #close:hover,
-        #close:focus {
+        .close:hover,
+        .close:focus {
             color: black;
             text-decoration: none;
             cursor: pointer;
-        }
+        }*/
+        .close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 50px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: #aaa;
+    }
 
+    .close:hover,
+    .close:focus {
+        color: black;
+        text-decoration: none;
+    }
         .customoverlay {
             position: absolute;
             bottom: 85px;
@@ -400,6 +433,43 @@
     background: #9e988a;
     border-color: #998d7f;
 }
+
+.page {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        transform: translateX(100%);
+        transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .page.active {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .page-leave {
+        opacity: 0;
+        transform: translateX(-100%);
+    }
+
+    .page-enter {
+        opacity: 1;
+        transform: translateX(100%);
+    }
+
+    .form-navigation {
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between; /* 버튼 간격 조정 */
+        width: 80%;
+    }
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -408,11 +478,11 @@
     <div id="map-container">
         <div id="map"></div>
         <div class="custom_categorycontrol radius_border">
-            <span class="btn" data-category="택시" onclick="toggleCategoryMarkers('택시', this)">택시</span>
-            <span class="btn" data-category="도서관" onclick="toggleCategoryMarkers('도서관', this)">도서관</span>
-            <span class="btn" data-category="식당" onclick="toggleCategoryMarkers('식당', this)">식당</span>
-            <span class="btn" data-category="만남" onclick="toggleCategoryMarkers('만남', this)">만남</span>
-            <span class="btn" data-category="기타" onclick="toggleCategoryMarkers('기타', this)">기타</span>
+            <span class="btn" data-category="택시" onclick="toggleCategoryMarkers('taxi', this)">택시</span>
+            <span class="btn" data-category="도서관" onclick="toggleCategoryMarkers('library', this)">도서관</span>
+            <span class="btn" data-category="식당" onclick="toggleCategoryMarkers('restaurant', this)">식당</span>
+            <span class="btn" data-category="만남" onclick="toggleCategoryMarkers('meeting', this)">만남</span>
+            <span class="btn" data-category="기타" onclick="toggleCategoryMarkers('etc', this)">기타</span>
         </div>
     </div>
     
@@ -429,36 +499,56 @@
     <!-- 모달 구조 -->
     <div id="myModal" class="modal">
         <div class="modal-content">
-            <span id="close">&times;</span>
             <form id="markerForm" onsubmit="return false;">
-                <label for="title">Title:</label>
-                <input type="text" id="title" name="title" required><br>
-                <label for="userText">Text:</label>
-                <input type="text" id="userText" name="userText" required><br>
-                <label for="maxNumber">Max Number:</label>
-                <input type="text" id="maxNumber" name="maxNumber" required><br>
-                <label for="category">Category:</label>
-                <select id="category" name="category" required>
-                    <option value="taxi">택시</option>
-                    <option value="library">도서관</option>
-                    <option value="restaurant">식당</option>
-                    <option value="school">학교</option>
-                    <option value="meeting">만남</option>
-                    <option value="etc">기타</option>
-                </select><br>
+                <div class="page active" id="page1">
+                    <span class="close">&times;</span>
+                    <label for="title">Title:</label>
+                    <input type="text" id="title" name="title" required>
+                    <div class="form-navigation">
+                        <button type="button" class="btn" onclick="nextPage()">Next</button>
+                    </div>
+                </div>
+                <div class="page" id="page2">
+                    <span class="close">&times;</span>
+                    <label for="userText">Text:</label>
+                    <input type="text" id="userText" name="userText" required>
+                    <div class="form-navigation">
+                        <button type="button" class="btn" onclick="prevPage()">Back</button>
+                        <button type="button" class="btn" onclick="nextPage()">Next</button>
+                    </div>
+                </div>
+                <div class="page" id="page3">
+                    <span class="close">&times;</span>
+                    <label for="maxNumber">Max Number:</label>
+                    <input type="number" id="maxNumber" name="maxNumber" required>
+                    <div class="form-navigation">
+                        <button type="button" class="btn" onclick="prevPage()">Back</button>
+                        <button type="button" class="btn" onclick="nextPage()">Next</button>
+                    </div>
+                </div>
+                <div class="page" id="page4">
+                    <span class="close">&times;</span>
+                    <label for="category">Category:</label>
+                    <select id="category" name="category" required onchange="updateMarkerTypeAndImage(this.value)">
+                        <option value="taxi">택시</option>
+                        <option value="library">도서관</option>
+                        <option value="restaurant">식당</option>
+                        <option value="meeting">만남</option>
+                        <option value="etc">기타</option>
+                    </select>
+                    <div class="form-navigation">
+                        <button type="button" class="btn" onclick="prevPage()">Back</button>
+                        <button type="button" class="btn" onclick="submitForm()">Create Marker</button>
+                    </div>
+                </div>
                 <input type="hidden" id="latitude" name="latitude">
-                <input type="hidden" id="longitude" name="longitude"><br>
-                <button type="button" class="btn" onclick="submitForm()">Create Marker</button>
+                <input type="hidden" id="longitude" name="longitude">
             </form>
         </div>
     </div>
 
-    
-
-
-    
     <script type="text/javascript"
-        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=0e419e4b5894ad7c49b0ceff0ede9c8a"></script>
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=53644151cc4f34401c8eef39c8923729"></script>
     <script>
         var container = document.getElementById('map');
         var options = {
@@ -482,7 +572,7 @@
         };
 
         var currentMarkerImage = markerImages.taxi;
-        var currentMarkerType = "택시";
+        var currentMarkerType = "taxi";
         var markerCreated = false;
         var markers = {}; // 마커를 저장할 객체
 
@@ -802,7 +892,6 @@
             alert(data.message);
         });
 
-
         socket.on('updateUserCount', function (data) {
             if (markers[data.roomId]) {
                 updateOverlayContent(data.roomId, data.userCount, data.maxNumber);
@@ -825,10 +914,6 @@
             if (!data.success) {
                 alert(data.message);
             }
-        });
-
-        document.getElementById('close').addEventListener('click', function () {
-            document.getElementById('myModal').style.display = "none";
         });
 
         kakao.maps.event.addListener(map, 'click', function (mouseEvent) {
@@ -861,6 +946,59 @@
             }
         }
 
+        function updateMarkerTypeAndImage(category) {
+        currentMarkerImage = markerImages[category];
+        currentMarkerType = category;
+    }
+     let currentPage = 1;
+    const totalPages = 4; // 페이지 수
+
+    function showPage(page) {
+        const pages = document.querySelectorAll('.page');
+        pages.forEach((pageElement, index) => {
+            pageElement.classList.remove('page-enter', 'page-leave', 'active');
+            if (index === page - 1) {
+                pageElement.classList.add('active');
+            } else if (index < page - 1) {
+                pageElement.classList.add('page-leave');
+            } else if (index === page) {
+                pageElement.classList.add('page-enter');
+            }
+        });
+    }
+
+    function nextPage() {
+        if (currentPage < totalPages) {
+            currentPage++;
+            showPage(currentPage);
+        }
+    }
+
+
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            showPage(currentPage);
+        }
+    }
+
+    function resetPages() {
+        currentPage = 1;
+        showPage(currentPage);
+    }
+
+    document.querySelectorAll('.close').forEach(function (closeBtn) {
+        closeBtn.addEventListener('click', function () {
+            document.getElementById('myModal').style.display = "none";
+            resetPages();
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        showPage(currentPage);
+    });
+
+
         function submitForm() {
             var title = document.getElementById('title').value;
             var context = document.getElementById('userText').value;
@@ -879,68 +1017,83 @@
         function deleteMarker() {
             socket.emit('deleteMarker');
             markerCreated = false;
+            resetPages();
+        }
+        var currentCategory = null;
+        var markersByCategory = {}; // 카테고리별 마커를 저장할 객체
+
+        function toggleCategoryMarkers(category, buttonElement) {
+            var buttons = document.querySelectorAll('.custom_categorycontrol .btn');
+            
+            // 모든 버튼의 selected 클래스 제거
+            buttons.forEach(function(button) {
+                button.classList.remove('selected');
+            });
+        
+            // 동일 카테고리를 다시 클릭한 경우 모든 마커 표시
+            if (currentCategory === category) {
+                currentCategory = null;
+                buttonElement.classList.remove('selected');
+                for (var key in markers) {
+                    if (markers.hasOwnProperty(key)) {
+                        markers[key].marker.setMap(map);
+                        markers[key].overlay.setMap(map);
+                    }
+                }
+            } else {
+                currentCategory = category;
+                buttonElement.classList.add('selected');
+        
+                // 모든 마커 숨김 처리
+                for (var key in markers) {
+                    if (markers.hasOwnProperty(key)) {
+                        markers[key].marker.setMap(null);
+                        markers[key].overlay.setMap(null);
+                    }
+                }
+        
+                // 해당 카테고리의 마커만 보이도록 설정
+                fetch('/getMarkers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ type: category })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(markerData => {
+                        var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
+                        var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption);
+                        var marker = new kakao.maps.Marker({
+                            position: markerPosition,
+                            map: map,
+                            image: markerImage
+                        });
+        
+                        var overlay = createOverlay(markerData);
+        
+                        markers[markerData.id] = {
+                            marker: marker,
+                            overlay: overlay,
+                            markerData: markerData,
+                            context: markerData.context,
+                            maxNumber: markerData.max_number
+                        };
+        
+                        // 카테고리별로 마커 저장
+                        if (!markersByCategory[category]) {
+                            markersByCategory[category] = [];
+                        }
+                        markersByCategory[category].push(markerData.id);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching markers:', error);
+                });
+            }
         }
 
-        document.getElementById('taxiBtn').addEventListener('click', function () {
-            currentMarkerImage = markerImages.taxi;
-            currentMarkerType = "택시";
-            fetch('/getMarkers', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ type: "택시" })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    clearSidebar();
-                    data.forEach(marker => {
-                        addSidebar(marker.title, marker.type, marker.context, marker.max_number);
-                    });
-                })
-                .catch(error => {
-                    console.error('Error fetching markers:', error);
-                });
-        });
-
-        document.getElementById('libraryBtn').addEventListener('click', function () {
-            currentMarkerImage = markerImages.library;
-            currentMarkerType = "도서관";
-            fetch('/getMarkers', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ type: "도서관" })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    clearSidebar();
-                    data.forEach(marker => {
-                        addSidebar(marker.title, marker.type, marker.context, marker.max_number);
-                    });
-                })
-                .catch(error => {
-                    console.error('Error fetching markers:', error);
-                });
-        });
-
-        document.getElementById('restaurantBtn').addEventListener('click', function () {
-            currentMarkerImage = markerImages.restaurant;
-            currentMarkerType = "식당";
-        });
-        document.getElementById('meetingBtn').addEventListener('click', function () {
-            currentMarkerImage = markerImages.meeting;
-            currentMarkerType = "만남";
-        });
-        document.getElementById('schoolBtn').addEventListener('click', function () {
-            currentMarkerImage = markerImages.school;
-            currentMarkerType = "등교/하교";
-        });
-        document.getElementById('etcBtn').addEventListener('click', function () {
-            currentMarkerImage = markerImages.etc;
-            currentMarkerType = "기타";
-        });
     </script>
 </body>
 
