@@ -205,6 +205,7 @@ body {
 
 .custom-popup {
     position: absolute;
+    font-size: 35px;
     text-align: center;
     white-space: nowrap;
     transform: translateY(-100%);
@@ -217,7 +218,7 @@ body {
     border-radius: 12px;
     background: white;
     box-shadow: 0 3px 14px rgba(0,0,0,0.2);
-    width:  150px; /* 고정 너비 설정 */
+    width:  320px; /* 고정 너비 설정 */
     height: auto; /* 높이를 자동으로 설정 */
     min-height: 50px; /* 최소 높이 설정 */
 }
