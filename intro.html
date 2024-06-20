@@ -1,7 +1,5 @@
-<!--처음 로고 띄우는 페이지 -->
-
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,6 +22,8 @@
             margin-bottom: 20px;
             font-size: 24px;
             color: white;
+            opacity: 1;
+            transition: opacity 2s;
         }
         .intro-container button {
             padding: 15px 30px;
@@ -50,20 +50,19 @@
 <body>
     <div class="intro-container">
         <img id="image" src="/images/star.jpg" alt="Star Image">
-        <h1>Welcome to Our Application</h1>
+        <h1 id="title">별별약속</h1>
         <button onclick="location.href='login.html'">Go to Login</button>
     </div>
     <script>
         window.onload = function() {
             setTimeout(() => {
                 document.getElementById('image').style.opacity = '0';
+                document.getElementById('title').style.opacity = '0';
             }, 1000);
             setTimeout(() => {
                 location.href = 'login.html';      
             }, 5000);  
         };
-
-
     </script>
 </body>
 </html>

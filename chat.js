@@ -36,8 +36,37 @@ let roomUserLocations = {}; // 방별로 사용자 위치를 저장하는 객체
 let roomUsers = {}; // 방별 사용자 목록
 let bannedUsers = {}; // 방별 강퇴된 사용자 목록
 const roomUserCounts = {}; // 방별 유저 수를 저장하는 객체
+const roomEmptyCheckInterval = 5 * 60 * 1000; // 5분
 
+function checkAndRemoveEmptyRooms() {
+    for (const roomId in roomUsers) {
+        if (roomUsers.hasOwnProperty(roomId)) {
+            if (roomUsers[roomId].length === 0) {
+                console.log(`Removing empty room: ${roomId}`);
+                removeRoom(roomId);
+            }
+        }
+    }
+}
 
+function removeRoom(roomId) {
+    // DB에서 마커 삭제
+    pool.query('DELETE FROM markers WHERE id = ?', [roomId], (err) => {
+        if (err) {
+            console.error('Error deleting marker from MySQL:', err);
+            return;
+        }
+        console.log('Marker deleted from MySQL');
+
+        delete markers[roomId];
+
+        delete roomUsers[roomId];
+
+        io.emit('removeMarker', { id: roomId });
+    });
+}
+
+setInterval(checkAndRemoveEmptyRooms, roomEmptyCheckInterval);
 
 app.use(sessionParser);
 app.use('/images', express.static(path.join(__dirname, 'images')));
@@ -88,7 +117,7 @@ io.on('connection', (socket) => {
         console.log(`Session user: ${req.session.username}`);
     }
 
-    // 기존 마커 정보를 클라이언트에 전송
+
     Object.values(markers).forEach(marker => {
         const userCount = roomUsers[marker.id] ? roomUsers[marker.id].length : 0;
         const maxNumber = marker.max_number || 0;
@@ -99,6 +128,7 @@ io.on('connection', (socket) => {
             maxNumber: maxNumber
         });
     });
+
     socket.on('joinRoom', (roomId) => {
         if (bannedUsers[roomId] && bannedUsers[roomId].includes(socket.username)) {
             socket.emit('banned', { success: false, message: 'You are banned from this room.' });
@@ -461,39 +491,41 @@ app.post('/login', (req, res) => {
             [username, password],
             (err, results) => {
                 if (err) {
-                    res.status(500).send('Database error');
+                    res.status(500).json({ success: false, message: 'Database error' });
                     return;
                 }
                 if (results.length > 0) {
                     if (results[0].status === 1) {
-                        res.send('This account is already logged in.');
-                    }else{
-                    req.session.loggedin = true;
-                    req.session.username = username;
-
-                    // 관리자 확인을 위한 추가 코드
-                    const isAdmin = results[0].is_admin; // 데이터베이스에 is_admin 필드가 있다고 가정
-                    req.session.isAdmin = isAdmin;
-
-                    pool.query('UPDATE user_login SET status = 1 WHERE username = ?', [username], (err, result) => {
-                        if (err) {
-                            console.error('Failed to update user status:', err);
-                            return;
-                        }
-                    });
-
-                    if (isAdmin) {
-                        res.redirect('/admin.html');
+                        res.status(400).json({ success: false, message: '아마 접속 중입니다.' });
                     } else {
-                        res.redirect('/map.html');
+                        req.session.loggedin = true;
+                        req.session.username = username;
+
+                        const isAdmin = results[0].is_admin;
+                        req.session.isAdmin = isAdmin;
+
+                        pool.query('UPDATE user_login SET status = 0 WHERE username = ?', [username], (err, result) => {
+                            if (err) {
+                                console.error('Failed to update user status:', err);
+                                return;
+                            }
+                        });
+                        /*pool.query('UPDATE user_login SET status = 0 WHERE username = ?', [username], (err, result) => {
+                            if (err) {
+                                console.error('Failed to update user status:', err);
+                                return;
+                            }
+                        });*/
+
+                        res.json({ success: true, isAdmin: isAdmin });
                     }
-                } }else {
-                    res.send('Incorrect Username and/or Password!');
+                } else {
+                    res.status(400).json({ success: false, message: '아이디 또는 비밀번호가 일치하지 않습니다' });
                 }
             }
         );
     } else {
-        res.status(400).send('Username and Password are required');
+        res.status(400).json({ success: false, message: 'Username and Password are required' });
     }
 });
 
@@ -543,6 +575,28 @@ app.get('/getUserCounts', (req, res) => {
 
     res.json(userCounts);
 });
+
+app.get('/hasMarker', (req, res) => {
+    if (!req.session.username) {
+        return res.status(401).json({ error: 'Not logged in' });
+    }
+
+    const username = req.session.username;
+
+    pool.query('SELECT * FROM markers WHERE created_by = ?', [username], (err, results) => {
+        if (err) {
+            console.error('Error checking existing marker:', err);
+            return res.status(500).json({ success: false, message: 'Database error' });
+        }
+
+        if (results.length > 0) {
+            return res.json({ hasMarker: true, marker: results[0] });
+        }
+
+        res.json({ hasMarker: false });
+    });
+});
+
 
 
 app.get('/map.html', (req, res) => {
