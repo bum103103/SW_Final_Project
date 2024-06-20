@@ -36,6 +36,37 @@ let roomUserLocations = {}; // 방별로 사용자 위치를 저장하는 객체
 let roomUsers = {}; // 방별 사용자 목록
 let bannedUsers = {}; // 방별 강퇴된 사용자 목록
 const roomUserCounts = {}; // 방별 유저 수를 저장하는 객체
+const roomEmptyCheckInterval = 5 * 60 * 1000; // 5분
+
+function checkAndRemoveEmptyRooms() {
+    for (const roomId in roomUsers) {
+        if (roomUsers.hasOwnProperty(roomId)) {
+            if (roomUsers[roomId].length === 0) {
+                console.log(`Removing empty room: ${roomId}`);
+                removeRoom(roomId);
+            }
+        }
+    }
+}
+
+function removeRoom(roomId) {
+    // DB에서 마커 삭제
+    pool.query('DELETE FROM markers WHERE id = ?', [roomId], (err) => {
+        if (err) {
+            console.error('Error deleting marker from MySQL:', err);
+            return;
+        }
+        console.log('Marker deleted from MySQL');
+
+        delete markers[roomId];
+
+        delete roomUsers[roomId];
+
+        io.emit('removeMarker', { id: roomId });
+    });
+}
+
+setInterval(checkAndRemoveEmptyRooms, roomEmptyCheckInterval);
 
 app.use(sessionParser);
 app.use('/images', express.static(path.join(__dirname, 'images')));
