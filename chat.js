@@ -460,39 +460,41 @@ app.post('/login', (req, res) => {
             [username, password],
             (err, results) => {
                 if (err) {
-                    res.status(500).send('Database error');
+                    res.status(500).json({ success: false, message: 'Database error' });
                     return;
                 }
                 if (results.length > 0) {
                     if (results[0].status === 1) {
-                        res.send('This account is already logged in.');
-                    }else{
-                    req.session.loggedin = true;
-                    req.session.username = username;
-
-                    // 관리자 확인을 위한 추가 코드
-                    const isAdmin = results[0].is_admin; // 데이터베이스에 is_admin 필드가 있다고 가정
-                    req.session.isAdmin = isAdmin;
-
-                    pool.query('UPDATE user_login SET status = 1 WHERE username = ?', [username], (err, result) => {
-                        if (err) {
-                            console.error('Failed to update user status:', err);
-                            return;
-                        }
-                    });
-
-                    if (isAdmin) {
-                        res.redirect('/admin.html');
+                        res.status(400).json({ success: false, message: '아마 접속 중입니다.' });
                     } else {
-                        res.redirect('/map.html');
+                        req.session.loggedin = true;
+                        req.session.username = username;
+
+                        const isAdmin = results[0].is_admin;
+                        req.session.isAdmin = isAdmin;
+
+                        pool.query('UPDATE user_login SET status = 0 WHERE username = ?', [username], (err, result) => {
+                            if (err) {
+                                console.error('Failed to update user status:', err);
+                                return;
+                            }
+                        });
+                        /*pool.query('UPDATE user_login SET status = 0 WHERE username = ?', [username], (err, result) => {
+                            if (err) {
+                                console.error('Failed to update user status:', err);
+                                return;
+                            }
+                        });*/
+
+                        res.json({ success: true, isAdmin: isAdmin });
                     }
-                } }else {
-                    res.send('Incorrect Username and/or Password!');
+                } else {
+                    res.status(400).json({ success: false, message: '아이디 또는 비밀번호가 일치하지 않습니다' });
                 }
             }
         );
     } else {
-        res.status(400).send('Username and Password are required');
+        res.status(400).json({ success: false, message: 'Username and Password are required' });
     }
 });
 

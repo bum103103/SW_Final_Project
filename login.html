@@ -49,20 +49,56 @@
         }
         .error {
             color: red;
-            text-align: center;
+            font-size: 12px;
+            margin-top: -10px;
+            margin-bottom: 10px;
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="login-container">
         <h2>로그인</h2>
-        <form id="loginForm" action="/login" method="post">
+        <form id="loginForm" method="post">
+            <p class="error" id="errorMessage"></p>
             <input type="text" id="username" name="username" placeholder="Username" required>
             <input type="password" id="password" name="password" placeholder="Password" required>
             <button type="submit">로그인</button>
         </form>
-        <p class="error" id="errorMessage"></p>
         <button type="button" onClick="location.href='register.html'" style="padding: 5px 10px;">회원가입</button>
     </div>
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorMessage = document.getElementById('errorMessage');
+
+            fetch('/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ username: username, password: password })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.isAdmin) {
+                        window.location.href = '/admin.html';
+                    } else {
+                        window.location.href = '/map.html';
+                    }
+                } else {
+                    errorMessage.textContent = data.message;
+                    errorMessage.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    </script>
 </body>
 </html>
