@@ -27,6 +27,7 @@ function toggleChat() {
         chat.style.display = 'none';
         showControls();
     }
+    scrollToBottom();
 }
 
 function getUserGeoData() {

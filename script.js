@@ -12,6 +12,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     })
     .catch(error => console.error('Error fetching username:', error));
+    
+    fetch(`/api/messages?roomId=${roomId}`)
+        .then(response => response.json())
+        .then(messages => {
+            messages.forEach(message => {
+                addMessageToChat(message.text, message.id, message.username);
+            });
+            scrollToBottom();
+        })
+        .catch(error => console.error('Error fetching messages:', error));
+      
 });
 
 
@@ -28,16 +39,7 @@ let isAdmin = false;
 let username = '';
 
 function initializeChat(roomId) {
-    fetch(`/api/messages?roomId=${roomId}`)
-        .then(response => response.json())
-        .then(messages => {
-            messages.forEach(message => {
-                addMessageToChat(message.text, message.id, message.username);
-            });
-            scrollToBottom();
-        })
-        .catch(error => console.error('Error fetching messages:', error));
-        
+      
     socket.emit('joinRoom', roomId);
     console.log(`Joined room ${roomId}`);
 
