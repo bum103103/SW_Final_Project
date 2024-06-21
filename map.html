@@ -20,7 +20,8 @@
             margin: 0;
             padding: 0;
             height: calc(100 * var(--vh, 1vh));
-            background: url('/images/star1.avif') no-repeat center center fixed; /* 배경 이미지 추가 */
+            background: url('/images/star1.avif') no-repeat center center fixed;
+            /* 배경 이미지 추가 */
             background-size: cover;
             display: flex;
             flex-direction: column;
@@ -28,6 +29,7 @@
             justify-content: space-between;
             font-family: Arial, sans-serif;
         }
+
         html {
             margin: 0;
             padding: 0;
@@ -44,51 +46,75 @@
         }
 
         #map {
-            width: calc(100% - 30px); /* 전체 너비에서 좌우 10px씩 간격 */
+            width: calc(100% - 30px);
+            /* 전체 너비에서 좌우 10px씩 간격 */
             height: calc(85 * var(--vh, 1vh));
-            margin: 15px 0 0 15px; /* 위쪽과 좌우에 10px 간격 */
-            border-radius: 10px; /* 둥근 모서리 */
-            overflow: hidden; /* 내용이 둥근 모서리를 넘어가지 않도록 */
+            margin: 15px 0 0 15px;
+            /* 위쪽과 좌우에 10px 간격 */
+            border-radius: 10px;
+            /* 둥근 모서리 */
+            overflow: hidden;
+            /* 내용이 둥근 모서리를 넘어가지 않도록 */
         }
 
         .buttons {
             display: flex;
             justify-content: space-between;
-            width: calc(100% - 31px); /* 지도와 동일한 간격 */
+            width: calc(100% - 31px);
+            /* 지도와 동일한 간격 */
             position: absolute;
             bottom: 20px;
-            left: 15px; /* 좌측 테두리와 동일한 간격 */
-            gap: 10px; /* 버튼 간격 */
-            box-sizing: border-box; /* 패딩과 보더를 포함한 크기 계산 */
+            left: 15px;
+            /* 좌측 테두리와 동일한 간격 */
+            gap: 10px;
+            /* 버튼 간격 */
+            box-sizing: border-box;
+            /* 패딩과 보더를 포함한 크기 계산 */
         }
 
         .btn {
             flex: 1;
-            padding: 5px 20px; /* 버튼 크기 늘리기 */
+            padding: 5px 20px;
+            /* 버튼 크기 늘리기 */
             text-align: center;
             background-color: #fafc95;
             border: 1px solid #ccc;
-            border-radius: 10px; /* 둥근 모서리 */
+            border-radius: 10px;
+            /* 둥근 모서리 */
             font-size: 16px;
             height: calc(8 * var(--vh, 1vh));
         }
+
         .left-btn {
-            background-image: url('/images/group_making_button.png'); /* 배경 이미지 경로 */
-            background-position: left 10px center; /* 왼쪽 정렬 */
-            background-repeat: no-repeat; /* 이미지 반복 안 함 */
-            background-size: 40px 40px; /* 이미지가 요소에 맞게 조정 */
-            background-color: #fafc95; /* 기존 배경색 유지 */
-            padding-left: 30px; /* 필요한 경우 이미지와 텍스트 사이 간격 조정 */
+            background-image: url('/images/group_making_button.png');
+            /* 배경 이미지 경로 */
+            background-position: left 10px center;
+            /* 왼쪽 정렬 */
+            background-repeat: no-repeat;
+            /* 이미지 반복 안 함 */
+            background-size: 40px 40px;
+            /* 이미지가 요소에 맞게 조정 */
+            background-color: #fafc95;
+            /* 기존 배경색 유지 */
+            padding-left: 30px;
+            /* 필요한 경우 이미지와 텍스트 사이 간격 조정 */
 
             border-right: none;
         }
+
         .right-btn {
-            background-image: url('/images/trash2.png'); /* 배경 이미지 경로 */
-            background-position: left 5px center; /* 왼쪽 정렬 */
-            background-repeat: no-repeat; /* 이미지 반복 안 함 */
-            background-size: 30px 30px; /* 이미지가 요소에 맞게 조정 */
-            background-color: #fafc95; /* 기존 배경색 유지 */
-            padding-left: 30px; /* 필요한 경우 이미지와 텍스트 사이 간격 조정 */
+            background-image: url('/images/trash2.png');
+            /* 배경 이미지 경로 */
+            background-position: left 5px center;
+            /* 왼쪽 정렬 */
+            background-repeat: no-repeat;
+            /* 이미지 반복 안 함 */
+            background-size: 30px 30px;
+            /* 이미지가 요소에 맞게 조정 */
+            background-color: #fafc95;
+            /* 기존 배경색 유지 */
+            padding-left: 30px;
+            /* 필요한 경우 이미지와 텍스트 사이 간격 조정 */
 
             border-left: none;
         }
@@ -117,79 +143,100 @@
             cursor: pointer;
             margin: 0 5px;
         }
-        
+
         .modal-content {
-        position: relative;
-        padding: 20px;
-        border: none;
-        width: 50%; /* 폼 크기 고정 */
-        border-radius: 15px;
-        background: #fff; /* 배경색 변경 */
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 그림자 추가 */
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        overflow: hidden;
-        height: 400px; /* 폼 크기 고정 */
-        background: url('/images/star1.avif') no-repeat center center; /* 배경 이미지 추가 */
-        background-size: cover;
-    }
+            position: relative;
+            padding: 20px;
+            border: none;
+            width: 50%;
+            /* 폼 크기 고정 */
+            border-radius: 15px;
+            background: #fff;
+            /* 배경색 변경 */
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            /* 그림자 추가 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            height: 400px;
+            /* 폼 크기 고정 */
+            background: url('/images/star1.avif') no-repeat center center;
+            /* 배경 이미지 추가 */
+            background-size: cover;
+        }
 
-    .modal-content label {
-        display: block;
-        text-align: center;
-        font-size: 20px; /* 글자 크기 키움 */
-        margin-bottom: 10px;
-        color: #fff; /* 글자 색상 변경 */
-    }
+        .modal-content label {
+            display: block;
+            text-align: center;
+            font-size: 20px;
+            /* 글자 크기 키움 */
+            margin-bottom: 10px;
+            color: #fff;
+            /* 글자 색상 변경 */
+        }
 
-    .modal-content input,
-    .modal-content select {
-        width: 80%; /* 입력창 크기 조절 */
-        box-sizing: border-box;
-        padding: 10px;
-        margin-bottom: 20px;
-        font-size: 18px; /* 글자 크기 키움 */
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        text-align: center; /* 입력창 가운데 정렬 */
-        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* 내부 그림자 추가 */
-        transition: border-color 0.3s, box-shadow 0.3s; /* 전환 효과 추가 */
-    }
+        .modal-content input,
+        .modal-content select {
+            width: 80%;
+            /* 입력창 크기 조절 */
+            box-sizing: border-box;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 18px;
+            /* 글자 크기 키움 */
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            text-align: center;
+            /* 입력창 가운데 정렬 */
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+            /* 내부 그림자 추가 */
+            transition: border-color 0.3s, box-shadow 0.3s;
+            /* 전환 효과 추가 */
+        }
 
-    .modal-content input:focus,
-    .modal-content select:focus {
-        border-color: #007BFF; /* 포커스 시 테두리 색상 변경 */
-        box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* 포커스 시 그림자 효과 추가 */
-        outline: none; /* 포커스 시 기본 아웃라인 제거 */
-    }
+        .modal-content input:focus,
+        .modal-content select:focus {
+            border-color: #007BFF;
+            /* 포커스 시 테두리 색상 변경 */
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+            /* 포커스 시 그림자 효과 추가 */
+            outline: none;
+            /* 포커스 시 기본 아웃라인 제거 */
+        }
 
-    .modal-content button {
-        width: 45%; /* 버튼 너비 조절 */
-        background-color: #fafc95; /* 버튼 배경색 변경 */
-        color: #333; /* 버튼 글자 색상 변경 */
-        border: 1px solid #ccc;
-        padding: 10px;
-        border-radius: 10px;
-        cursor: pointer;
-        font-size: 18px; /* 버튼 글자 크기 키움 */
-        transition: background-color 0.3s ease;
-    }
+        .modal-content button {
+            width: 45%;
+            /* 버튼 너비 조절 */
+            background-color: #fafc95;
+            /* 버튼 배경색 변경 */
+            color: #333;
+            /* 버튼 글자 색상 변경 */
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            /* 버튼 글자 크기 키움 */
+            transition: background-color 0.3s ease;
+        }
 
-    .modal-content button:hover {
-        background-color: #e2e684; /* 버튼 호버 색상 변경 */
-    }
+        .modal-content button:hover {
+            background-color: #e2e684;
+            /* 버튼 호버 색상 변경 */
+        }
 
-   
 
-    .form-navigation {
-        margin-top: 20px;
-        display: flex;
-        justify-content: space-between; /* 버튼 간격 조정 */
-        width: 80%;
-    }
 
-    
+        .form-navigation {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            /* 버튼 간격 조정 */
+            width: 80%;
+        }
+
+
         #input-container {
             display: flex;
             width: 100%;
@@ -251,21 +298,22 @@
             cursor: pointer;
         }*/
         .close {
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        font-size: 50px;
-        background: none;
-        border: none;
-        cursor: pointer;
-        color: #aaa;
-    }
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 50px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #aaa;
+        }
 
-    .close:hover,
-    .close:focus {
-        color: black;
-        text-decoration: none;
-    }
+        .close:hover,
+        .close:focus {
+            color: black;
+            text-decoration: none;
+        }
+
         .customoverlay {
             position: absolute;
             bottom: 85px;
@@ -397,96 +445,107 @@
         .btn-share:hover {
             background-color: #928f8f;
         }
+
         .custom_categorycontrol {
-    position: absolute;
-    top: 30px;
-    left: 20px;
-    overflow: hidden;
-    width: auto;
-    height: 30px; /* 높이 줄이기 */
-    margin: 0;
-    padding: 0;
-    z-index: 1000;
-    font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
-    background: none; /* 회색 배경 제거 */
-}
+            position: absolute;
+            top: 30px;
+            left: 20px;
+            overflow: hidden;
+            width: auto;
+            height: 30px;
+            /* 높이 줄이기 */
+            margin: 0;
+            padding: 0;
+            z-index: 1000;
+            font-family: 'Malgun Gothic', '맑은 고딕', sans-serif;
+            background: none;
+            /* 회색 배경 제거 */
+        }
 
-.custom_categorycontrol span {
-    display: inline-block;
-    width: auto;
-    padding: 0 8px; /* 패딩 줄이기 */
-    height: 20px; /* 높이 줄이기 */
-    text-align: center;
-    line-height: 20px; /* 높이에 맞게 조정 */
-    cursor: pointer;
-    background: #fff;
-    color: #333;
-    border: 1px solid #ccc;
-    border-radius: 12px; /* 둥근 모서리 */
-    margin-right: 5px;
-    font-size: 10px; /* 글자 크기 줄이기 */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: background 0.3s ease, color 0.3s ease, transform 0.3s;
-}
+        .custom_categorycontrol span {
+            display: inline-block;
+            width: auto;
+            padding: 0 8px;
+            /* 패딩 줄이기 */
+            height: 20px;
+            /* 높이 줄이기 */
+            text-align: center;
+            line-height: 20px;
+            /* 높이에 맞게 조정 */
+            cursor: pointer;
+            background: #fff;
+            color: #333;
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            /* 둥근 모서리 */
+            margin-right: 5px;
+            font-size: 10px;
+            /* 글자 크기 줄이기 */
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: background 0.3s ease, color 0.3s ease, transform 0.3s;
+        }
 
-.custom_categorycontrol .btn:hover {
-    background: #f5f5f5;
-    border-color: #bbb;
-    transform: scale(1.05);
-}
+        .custom_categorycontrol .btn:hover {
+            background: #f5f5f5;
+            border-color: #bbb;
+            transform: scale(1.05);
+        }
 
-.custom_categorycontrol .btn:active,
-.custom_categorycontrol .selected_btn {
-    background: #777468; /* 클릭된 버튼 색상 */
-    color: #fff;
-    border-color: #ff9900;
-}
+        .custom_categorycontrol .btn:active,
+        .custom_categorycontrol .selected_btn {
+            background: #777468;
+            /* 클릭된 버튼 색상 */
+            color: #fff;
+            border-color: #ff9900;
+        }
 
-.custom_categorycontrol .selected_btn {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* 눌린 버튼 음영 효과 */
-}
+        .custom_categorycontrol .selected_btn {
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            /* 눌린 버튼 음영 효과 */
+        }
 
-.custom_categorycontrol .selected_btn:hover {
-    background: #9e988a;
-    border-color: #998d7f;
-}
+        .custom_categorycontrol .selected_btn:hover {
+            background: #9e988a;
+            border-color: #998d7f;
+        }
 
-.page {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        opacity: 0;
-        transform: translateX(100%);
-        transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-    }
+        .page {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
 
-    .page.active {
-        opacity: 1;
-        transform: translateX(0);
-    }
+        .page.active {
+            opacity: 1;
+            transform: translateX(0);
+        }
 
-    .page-leave {
-        opacity: 0;
-        transform: translateX(-100%);
-    }
+        .page-leave {
+            opacity: 0;
+            transform: translateX(-100%);
+        }
 
-    .page-enter {
-        opacity: 1;
-        transform: translateX(100%);
-    }
+        .page-enter {
+            opacity: 1;
+            transform: translateX(100%);
+        }
 
-    .form-navigation {
-        margin-top: 20px;
-        display: flex;
-        justify-content: space-between; /* 버튼 간격 조정 */
-        width: 80%;
-    }
+        .form-navigation {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-between;
+            /* 버튼 간격 조정 */
+            width: 80%;
+        }
     </style>
     <script src="/socket.io/socket.io.js"></script>
 </head>
@@ -502,11 +561,11 @@
             <span class="btn" data-category="기타" onclick="toggleCategoryMarkers('etc', this)">기타</span>
         </div>
     </div>
-    
+
     <!---->
     <div class="buttons">
         <button class="btn left-btn" id="createMeetingBtn">약속 만들기</button>
-        
+
         <button class="btn right-btn" id="deleteMarkerBtn" onclick="deleteMarker()">약속 삭제</button>
     </div>
 
@@ -596,18 +655,18 @@
         });
 
 
-        let isCreatingMarker = false; 
+        let isCreatingMarker = false;
 
         document.getElementById('createMeetingBtn').addEventListener('click', function () {
-            isCreatingMarker = !isCreatingMarker; 
+            isCreatingMarker = !isCreatingMarker;
             if (isCreatingMarker) {
-                this.style.backgroundColor = '#777468'; 
+                this.style.backgroundColor = '#777468';
                 fetch('/hasMarker')
                     .then(response => response.json())
                     .then(data => {
                         if (data.hasMarker) {
                             alert('새 마커를 만드려면 기존 마커를 삭제하세요.');
-                            isCreatingMarker = false; 
+                            isCreatingMarker = false;
                             this.style.backgroundColor = '#fafc95';
                         } else {
                             canCreateMarker = true;
@@ -616,7 +675,7 @@
                     })
                     .catch(error => console.error('Error checking marker:', error));
             } else {
-                this.style.backgroundColor = '#fafc95'; 
+                this.style.backgroundColor = '#fafc95';
                 canCreateMarker = false;
             }
         });
@@ -650,7 +709,7 @@
                 content: content,
                 yAnchor: 1
             });
-        
+
             const overlayLink = overlay.a.getElementsByClassName('overlay-link')[0];
             if (isMobileDevice()) {
                 overlayLink.addEventListener('click', function (event) {
@@ -664,7 +723,7 @@
                     collapseOverlay(markerData.id);
                 });
             }
-        
+
             return overlay;
         }
 
@@ -773,80 +832,81 @@
 
             markerCreated = true;
             canCreateMarker = false; // 마커 생성 후 다시 초기화
+            window.location.href = `/index.html?roomId=${markerId}`;
         }
 
         var currentCategory = null;
         var markersByCategory = {}; // 카테고리별 마커를 저장할 객체
 
         function toggleCategoryMarkers(category, buttonElement) {
-    var buttons = document.querySelectorAll('.custom_categorycontrol .btn');
-    
-    // 동일 카테고리를 다시 클릭한 경우 모든 마커 표시
-    if (currentCategory === category) {
-        currentCategory = null;
-        buttonElement.classList.remove('selected_btn');
-        for (var key in markers) {
-            if (markers.hasOwnProperty(key)) {
-                markers[key].marker.setMap(map);
-                markers[key].overlay.setMap(map);
-            }
-        }
-    } else {
-        currentCategory = category;
-        buttons.forEach(function(button) {
-            button.classList.remove('selected_btn');
-        });
-        buttonElement.classList.add('selected_btn');
-        
-        // 모든 마커 숨김 처리
-        for (var key in markers) {
-            if (markers.hasOwnProperty(key)) {
-                markers[key].marker.setMap(null);
-                markers[key].overlay.setMap(null);
-            }
-        }
+            var buttons = document.querySelectorAll('.custom_categorycontrol .btn');
 
-        // 해당 카테고리의 마커만 보이도록 설정
-        fetch('/getMarkers', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ type: category })
-        })
-        .then(response => response.json())
-        .then(data => {
-            data.forEach(markerData => {
-                var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
-                var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption);
-                var marker = new kakao.maps.Marker({
-                    position: markerPosition,
-                    map: map,
-                    image: markerImage
-                });
-
-                var overlay = createOverlay(markerData);
-
-                markers[markerData.id] = {
-                    marker: marker,
-                    overlay: overlay,
-                    markerData: markerData,
-                    context: markerData.context,
-                    maxNumber: markerData.max_number
-                };
-
-                // 카테고리별로 마커 저장
-                if (!markersByCategory[category]) {
-                    markersByCategory[category] = [];
+            // 동일 카테고리를 다시 클릭한 경우 모든 마커 표시
+            if (currentCategory === category) {
+                currentCategory = null;
+                buttonElement.classList.remove('selected_btn');
+                for (var key in markers) {
+                    if (markers.hasOwnProperty(key)) {
+                        markers[key].marker.setMap(map);
+                        markers[key].overlay.setMap(map);
+                    }
                 }
-                markersByCategory[category].push(markerData.id);
-            });
-        })
-        .catch(error => {
-            console.error('Error fetching markers:', error);
-        });
-    }
-}
+            } else {
+                currentCategory = category;
+                buttons.forEach(function (button) {
+                    button.classList.remove('selected_btn');
+                });
+                buttonElement.classList.add('selected_btn');
+
+                // 모든 마커 숨김 처리
+                for (var key in markers) {
+                    if (markers.hasOwnProperty(key)) {
+                        markers[key].marker.setMap(null);
+                        markers[key].overlay.setMap(null);
+                    }
+                }
+
+                // 해당 카테고리의 마커만 보이도록 설정
+                fetch('/getMarkers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ type: category })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(markerData => {
+                            var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
+                            var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption);
+                            var marker = new kakao.maps.Marker({
+                                position: markerPosition,
+                                map: map,
+                                image: markerImage
+                            });
+
+                            var overlay = createOverlay(markerData);
+
+                            markers[markerData.id] = {
+                                marker: marker,
+                                overlay: overlay,
+                                markerData: markerData,
+                                context: markerData.context,
+                                maxNumber: markerData.max_number
+                            };
+
+                            // 카테고리별로 마커 저장
+                            if (!markersByCategory[category]) {
+                                markersByCategory[category] = [];
+                            }
+                            markersByCategory[category].push(markerData.id);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching markers:', error);
+                    });
+            }
+        }
 
 
         function updateOverlayContent(markerId, userCount, maxNumber) {
@@ -960,10 +1020,10 @@
         }
 
         function updateMarkerTypeAndImage(category) {
-        currentMarkerImage = markerImages[category];
-        currentMarkerType = category;
-    }
-    let currentPage = 1;
+            currentMarkerImage = markerImages[category];
+            currentMarkerType = category;
+        }
+        let currentPage = 1;
         const totalPages = 2;
 
         function showPage(page) {
@@ -997,28 +1057,28 @@
             }
         }
 
-    function prevPage() {
-        if (currentPage > 1) {
-            currentPage--;
+        function prevPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                showPage(currentPage);
+            }
+        }
+
+        function resetPages() {
+            currentPage = 1;
             showPage(currentPage);
         }
-    }
 
-    function resetPages() {
-        currentPage = 1;
-        showPage(currentPage);
-    }
-
-    document.querySelectorAll('.close').forEach(function (closeBtn) {
-        closeBtn.addEventListener('click', function () {
-            document.getElementById('myModal').style.display = "none";
-            resetPages();
+        document.querySelectorAll('.close').forEach(function (closeBtn) {
+            closeBtn.addEventListener('click', function () {
+                document.getElementById('myModal').style.display = "none";
+                resetPages();
+            });
         });
-    });
 
-    document.addEventListener('DOMContentLoaded', () => {
-        showPage(currentPage);
-    });
+        document.addEventListener('DOMContentLoaded', () => {
+            showPage(currentPage);
+        });
 
 
         function submitForm() {
@@ -1042,77 +1102,77 @@
             resetPages();
         }
         var currentCategory = null;
-    var markersByCategory = {}; // 카테고리별 마커를 저장할 객체
+        var markersByCategory = {}; // 카테고리별 마커를 저장할 객체
 
-    function toggleCategoryMarkers(category, buttonElement) {
-        var buttons = document.querySelectorAll('.custom_categorycontrol .btn');
+        function toggleCategoryMarkers(category, buttonElement) {
+            var buttons = document.querySelectorAll('.custom_categorycontrol .btn');
 
-        // 동일 카테고리를 다시 클릭한 경우 모든 마커 표시
-        if (currentCategory === category) {
-            currentCategory = null;
-            buttonElement.classList.remove('selected_btn');
-            for (var key in markers) {
-                if (markers.hasOwnProperty(key)) {
-                    markers[key].marker.setMap(map);
-                    markers[key].overlay.setMap(map);
-                }
-            }
-        } else {
-            currentCategory = category;
-            buttons.forEach(function (button) {
-                button.classList.remove('selected_btn');
-            });
-            buttonElement.classList.add('selected_btn');
-
-            // 모든 마커 숨김 처리
-            for (var key in markers) {
-                if (markers.hasOwnProperty(key)) {
-                    markers[key].marker.setMap(null);
-                    markers[key].overlay.setMap(null);
-                }
-            }
-
-            // 해당 카테고리의 마커만 보이도록 설정
-            fetch('/getMarkers', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ type: category })
-            })
-            .then(response => response.json())
-            .then(data => {
-                data.forEach(markerData => {
-                    var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
-                    var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption);
-                    var marker = new kakao.maps.Marker({
-                        position: markerPosition,
-                        map: map,
-                        image: markerImage
-                    });
-
-                    var overlay = createOverlay(markerData);
-
-                    markers[markerData.id] = {
-                        marker: marker,
-                        overlay: overlay,
-                        markerData: markerData,
-                        context: markerData.context,
-                        maxNumber: markerData.max_number
-                    };
-
-                    // 카테고리별로 마커 저장
-                    if (!markersByCategory[category]) {
-                        markersByCategory[category] = [];
+            // 동일 카테고리를 다시 클릭한 경우 모든 마커 표시
+            if (currentCategory === category) {
+                currentCategory = null;
+                buttonElement.classList.remove('selected_btn');
+                for (var key in markers) {
+                    if (markers.hasOwnProperty(key)) {
+                        markers[key].marker.setMap(map);
+                        markers[key].overlay.setMap(map);
                     }
-                    markersByCategory[category].push(markerData.id);
+                }
+            } else {
+                currentCategory = category;
+                buttons.forEach(function (button) {
+                    button.classList.remove('selected_btn');
                 });
-            })
-            .catch(error => {
-                console.error('Error fetching markers:', error);
-            });
+                buttonElement.classList.add('selected_btn');
+
+                // 모든 마커 숨김 처리
+                for (var key in markers) {
+                    if (markers.hasOwnProperty(key)) {
+                        markers[key].marker.setMap(null);
+                        markers[key].overlay.setMap(null);
+                    }
+                }
+
+                // 해당 카테고리의 마커만 보이도록 설정
+                fetch('/getMarkers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ type: category })
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        data.forEach(markerData => {
+                            var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
+                            var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption);
+                            var marker = new kakao.maps.Marker({
+                                position: markerPosition,
+                                map: map,
+                                image: markerImage
+                            });
+
+                            var overlay = createOverlay(markerData);
+
+                            markers[markerData.id] = {
+                                marker: marker,
+                                overlay: overlay,
+                                markerData: markerData,
+                                context: markerData.context,
+                                maxNumber: markerData.max_number
+                            };
+
+                            // 카테고리별로 마커 저장
+                            if (!markersByCategory[category]) {
+                                markersByCategory[category] = [];
+                            }
+                            markersByCategory[category].push(markerData.id);
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Error fetching markers:', error);
+                    });
+            }
         }
-    }
 
     </script>
 </body>
