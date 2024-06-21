@@ -73,6 +73,9 @@ function initializeChat(roomId) {
     });
 }
 
+const messageQueues = {};
+
+
 function addMessageToChat(messageText, messageId, messageUsername) {
     const messageContainer = document.createElement('div');
     messageContainer.classList.add('chat-message-container');
@@ -106,44 +109,61 @@ function addMessageToChat(messageText, messageId, messageUsername) {
     messageContainer.appendChild(message);
     chat.appendChild(messageContainer);
     if (userMarkers[messageUsername]) {
-        // 이 메시지가 클러스터 된 마커의 메시지라면
+        let popupElement, queueKey;
         if(userMarkers[messageUsername].clusteredBy !== messageUsername ||
              userMarkers[messageUsername].isCluster) {
             let clusteredBy = userMarkers[messageUsername].clusteredBy;
-            // 부모 클러스터의 개인 메시지에 자신의 이름을 덧붙여서 보내기
-            const popupElement = document.getElementById(`${clusteredBy}-popup`).querySelector('.messages');
-            const newMessage = document.createElement('div');
-            newMessage.style.background = 'beige';
-            newMessage.style.marginBottom = '5px';
-            newMessage.textContent = `${messageUsername} : ${messageText}`;
-            popupElement.appendChild(newMessage);
-
-            // 3개 이상의 메시지가 있는 경우, 가장 오래된 메시지를 서서히 제거
-            if (popupElement.children.length > 5) {
-                const oldestMessage = popupElement.children[0];
-                oldestMessage.classList.add('fade-out');
-                setTimeout(() => {
-                    oldestMessage.remove();
-                }, 1000); // 애니메이션 시간 (1초)과 일치시킵니다.
-            }
+            popupElement = document.getElementById(`${clusteredBy}-popup`).querySelector('.messages');
+            queueKey = clusteredBy;
+        } else {
+            popupElement = document.getElementById(`${messageUsername}-popup`).querySelector('.messages');
+            queueKey = messageUsername;
         }
-        else{
-            const popupElement = document.getElementById(`${messageUsername}-popup`).querySelector('.messages');
-            const newMessage = document.createElement('div');
-            newMessage.style.background = 'beige';
-            newMessage.style.marginBottom = '5px';
-            newMessage.textContent = messageText;
-            popupElement.appendChild(newMessage);
 
-            // 3개 이상의 메시지가 있는 경우, 가장 오래된 메시지를 서서히 제거
-            if (popupElement.children.length > 3) {
-                const oldestMessage = popupElement.children[0];
-                oldestMessage.classList.add('fade-out');
-                setTimeout(() => {
-                    oldestMessage.remove();
-                }, 1000); // 애니메이션 시간 (1초)과 일치시킵니다.
-            }
+        // 해당 사용자/클러스터의 메시지 큐가 없으면 생성
+        if (!messageQueues[queueKey]) {
+            messageQueues[queueKey] = [];
         }
+
+        const newMessage = {
+            element: document.createElement('div'),
+            timestamp: Date.now()
+        };
+        newMessage.element.style.background = 'beige';
+        newMessage.element.style.marginBottom = '5px';
+        newMessage.element.textContent = userMarkers[messageUsername].clusteredBy !== messageUsername ? 
+            `${messageUsername} : ${messageText}` : messageText;
+
+        // 새 메시지를 큐에 추가
+        messageQueues[queueKey].push(newMessage);
+
+        // 큐에 3개 이상의 메시지가 있으면 가장 오래된 메시지 제거
+        if (messageQueues[queueKey].length > 3) {
+            const oldestMessage = messageQueues[queueKey].shift();
+            oldestMessage.element.classList.add('fade-out');
+            setTimeout(() => {
+                if (oldestMessage.element.parentNode === popupElement) {
+                    popupElement.removeChild(oldestMessage.element);
+                }
+            }, 1000); // 애니메이션 시간 (1초)
+        }
+
+        // 새 메시지를 팝업에 추가
+        popupElement.appendChild(newMessage.element);
+
+        // 5초 후 메시지 제거 타이머 설정
+        setTimeout(() => {
+            const index = messageQueues[queueKey].findIndex(msg => msg.timestamp === newMessage.timestamp);
+            if (index !== -1) {
+                messageQueues[queueKey].splice(index, 1);
+                newMessage.element.classList.add('fade-out');
+                setTimeout(() => {
+                    if (newMessage.element.parentNode === popupElement) {
+                        popupElement.removeChild(newMessage.element);
+                    }
+                }, 1000);
+            }
+        }, 5000);
     }
 }
 
