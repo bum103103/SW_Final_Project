@@ -496,7 +496,7 @@ app.post('/login', (req, res) => {
                 }
                 if (results.length > 0) {
                     if (results[0].status === 1) {
-                        res.status(400).json({ success: false, message: '아마 접속 중입니다.' });
+                        res.status(400).json({ success: false, message: '이미 접속 중입니다.' });
                     } else {
                         req.session.loggedin = true;
                         req.session.username = username;

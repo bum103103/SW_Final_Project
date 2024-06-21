@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login and Image Fade Out</title>
+    <title>로그인 및 이미지 페이드 아웃</title>
     <style>
         body {
             background: linear-gradient(135deg, #000428 0%, #004e92 70%, #b21f1f 100%);
@@ -35,7 +36,13 @@
             border: 1px solid #ccc;
             border-radius: 5px;
         }
-        .login-container button {
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+        }
+        .button-container button {
+            flex: 1;
+            margin: 0 5px;
             padding: 10px;
             font-size: 16px;
             cursor: pointer;
@@ -44,7 +51,7 @@
             color: white;
             border-radius: 5px;
         }
-        .login-container button:hover {
+        .button-container button:hover {
             background-color: #0056b3;
         }
         .error {
@@ -61,11 +68,13 @@
         <h2>로그인</h2>
         <form id="loginForm" method="post">
             <p class="error" id="errorMessage"></p>
-            <input type="text" id="username" name="username" placeholder="Username" required>
-            <input type="password" id="password" name="password" placeholder="Password" required>
-            <button type="submit">로그인</button>
+            <input type="text" id="username" name="username" placeholder="아이디" required>
+            <input type="password" id="password" name="password" placeholder="비밀번호" required>
+            <div class="button-container">
+                <button type="submit">로그인</button>
+                <button type="button" onClick="location.href='register.html'">회원가입</button>
+            </div>
         </form>
-        <button type="button" onClick="location.href='register.html'" style="padding: 5px 10px;">회원가입</button>
     </div>
     <script>
         document.getElementById('loginForm').addEventListener('submit', function(event) {
@@ -102,3 +111,4 @@
     </script>
 </body>
 </html>
+```
