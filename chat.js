@@ -593,7 +593,20 @@ app.get('/hasMarker', (req, res) => {
     });
 });
 
+app.get('/api/messages', (req, res) => {
+    const roomId = req.query.roomId;
+    if (!roomId) {
+        return res.status(400).send('Room ID is required');
+    }
 
+    pool.query('SELECT * FROM messages WHERE roomId = ? ORDER BY id ASC', [roomId], (err, results) => {
+        if (err) {
+            console.error('Error fetching messages from MySQL:', err);
+            return res.status(500).send('Database error');
+        }
+        res.json(results);
+    });
+});
 
 app.get('/map.html', (req, res) => {
     res.sendFile(__dirname + '/map.html');
