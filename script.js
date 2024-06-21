@@ -206,6 +206,24 @@ function scrollToBottom() {
     chat.scrollTop = chat.scrollHeight;
 }
 
+function toggleChat() {
+    let chat = document.getElementsByClassName('chat-container')[0];
+    
+    if (chat.classList.contains('show')) {
+        chat.classList.remove('show');
+        setTimeout(() => {
+            chat.style.display = 'none';
+        }, 500); // 전환 시간과 동일하게 설정
+    } else {
+        chat.style.display = 'flex';
+        setTimeout(() => {
+            chat.classList.add('show');
+            scrollToBottom(); // 채팅창을 열 때 가장 최근 채팅으로 스크롤
+        }, 10); // 약간의 지연을 주어 display 설정 후 클래스 추가
+    }
+}
+
+
 function updateUserList() {
     if (users && Array.isArray(users)) {
         userCount.textContent = `Users: ${users.length}`;

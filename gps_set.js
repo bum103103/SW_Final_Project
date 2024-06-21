@@ -16,19 +16,6 @@ document.addEventListener('DOMContentLoaded', function() {
     .catch(error => console.error('Error fetching username:', error));
 });
 
-function toggleChat() {
-    let chat = document.getElementsByClassName('chat-container')[0];
-    
-    if (chat.style.display === 'none') {
-        chat.style.display = 'flex';
-        hideControls();
-    }
-    else {
-        chat.style.display = 'none';
-        showControls();
-    }
-    scrollToBottom();
-}
 
 function getUserGeoData() {
     return new Promise((resolve, reject) => {

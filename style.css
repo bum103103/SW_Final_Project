@@ -32,8 +32,7 @@ body {
 .chat-container {
     position: absolute;
     top: 0;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
     width: 100%; /* Width of the chat container */
     height: 90%; /* Height of the chat container */
     display: none;
@@ -42,8 +41,18 @@ body {
     z-index: 1; /* Ensure it is above the map */
     border-radius: 10px; /* Optional: for rounded corners */
     box-shadow: 0px -1px 10px rgba(0,0,0,0.5); /* Optional: shadow for better visibility */
+    transition: transform 0.3s ease, opacity 0.3s ease, visibility 0.3s ease; /* 전환 효과 추가 */
+    transform: scale(0.5);
+    transform-origin: bottom left;
+    opacity: 0;
   }
 
+  .chat-container.show {
+    display: flex;
+    transform: scale(1); /* 확대 상태 */
+    opacity: 1;
+    visibility: visible;
+}
 .header {
     background-color: #FFD700;
     padding: 10px;
