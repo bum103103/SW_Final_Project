@@ -520,7 +520,7 @@
                     <label for="title">제목</label>
                     <input type="text" id="title" name="title" required>
                     <div class="form-navigation">
-                        <button type="button" class="btn" onclick="nextPage()">Next</button>
+                        <button type="button" class="btn" onclick="nextPage()">다음</button>
                     </div>
                 </div>
                 <div class="page" id="page2">
@@ -528,8 +528,8 @@
                     <label for="userText">내용</label>
                     <input type="text" id="userText" name="userText" required>
                     <div class="form-navigation">
-                        <button type="button" class="btn" onclick="prevPage()">Back</button>
-                        <button type="button" class="btn" onclick="nextPage()">Next</button>
+                        <button type="button" class="btn" onclick="prevPage()">이전</button>
+                        <button type="button" class="btn" onclick="nextPage()">다음</button>
                     </div>
                 </div>
                 <div class="page" id="page3">
@@ -537,8 +537,8 @@
                     <label for="maxNumber">인원 수</label>
                     <input type="number" id="maxNumber" name="maxNumber" required>
                     <div class="form-navigation">
-                        <button type="button" class="btn" onclick="prevPage()">Back</button>
-                        <button type="button" class="btn" onclick="nextPage()">Next</button>
+                        <button type="button" class="btn" onclick="prevPage()">이전</button>
+                        <button type="button" class="btn" onclick="nextPage()">다음</button>
                     </div>
                 </div>
                 <div class="page" id="page4">
@@ -552,8 +552,8 @@
                         <option value="etc">기타</option>
                     </select>
                     <div class="form-navigation">
-                        <button type="button" class="btn" onclick="prevPage()">Back</button>
-                        <button type="button" class="btn" onclick="submitForm()">Create Marker</button>
+                        <button type="button" class="btn" onclick="prevPage()">이전</button>
+                        <button type="button" class="btn" onclick="submitForm()">약속 생성</button>
                     </div>
                 </div>
                 <input type="hidden" id="latitude" name="latitude">
@@ -563,7 +563,7 @@
     </div>
 
     <script type="text/javascript"
-        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=ce088c9e60f0aa7b15b277e55acb4149"></script>
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=0e419e4b5894ad7c49b0ceff0ede9c8a"></script>
     <script>
         var container = document.getElementById('map');
         var options = {
@@ -1022,7 +1022,7 @@
             var maxNumber = document.getElementById('maxNumber').value;
 
             if (!title || !context || !latitude || !longitude || !maxNumber) {
-                alert('모든 필드를 채워주세요.');
+                alert('모든 창을 채워주세요.');
                 return;
             }
             createMarker(latitude, longitude);
