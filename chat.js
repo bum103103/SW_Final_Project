@@ -56,7 +56,6 @@ function removeRoom(roomId) {
             console.error('Error deleting marker from MySQL:', err);
             return;
         }
-        console.log('Marker deleted from MySQL');
 
         delete markers[roomId];
 
@@ -145,7 +144,6 @@ io.on('connection', (socket) => {
 
         socket.join(roomId);
         socket.room = roomId;
-        console.log(`${socket.username} joined room ${roomId}`);
 
         if (!roomUserLocations[roomId]) {
             roomUserLocations[roomId] = [];
@@ -209,7 +207,6 @@ io.on('connection', (socket) => {
         const roomId = markerData.id;
         socket.join(roomId);
         socket.room = roomId;
-        console.log(`${socket.username} created and joined room ${roomId}`);
 
         markers[roomId] = markerData;
         userMarkers[socket.username] = roomId;
@@ -274,7 +271,6 @@ io.on('connection', (socket) => {
             if (currentUsersCount < maxNumber) {
                 socket.join(roomId);
                 socket.room = roomId;
-                console.log(`${socket.username} joined marker room ${roomId}`);
                 
                 // 사용자 목록에 추가
                 if (!roomUsers[roomId]) {
