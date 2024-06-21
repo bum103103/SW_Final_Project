@@ -1102,79 +1102,77 @@
             resetPages();
         }
         var currentCategory = null;
-        var markersByCategory = {}; // 카테고리별 마커를 저장할 객체
+    var markersByCategory = {}; // 카테고리별 마커를 저장할 객체
 
-        function toggleCategoryMarkers(category, buttonElement) {
-            var buttons = document.querySelectorAll('.custom_categorycontrol .btn');
+    function toggleCategoryMarkers(category, buttonElement) {
+        var buttons = document.querySelectorAll('.custom_categorycontrol .btn');
 
-            // 모든 버튼의 selected 클래스 제거
-            buttons.forEach(function (button) {
-                button.classList.remove('selected');
-            });
-
-            // 동일 카테고리를 다시 클릭한 경우 모든 마커 표시
-            if (currentCategory === category) {
-                currentCategory = null;
-                buttonElement.classList.remove('selected');
-                for (var key in markers) {
-                    if (markers.hasOwnProperty(key)) {
-                        markers[key].marker.setMap(map);
-                        markers[key].overlay.setMap(map);
-                    }
+        // 동일 카테고리를 다시 클릭한 경우 모든 마커 표시
+        if (currentCategory === category) {
+            currentCategory = null;
+            buttonElement.classList.remove('selected_btn');
+            for (var key in markers) {
+                if (markers.hasOwnProperty(key)) {
+                    markers[key].marker.setMap(map);
+                    markers[key].overlay.setMap(map);
                 }
-            } else {
-                currentCategory = category;
-                buttonElement.classList.add('selected');
-
-                // 모든 마커 숨김 처리
-                for (var key in markers) {
-                    if (markers.hasOwnProperty(key)) {
-                        markers[key].marker.setMap(null);
-                        markers[key].overlay.setMap(null);
-                    }
-                }
-
-                // 해당 카테고리의 마커만 보이도록 설정
-                fetch('/getMarkers', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ type: category })
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        data.forEach(markerData => {
-                            var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
-                            var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption);
-                            var marker = new kakao.maps.Marker({
-                                position: markerPosition,
-                                map: map,
-                                image: markerImage
-                            });
-
-                            var overlay = createOverlay(markerData);
-
-                            markers[markerData.id] = {
-                                marker: marker,
-                                overlay: overlay,
-                                markerData: markerData,
-                                context: markerData.context,
-                                maxNumber: markerData.max_number
-                            };
-
-                            // 카테고리별로 마커 저장
-                            if (!markersByCategory[category]) {
-                                markersByCategory[category] = [];
-                            }
-                            markersByCategory[category].push(markerData.id);
-                        });
-                    })
-                    .catch(error => {
-                        console.error('Error fetching markers:', error);
-                    });
             }
+        } else {
+            currentCategory = category;
+            buttons.forEach(function (button) {
+                button.classList.remove('selected_btn');
+            });
+            buttonElement.classList.add('selected_btn');
+
+            // 모든 마커 숨김 처리
+            for (var key in markers) {
+                if (markers.hasOwnProperty(key)) {
+                    markers[key].marker.setMap(null);
+                    markers[key].overlay.setMap(null);
+                }
+            }
+
+            // 해당 카테고리의 마커만 보이도록 설정
+            fetch('/getMarkers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ type: category })
+            })
+            .then(response => response.json())
+            .then(data => {
+                data.forEach(markerData => {
+                    var markerPosition = new kakao.maps.LatLng(markerData.latitude, markerData.longitude);
+                    var markerImage = new kakao.maps.MarkerImage(markerData.image, imageSize, imageOption);
+                    var marker = new kakao.maps.Marker({
+                        position: markerPosition,
+                        map: map,
+                        image: markerImage
+                    });
+
+                    var overlay = createOverlay(markerData);
+
+                    markers[markerData.id] = {
+                        marker: marker,
+                        overlay: overlay,
+                        markerData: markerData,
+                        context: markerData.context,
+                        maxNumber: markerData.max_number
+                    };
+
+                    // 카테고리별로 마커 저장
+                    if (!markersByCategory[category]) {
+                        markersByCategory[category] = [];
+                    }
+                    markersByCategory[category].push(markerData.id);
+                });
+            })
+            .catch(error => {
+                console.error('Error fetching markers:', error);
+            });
         }
+    }
 
     </script>
 </body>
