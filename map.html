@@ -581,7 +581,7 @@
                     <input type="text" id="title" name="title" required>
                     <label for="userText">내용</label>
                     <input type="text" id="userText" name="userText" required>
-                    
+
                     <div class="form-navigation">
                         <button type="button" class="btn" onclick="nextPage()">Next</button>
                     </div>
@@ -610,7 +610,7 @@
     </div>
 
     <script type="text/javascript"
-        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=53644151cc4f34401c8eef39c8923729"></script>
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=22c293b2277db520a282856b10771470"></script>
     <script>
         var container = document.getElementById('map');
         var options = {
@@ -655,19 +655,30 @@
                 .catch(error => console.error('Error fetching username:', error));
         });
 
-        document.getElementById('createMeetingBtn').addEventListener('click', function () {
-            fetch('/hasMarker')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.hasMarker) {
-                        alert('새 마커를 만드려면 기존 마커를 삭제하세요.');
-                    } else {
-                        canCreateMarker = true;
-                        alert("원하는 곳을 클릭해 마커를 만드세요.")
-                    }
-                })
-                .catch(error => console.error('Error checking marker:', error));
 
+        let isCreatingMarker = false; 
+
+        document.getElementById('createMeetingBtn').addEventListener('click', function () {
+            isCreatingMarker = !isCreatingMarker; 
+            if (isCreatingMarker) {
+                this.style.backgroundColor = '#777468'; 
+                fetch('/hasMarker')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.hasMarker) {
+                            alert('새 마커를 만드려면 기존 마커를 삭제하세요.');
+                            isCreatingMarker = false; 
+                            this.style.backgroundColor = '#fafc95';
+                        } else {
+                            canCreateMarker = true;
+                            alert("원하는 곳을 클릭해 마커를 만드세요.");
+                        }
+                    })
+                    .catch(error => console.error('Error checking marker:', error));
+            } else {
+                this.style.backgroundColor = '#fafc95'; 
+                canCreateMarker = false;
+            }
         });
 
         window.joinMarkerRoom = function (markerId) {
@@ -1033,13 +1044,13 @@
             if (currentPage === 1) {
                 var title = document.getElementById('title').value;
                 var userText = document.getElementById('userText').value;
-        
+
                 if (!title || !userText || !maxNumber) {
                     alert('모든 필드를 채워주세요.');
                     return;
                 }
             }
-        
+
             if (currentPage < totalPages) {
                 currentPage++;
                 showPage(currentPage);
