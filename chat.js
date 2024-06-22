@@ -186,8 +186,9 @@ io.on('connection', (socket) => {
         const isAdmin = markers[roomId].created_by === socket.username;
         socket.emit('joinedRoom', roomId, markers[roomId], isAdmin);
 
-        if (!roomMarkers[roomId]) {
-            initializeRoomMarkers(roomId, 37.566826, 126.9786567, 37.566826, 126.9786567);
+        if (roomMarkers[roomId]) {
+            socket.emit('markerUpdate', roomMarkers[roomId].start);
+            socket.emit('markerUpdate', roomMarkers[roomId].end);
         }
 
         io.to(roomId).emit('updateUserLocations', {
@@ -208,7 +209,10 @@ io.on('connection', (socket) => {
     });
     
     socket.on('markerMove', (data) => {
-        updateMarkerPosition(data.roomId, data.type, data.lat, data.lng);
+        if (!roomMarkers[data.roomId]) {
+            roomMarkers[data.roomId] = {};
+        }
+        roomMarkers[data.roomId][data.type] = data;
         socket.to(data.roomId).emit('markerUpdate', data);
     });
 

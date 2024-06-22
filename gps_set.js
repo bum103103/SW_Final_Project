@@ -1,5 +1,5 @@
 function escapeHTML(str) {
-    return str.replace(/[&<>"']/g, function(match) {
+    return str.replace(/[&<>"']/g, function (match) {
         switch (match) {
             case '&':
                 return '&amp;';
@@ -17,20 +17,20 @@ function escapeHTML(str) {
     });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const urlParams = new URLSearchParams(window.location.search);
     roomId = urlParams.get('roomId');  // URL에서 roomId 추출
 
     fetch('/get-username')
-    .then(response => response.json())
-    .then(data => {
-        if (data.username) {
-            console.log("Logged in as:", data.username);
-            username = data.username;
-            initializeMap(roomId);
-        }
-    })
-    .catch(error => console.error('Error fetching username:', error));
+        .then(response => response.json())
+        .then(data => {
+            if (data.username) {
+                console.log("Logged in as:", data.username);
+                username = data.username;
+                initializeMap(roomId);
+            }
+        })
+        .catch(error => console.error('Error fetching username:', error));
 });
 
 
@@ -70,11 +70,11 @@ function initializeMap(roomId) {
             userLatitude = latitude;
             userLongitude = longitude;
             console.log(`Initial Latitude: ${userLatitude}, Longitude: ${userLongitude}`);
-            
-            var container = document.getElementById('map'); 
-            var options = { 
-                center: new kakao.maps.LatLng(userLatitude, userLongitude), 
-                level: 2 
+
+            var container = document.getElementById('map');
+            var options = {
+                center: new kakao.maps.LatLng(userLatitude, userLongitude),
+                level: 2
             };
 
             map = new kakao.maps.Map(container, options);
@@ -82,18 +82,18 @@ function initializeMap(roomId) {
             var mapTypeControl = new kakao.maps.MapTypeControl();
 
             map.addControl(mapTypeControl, kakao.maps.ControlPosition.TOPRIGHT);
-        
+
             if (username) {
                 addOrUpdateUserMarker(username, userLatitude, userLongitude);
             }
-            
+            socket.on('adminStatus', handleAdminStatus);
+            socket.on('markerUpdate', updateMarkerPosition);
             setInterval(() => updateUserLocation(roomId), 5000);
         })
         .catch((error) => {
             console.error(error);
         });
-        socket.on('initialMarkers', createInitialMarkers);
-        socket.on('markerUpdate', updateMarkerPosition);
+
 
 }
 
@@ -106,6 +106,12 @@ socket.on('adminStatus', (status) => {
     }
 });
 
+function handleAdminStatus(status) {
+    isAdmin = status;
+    if (isAdmin) {
+        createAdminMarkers();
+    }
+}
 function emitMarkerPosition(type, position) {
     socket.emit('markerMove', {
         type: type,
@@ -115,52 +121,94 @@ function emitMarkerPosition(type, position) {
     });
 }
 
+
 function updateMarkerPosition(data) {
     const position = new kakao.maps.LatLng(data.lat, data.lng);
-    if (data.type === 'start' && startMarker) {
-        startMarker.setPosition(position);
-    } else if (data.type === 'end' && endMarker) {
-        endMarker.setPosition(position);
+    if (data.type === 'start') {
+        if (!startMarker) {
+            startMarker = new kakao.maps.Marker({
+                position: position,
+                image: new kakao.maps.MarkerImage(
+                    'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/red_b.png',
+                    new kakao.maps.Size(50, 45),
+                    { offset: new kakao.maps.Point(15, 43) }
+                )
+            });
+            startMarker.setMap(map);
+        } else {
+            startMarker.setPosition(position);
+        }
+    } else if (data.type === 'end') {
+        if (!endMarker) {
+            endMarker = new kakao.maps.Marker({
+                position: position,
+                image: new kakao.maps.MarkerImage(
+                    'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/blue_b.png',
+                    new kakao.maps.Size(50, 45),
+                    { offset: new kakao.maps.Point(15, 43) }
+                )
+            });
+            endMarker.setMap(map);
+        } else {
+            endMarker.setPosition(position);
+        }
+    }
+
+    // 방장이 아닌 경우에만 마커를 드래그 불가능하게 설정
+    if (!isAdmin) {
+        if (startMarker) startMarker.setDraggable(false);
+        if (endMarker) endMarker.setDraggable(false);
     }
 }
 
-function createInitialMarkers(markerPositions) {
+function createAdminMarkers() {
+    const offset = 0.001; // 약 100m 정도의 오프셋
+    
     if (!startMarker) {
         startMarker = new kakao.maps.Marker({
-            position: new kakao.maps.LatLng(markerPositions.start.lat, markerPositions.start.lng),
+            position: new kakao.maps.LatLng(userLatitude - offset, userLongitude - offset),
+            draggable: true,
             image: new kakao.maps.MarkerImage(
                 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/red_b.png',
                 new kakao.maps.Size(50, 45),
                 { offset: new kakao.maps.Point(15, 43) }
-            ),
-            draggable: isAdmin
+            )
         });
         startMarker.setMap(map);
+        
+        kakao.maps.event.addListener(startMarker, 'dragend', function() {
+            emitMarkerPosition('start', startMarker.getPosition());
+        });
     }
 
     if (!endMarker) {
         endMarker = new kakao.maps.Marker({
-            position: new kakao.maps.LatLng(markerPositions.end.lat, markerPositions.end.lng),
+            position: new kakao.maps.LatLng(userLatitude + offset, userLongitude + offset),
+            draggable: true,
             image: new kakao.maps.MarkerImage(
                 'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/blue_b.png',
                 new kakao.maps.Size(50, 45),
                 { offset: new kakao.maps.Point(15, 43) }
-            ),
-            draggable: isAdmin
+            )
         });
         endMarker.setMap(map);
+        
+        kakao.maps.event.addListener(endMarker, 'dragend', function() {
+            emitMarkerPosition('end', endMarker.getPosition());
+        });
     }
 
-    if (isAdmin) {
-        addMarkerDragListeners();
-    }
+    // 초기 마커 위치 서버에 전송
+    emitMarkerPosition('start', startMarker.getPosition());
+    emitMarkerPosition('end', endMarker.getPosition());
 }
+
 function addMarkerDragListeners() {
-    kakao.maps.event.addListener(startMarker, 'dragend', function() {
+    kakao.maps.event.addListener(startMarker, 'dragend', function () {
         emitMarkerPosition('start', startMarker.getPosition());
     });
 
-    kakao.maps.event.addListener(endMarker, 'dragend', function() {
+    kakao.maps.event.addListener(endMarker, 'dragend', function () {
         emitMarkerPosition('end', endMarker.getPosition());
     });
 }
@@ -191,8 +239,8 @@ function addOrUpdateUserMarker(username, latitude, longitude) {
         userMarkers[username].marker.setPosition(new kakao.maps.LatLng(latitude, longitude));
         userMarkers[username].overlay.setPosition(new kakao.maps.LatLng(latitude, longitude));
         userMarkers[username].clusterOverlay.setPosition(new kakao.maps.LatLng(latitude, longitude));
-        if(userMarkers[username].clusteredBy !== username || userMarkers[username].isCluster) {
-            if(!userMarkers[username].isCluster) {
+        if (userMarkers[username].clusteredBy !== username || userMarkers[username].isCluster) {
+            if (!userMarkers[username].isCluster) {
                 userMarkers[username].marker.setMap(map);
             }
             userMarkers[username].overlay.setMap(map);
@@ -220,7 +268,7 @@ function addOrUpdateUserMarker(username, latitude, longitude) {
                 <div class="leaflet-popup-tip"></div>
             </div>
         </div>`;
-        
+
         var overlay = new kakao.maps.CustomOverlay({
             position: markerPosition,
             content: content,
@@ -251,10 +299,10 @@ function addOrUpdateUserMarker(username, latitude, longitude) {
         userMarkers[username] = {
             marker: marker,
             overlay: overlay,
-            cluster : [],
-            clusterOverlay : clusterOverlay,
-            clusteredBy : username,
-            isCluster : false
+            cluster: [],
+            clusterOverlay: clusterOverlay,
+            clusteredBy: username,
+            isCluster: false
         };
     }
 }
@@ -273,8 +321,8 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
     const rLat2 = toRadians(lat2);
 
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(rLat1) * Math.cos(rLat2); 
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+        Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(rLat1) * Math.cos(rLat2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
     return EARTH_RADIUS * c; // 거리 반환 (미터 단위)
 }
@@ -284,36 +332,36 @@ function updateUserMarkers(userLocations) {
     userLocations.forEach(userLocation => {
         addOrUpdateUserMarker(userLocation.username, userLocation.latitude, userLocation.longitude);
     });
-    
+
     // 클러스터될 거리를 정하기
     let level = map.getLevel();
     let dist = 10 * level;
 
     // 각 마커에서 서로 거리가 클러스터될 거리에 포함되는지 확인하기
     userLocations.forEach(userLocation => {
-        if(userMarkers[userLocation.username].clusteredBy !== userLocation.username) {
+        if (userMarkers[userLocation.username].clusteredBy !== userLocation.username) {
             return;
         }
         let username = userLocation.username;
         let latlng = userMarkers[userLocation.username].marker.getPosition();
-        
+
         // 클러스터 리스트 초기화
         userMarkers[username].cluster = [];
 
         userLocations.forEach(userLocation_sub => {
-            if(userLocation_sub.username !== username && 
-                userMarkers[userLocation_sub.username].clusteredBy === userLocation_sub.username && 
+            if (userLocation_sub.username !== username &&
+                userMarkers[userLocation_sub.username].clusteredBy === userLocation_sub.username &&
                 !userMarkers[userLocation_sub.username].isCluster) {
                 let lat = userLocation_sub.latitude;
                 let lng = userLocation_sub.longitude;
                 let dist_between = haversineDistance(latlng.getLat(), latlng.getLng(), lat, lng);
                 // 포함되면 해당 마커 json을 리스트에 넣기
-                if(dist >= dist_between) {
+                if (dist >= dist_between) {
                     userMarkers[username].cluster.push(userMarkers[userLocation_sub.username]);
                 }
             }
         });
-        if(userMarkers[username].cluster.length > 0) {
+        if (userMarkers[username].cluster.length > 0) {
             userMarkers[username].overlay.setMap(null);
             userMarkers[username].clusterOverlay.setMap(map);
             userMarkers[username].isCluster = true;
@@ -322,17 +370,17 @@ function updateUserMarkers(userLocations) {
                 marker.overlay.setMap(null);
                 marker.clusteredBy = userLocation.username;
             });
-            
+
             console.log('clustered');
         }
     });
 }
 
-socket.on('connect', function() {
+socket.on('connect', function () {
     console.log('Socket.IO 연결 성공');
 });
 
-socket.on('disconnect', function() {
+socket.on('disconnect', function () {
     console.log('Socket.IO 연결 종료');
 });
 
@@ -353,7 +401,7 @@ function addOrUpdateCenterMarker(latitude, longitude) {
     if (centerMarker) {
         centerMarker.setPosition(new kakao.maps.LatLng(latitude, longitude));
     } else {
-        var markerPosition = new kakao.maps.LatLng(latitude, longitude); 
+        var markerPosition = new kakao.maps.LatLng(latitude, longitude);
         centerMarker = new kakao.maps.Marker({
             position: markerPosition
         });
