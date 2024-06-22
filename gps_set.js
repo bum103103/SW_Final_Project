@@ -334,8 +334,7 @@ function updateUserMarkers(userLocations) {
     });
 
     // 클러스터될 거리를 정하기
-    let level = map.getLevel();
-    let dist = 20 * level;
+    let dist = 30;
 
     // 각 마커에서 서로 거리가 클러스터될 거리에 포함되는지 확인하기
     userLocations.forEach(userLocation => {
