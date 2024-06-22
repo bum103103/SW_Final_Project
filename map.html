@@ -707,17 +707,21 @@
             const title = markerData.title || '';
             const maxNumber = markerData.max_number || 0;
             userCount = markerData.userCount || 0;
+            const isFull = userCount >= maxNumber;
+            const countColor = isFull ? 'red' : 'black';
+            const buttonDisabled = isFull ? 'disabled' : '';
+            const buttonText = isFull ? '참여 불가' : '참여하기';
             const countText = `${userCount}/${maxNumber}`;
             const content = `
                 <div class="customoverlay" id="overlay_${markerData.id}">
-                    <span class="count">${countText}</span>
+                    <span class="count" style="color: ${countColor};">${countText}</span>
                     <a href="javascript:void(0);" class="overlay-link">
                         <span class="title">${title}</span>
                         <div class="details">
                             <p>모임: ${title}</p>
                             <p>세부내용: ${markerData.context}</p>
                             <p></p>
-                            <button class="btn-share" onclick="joinMarkerRoom('${markerData.id}')">참여하기</button>
+                            <button class="btn-share" onclick="joinMarkerRoom('${markerData.id}')" ${buttonDisabled}>${buttonText}</button>
                         </div>
                     </a>
                 </div>
@@ -934,12 +938,21 @@
                 if (overlay) {
                     const title = markers[markerId].markerData.title || 'No Title';
                     const context = markers[markerId].context || 'No Context';
+                    const isFull = userCount >= maxNumber;
+                    const countColor = isFull ? 'red' : 'black';
+                    const buttonDisabled = isFull ? 'disabled' : '';
+                    const buttonText = isFull ? '참여 불가' : '참여하기';
 
                     const countText = `${userCount}/${maxNumber}`;
-
+                    const buttonElement = overlay.querySelector('.btn-share');
                     const countElement = overlay.querySelector('.count');
                     if (countElement) {
                         countElement.textContent = countText;
+                        countElement.style.color = countColor;
+                    }
+                    if (buttonElement) {
+                        buttonElement.disabled = isFull;
+                        buttonElement.textContent = buttonText; // 버튼 텍스트 변경
                     }
                 }
             }
