@@ -304,8 +304,35 @@
 
       .delete-button {
         margin-left: 5px !important;
-        /* 모바일에서 채팅과 쓰레기통 버튼 사이 간격 조정 */
       }
+      .leaflet-popup-content-wrapper,
+        .custom-popup .leaflet-popup-content-wrapper,
+        .leaflet-popup-content-wrapper-cluster {
+            width: 150px !important; 
+            height: auto !important; 
+            padding: 5px !important; 
+        }
+
+        .leaflet-popup-content,
+        .custom-popup .leaflet-popup-content,
+        .leaflet-popup-content-wrapper-cluster .leaflet-popup-content {
+            font-size: 12px !important; 
+            margin: 5px !important; 
+        }
+
+        .leaflet-popup-tip-container,
+        .custom-popup .leaflet-popup-tip-container,
+        .leaflet-popup-content-wrapper-cluster .leaflet-popup-tip-container {
+            width: 14px !important; 
+            height: 14px !important; 
+        }
+
+        .leaflet-popup-tip,
+        .custom-popup .leaflet-popup-tip,
+        .leaflet-popup-content-wrapper-cluster .leaflet-popup-tip {
+            width: 10px !important; 
+            height: 10px !important; 
+        }
     }
   </style>
 </head>
