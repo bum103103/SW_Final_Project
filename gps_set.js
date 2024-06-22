@@ -59,6 +59,7 @@ let userLatitude = 0.0;
 let userLongitude = 0.0;
 let map;
 let userMarkers = {};
+let startMarker, endMarker;
 
 function initializeMap(roomId) {
     socket.emit('joinRoom', roomId);
@@ -85,12 +86,99 @@ function initializeMap(roomId) {
             if (username) {
                 addOrUpdateUserMarker(username, userLatitude, userLongitude);
             }
-
+            
             setInterval(() => updateUserLocation(roomId), 5000);
         })
         .catch((error) => {
             console.error(error);
         });
+        socket.on('markerUpdate', updateMarkerPosition);
+
+}
+
+socket.on('adminStatus', (status) => {
+    isAdmin = status;
+    if (isAdmin && map) {
+        createDraggableMarkers();
+    }
+});
+
+function emitMarkerPosition(type, position) {
+    socket.emit('markerMove', {
+        type: type,
+        lat: position.getLat(),
+        lng: position.getLng(),
+        roomId: roomId
+    });
+}
+
+function updateMarkerPosition(data) {
+    const position = new kakao.maps.LatLng(data.lat, data.lng);
+    if (data.type === 'start') {
+        if (!startMarker) {
+            startMarker = new kakao.maps.Marker({
+                position: position,
+                image: new kakao.maps.MarkerImage(
+                    'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/red_b.png',
+                    new kakao.maps.Size(50, 45),
+                    { offset: new kakao.maps.Point(15, 43) }
+                )
+            });
+            startMarker.setMap(map);
+        } else {
+            startMarker.setPosition(position);
+        }
+    } else if (data.type === 'end') {
+        if (!endMarker) {
+            endMarker = new kakao.maps.Marker({
+                position: position,
+                image: new kakao.maps.MarkerImage(
+                    'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/blue_b.png',
+                    new kakao.maps.Size(50, 45),
+                    { offset: new kakao.maps.Point(15, 43) }
+                )
+            });
+            endMarker.setMap(map);
+        } else {
+            endMarker.setPosition(position);
+        }
+    }
+}
+
+function createDraggableMarkers() {
+    const startPosition = new kakao.maps.LatLng(userLatitude, userLongitude);
+    const endPosition = new kakao.maps.LatLng(userLatitude + 0.001, userLongitude + 0.001);
+
+    startMarker = new kakao.maps.Marker({
+        position: startPosition,
+        draggable: true,
+        image: new kakao.maps.MarkerImage(
+            'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/red_b.png',
+            new kakao.maps.Size(50, 45),
+            { offset: new kakao.maps.Point(15, 43) }
+        )
+    });
+
+    endMarker = new kakao.maps.Marker({
+        position: endPosition,
+        draggable: true,
+        image: new kakao.maps.MarkerImage(
+            'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/blue_b.png',
+            new kakao.maps.Size(50, 45),
+            { offset: new kakao.maps.Point(15, 43) }
+        )
+    });
+
+    startMarker.setMap(map);
+    endMarker.setMap(map);
+
+    kakao.maps.event.addListener(startMarker, 'dragend', function() {
+        emitMarkerPosition('start', startMarker.getPosition());
+    });
+
+    kakao.maps.event.addListener(endMarker, 'dragend', function() {
+        emitMarkerPosition('end', endMarker.getPosition());
+    });
 }
 
 function hideControls() {

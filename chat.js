@@ -175,6 +175,12 @@ io.on('connection', (socket) => {
             userCount: roomUserCounts[roomId].userCount,
             maxNumber: roomUserCounts[roomId].maxNumber
         });
+
+        socket.emit('adminStatus', isAdmin);
+    });
+    
+    socket.on('markerMove', (data) => {
+        socket.to(data.roomId).emit('markerUpdate', data);
     });
 
     socket.on('updateLocation', (data) => {
