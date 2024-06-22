@@ -66,7 +66,6 @@ function initializeChat(roomId) {
 
     socket.on('message', (data) => {
         addMessageToChat(data.text, data.messageId, data.username);
-        scrollToBottom()
     });
 
     socket.on('delete', (data) => {
@@ -101,22 +100,19 @@ const messageQueues = {};
 function addMessageToChat(messageText, messageId, messageUsername) {
     const messageContainer = document.createElement('div');
     messageContainer.classList.add('chat-message-container');
-
     var icon = document.createElement('i');
     icon.classList.add('fas', 'fa-trash');
 
     const message = document.createElement('p');
     message.dataset.id = messageId;
-    message.classList.add('chat-message');
+    message.classList.add('chat-message', messageUsername === username ? 'self' : 'other');
     message.style.fontSize = '40px';
-
+    scrollToBottom();
     const formattedMessageText = `${messageUsername}: ${messageText}`;
     message.textContent = formattedMessageText;
-
     setTextColor(message, messageText);
 
     if (messageUsername === username) {
-        message.classList.add('self');
         const deleteButton = document.createElement('button');
         deleteButton.onclick = function () {
             socket.emit('delete', message.dataset.id);
@@ -232,11 +228,12 @@ function setTextColor(element, messageText) {
 }
 
 function scrollToBottom() {
-    chat.scrollTo({
-        top: chat.scrollHeight,
-        behavior: 'smooth'
+    requestAnimationFrame(() => {
+        chat.scrollTo({
+            top: chat.scrollHeight,
+            behavior: 'smooth'
+        });
     });
-    handleScrollButtons(); // 스크롤 후 버튼 상태 업데이트
 }
 
 function scrollToTop() {
