@@ -187,7 +187,7 @@ function addMessageToChat(messageText, messageId, messageUsername) {
                     }
                 }, 1000);
             }
-        }, 5000);
+        }, 10000);
     }
 }
 
