@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <title>로그인 및 이미지 페이드 아웃</title>
     <style>
         body {
@@ -47,12 +48,12 @@
             font-size: 16px;
             cursor: pointer;
             border: none;
-            background-color: #007bff;
+            background-color: #01060c;
             color: white;
             border-radius: 5px;
         }
         .button-container button:hover {
-            background-color: #0056b3;
+            background-color: #363738;
         }
         .error {
             color: red;
@@ -61,18 +62,51 @@
             margin-bottom: 10px;
             display: none;
         }
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 1055;
+        }
+        .form-container {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .form-floating label {
+            color: #6c757d;
+        }
+
     </style>
 </head>
 <body>
-    <div class="login-container">
-        <h2>로그인</h2>
+    <div class="form-container">
+        <h3 class="text-center">로그인</h3>
         <form id="loginForm" method="post">
-            <p class="error" id="errorMessage"></p>
-            <input type="text" id="username" name="username" placeholder="아이디" required>
-            <input type="password" id="password" name="password" placeholder="비밀번호" required>
-            <div class="button-container">
-                <button type="submit">로그인</button>
-                <button type="button" onClick="location.href='register.html'">회원가입</button>
+            <div class="form-floating mb-3">
+                <input type="text" class="form-control" id="username" name="username" placeholder="아이디" required>
+                <label for="username">아이디</label>
+                <div id="errorMessage" class="error"></div>
+            </div>
+            <div class="form-floating">
+                <input type="password" class="form-control" id="password" name="password" placeholder="비밀번호" required>
+                <label for="password">비밀번호</label>
+            </div>
+            <p></p>
+            <div class="button-container text-end">
+                <button type="submit" class="btn btn-dark">로그인</button>
+                <button type="button" class="btn btn-dark" onclick="location.href='register.html'">회원가입</button>
+            </div>
+            <div class="toast-container">
+                <div class="toast align-items-center text-white bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true" id="loginToast">
+                    <div class="d-flex">
+                        <div class="toast-body" id="toastBody"></div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
             </div>
         </form>
     </div>
