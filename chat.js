@@ -37,6 +37,7 @@ let roomUsers = {}; // 방별 사용자 목록
 let bannedUsers = {}; // 방별 강퇴된 사용자 목록
 const roomUserCounts = {}; // 방별 유저 수를 저장하는 객체
 const roomEmptyCheckInterval = 5 * 60 * 1000; // 5분
+const roomMarkers = {};
 
 function checkAndRemoveEmptyRooms() {
     for (const roomId in roomUsers) {
@@ -64,7 +65,28 @@ function removeRoom(roomId) {
         io.emit('removeMarker', { id: roomId });
     });
 }
-
+function initializeRoomMarkers(roomId, startLat, startLng, endLat, endLng) {
+    roomMarkers[roomId] = {
+        start: { lat: startLat, lng: startLng },
+        end: { lat: endLat, lng: endLng }
+    };
+}
+function updateMarkerPosition(roomId, type, lat, lng) {
+    if (roomMarkers[roomId] && (type === 'start' || type === 'end')) {
+        roomMarkers[roomId][type] = { lat, lng };
+    }
+}
+function getMarkerPositions(roomId) {
+    if (roomMarkers[roomId]) {
+        return roomMarkers[roomId];
+    } else {
+        // 방에 대한 마커 정보가 없으면 기본값 반환
+        return {
+            start: { lat: 37.566826, lng: 126.9786567 }, // 서울시청 좌표
+            end: { lat: 37.566826, lng: 126.9786567 }
+        };
+    }
+}
 setInterval(checkAndRemoveEmptyRooms, roomEmptyCheckInterval);
 
 app.use(sessionParser);
@@ -164,6 +186,10 @@ io.on('connection', (socket) => {
         const isAdmin = markers[roomId].created_by === socket.username;
         socket.emit('joinedRoom', roomId, markers[roomId], isAdmin);
 
+        if (!roomMarkers[roomId]) {
+            initializeRoomMarkers(roomId, 37.566826, 126.9786567, 37.566826, 126.9786567);
+        }
+
         io.to(roomId).emit('updateUserLocations', {
             userLocations: roomUserLocations[roomId],
             center: calculateCenter(roomUserLocations[roomId]),
@@ -177,9 +203,12 @@ io.on('connection', (socket) => {
         });
 
         socket.emit('adminStatus', isAdmin);
+        const currentMarkers = getMarkerPositions(roomId);
+        socket.emit('initialMarkers', currentMarkers);
     });
     
     socket.on('markerMove', (data) => {
+        updateMarkerPosition(data.roomId, data.type, data.lat, data.lng);
         socket.to(data.roomId).emit('markerUpdate', data);
     });
 
