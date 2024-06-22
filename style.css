@@ -303,3 +303,31 @@ body {
     height: auto; /* 높이를 자동으로 설정 */
     min-height: 50px; /* 최소 높이 설정 */
 }
+.leaflet-popup-content-wrapper,
+.custom-popup .leaflet-popup-content-wrapper,
+.leaflet-popup-content-wrapper-cluster {
+    width: 200px; /* 기본 너비 조정 */
+    height: auto; /* 높이를 자동으로 설정 */
+    padding: 10px; /* 기본 패딩 조정 */
+}
+
+.leaflet-popup-content,
+.custom-popup .leaflet-popup-content,
+.leaflet-popup-content-wrapper-cluster .leaflet-popup-content {
+    font-size: 14px; /* 기본 폰트 크기 조정 */
+    margin: 10px; /* 기본 마진 조정 */
+}
+
+.leaflet-popup-tip-container,
+.custom-popup .leaflet-popup-tip-container,
+.leaflet-popup-content-wrapper-cluster .leaflet-popup-tip-container {
+    width: 20px; /* 기본 팁 컨테이너 너비 조정 */
+    height: 20px; /* 기본 팁 컨테이너 높이 조정 */
+}
+
+.leaflet-popup-tip,
+.custom-popup .leaflet-popup-tip,
+.leaflet-popup-content-wrapper-cluster .leaflet-popup-tip {
+    width: 14px; /* 기본 팁 너비 조정 */
+    height: 14px; /* 기본 팁 높이 조정 */
+}
