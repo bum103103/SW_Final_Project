@@ -52,6 +52,8 @@ const sendButton = document.getElementById('sendButton');
 const fontSizeRange = document.getElementById('fontSizeRange');
 const userCount = document.getElementById('userCount');
 const userList = document.getElementById('userList');
+const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
+const scrollToTopBtn = document.getElementById('scrollToTopBtn');
 
 let users = [];
 let isAdmin = false;
@@ -64,7 +66,7 @@ function initializeChat(roomId) {
 
     socket.on('message', (data) => {
         addMessageToChat(data.text, data.messageId, data.username);
-        scrollToBottom();
+        scrollToBottom()
     });
 
     socket.on('delete', (data) => {
@@ -90,6 +92,7 @@ function initializeChat(roomId) {
             alert(data.message);
         }
     });
+    chat.addEventListener('scroll', handleScrollButtons)
 }
 
 const messageQueues = {};
@@ -229,7 +232,19 @@ function setTextColor(element, messageText) {
 }
 
 function scrollToBottom() {
-    chat.scrollTop = chat.scrollHeight;
+    chat.scrollTo({
+        top: chat.scrollHeight,
+        behavior: 'smooth'
+    });
+    handleScrollButtons(); // 스크롤 후 버튼 상태 업데이트
+}
+
+function scrollToTop() {
+    chat.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+    handleScrollButtons(); // 스크롤 후 버튼 상태 업데이트
 }
 
 function toggleChat() {
@@ -298,3 +313,21 @@ function setScreenSize() {
     setScreenSize();
     window.addEventListener('resize', setScreenSize);
   });
+
+  function handleScrollButtons() {
+    const scrollPosition = chat.scrollTop;
+    const scrollHeight = chat.scrollHeight;
+    const clientHeight = chat.clientHeight;
+
+    if (scrollPosition + clientHeight >= scrollHeight - 10) {
+        scrollToBottomBtn.style.display = 'none';
+    } else {
+        scrollToBottomBtn.style.display = 'block';
+    }
+
+    if (scrollPosition > 10) {
+        scrollToTopBtn.style.display = 'block';
+    } else {
+        scrollToTopBtn.style.display = 'none';
+    }
+}
