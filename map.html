@@ -612,6 +612,24 @@
     <script type="text/javascript"
         src="//dapi.kakao.com/v2/maps/sdk.js?appkey=22c293b2277db520a282856b10771470"></script>
     <script>
+        function escapeHTML(str) {
+            return str.replace(/[&<>"']/g, function(match) {
+                switch (match) {
+                    case '&':
+                        return '&amp;';
+                    case '<':
+                        return '&lt;';
+                    case '>':
+                        return '&gt;';
+                    case '"':
+                        return '&quot;';
+                    case "'":
+                        return '&#039;';
+                    default:
+                        return match;
+                }
+            });
+        }
         var container = document.getElementById('map');
         var options = {
             center: new kakao.maps.LatLng(35.1152, 128.9684),
