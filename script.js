@@ -169,7 +169,8 @@ function addMessageToChat(messageText, messageId, messageUsername) {
 
 function sendMessage() {
     const messageId = Date.now().toString();
-    const messageText = messageInput.value.trim();
+    var messageText = messageInput.value.trim();
+    messageText = escapeHTML(messageText);
     if (messageText) {
         const messageData = {
             text: messageText,

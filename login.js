@@ -1,8 +1,11 @@
 document.getElementById('loginForm').addEventListener('submit', function(event) {
     event.preventDefault();
 
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
+    var username = document.getElementById('username').value;
+    var password = document.getElementById('password').value;
+
+    username = escapeHTML(username);
+    password = escapeHTML(password);
 
     fetch('/login', {
         method: 'POST',

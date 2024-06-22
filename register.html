@@ -63,12 +63,16 @@
         </form>
     </div>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="XSSprotect.js"></script>
     <script>
         document.querySelector('form').addEventListener('submit', function(event) {
             event.preventDefault(); // 폼 기본 제출 방지
 
-            const username = document.getElementById('floatingInput').value;
-            const password = document.getElementById('floatingPassword').value;
+            var username = document.getElementById('floatingInput').value;
+            var password = document.getElementById('floatingPassword').value;
+
+            username = escapeHTML(username);
+            password = escapeHTML(password);
 
             fetch('/signup', {
                 method: 'POST',

@@ -608,7 +608,7 @@
             </form>
         </div>
     </div>
-
+    <script src="XSSprotect.js"></script>
     <script type="text/javascript"
         src="//dapi.kakao.com/v2/maps/sdk.js?appkey=22c293b2277db520a282856b10771470"></script>
     <script>
@@ -1044,7 +1044,9 @@
         function nextPage() {
             if (currentPage === 1) {
                 var title = document.getElementById('title').value;
+                title = escapeHTML(title);
                 var userText = document.getElementById('userText').value;
+                userText = escapeHTML(userText);
 
                 if (!title || !userText || !maxNumber) {
                     alert('모든 필드를 채워주세요.');
@@ -1088,6 +1090,12 @@
             var latitude = document.getElementById('latitude').value;
             var longitude = document.getElementById('longitude').value;
             var maxNumber = document.getElementById('maxNumber').value;
+
+            title = escapeHTML(title);
+            context = escapeHTML(context);
+            latitude = escapeHTML(latitude);
+            longitude = escapeHTML(longitude);
+            maxNumber = escapeHTML(maxNumber);
 
             if (!title || !context || !latitude || !longitude || !maxNumber) {
                 alert('모든 창을 채워주세요.');
