@@ -144,6 +144,18 @@
             margin: 0 5px;
         }
 
+        .form-navigation {
+            margin-top: 20px;
+            display: flex;
+            justify-content: space-around;
+            /* 버튼 간격 조정 */
+            width: 80%;
+        }
+
+        .form-navigation button {
+            margin: 0 8px; /* 간격을 원하는 값으로 설정 */
+        }       
+
         .modal-content {
             position: relative;
             padding: 20px;
@@ -610,7 +622,7 @@
     </div>
     <script src="XSSprotect.js"></script>
     <script type="text/javascript"
-        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=22c293b2277db520a282856b10771470"></script>
+        src="//dapi.kakao.com/v2/maps/sdk.js?appkey=ce088c9e60f0aa7b15b277e55acb4149"></script>
     <script>
         function escapeHTML(str) {
             return str.replace(/[&<>"']/g, function(match) {
