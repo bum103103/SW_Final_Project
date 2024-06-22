@@ -234,31 +234,79 @@
       background-color: white;
       border: none;
       border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       z-index: 1000;
       display: none;
-  }
-  
-  #scrollToBottomBtn {
+    }
+
+    #scrollToBottomBtn {
       bottom: 20px;
       left: 50%;
       transform: translateX(-50%);
-  }
-  
-  #scrollToTopBtn {
-      top: 55px; /* 위치를 살짝 내림 */
+    }
+
+    #scrollToTopBtn {
+      top: 55px;
+      /* 위치를 살짝 내림 */
       left: 50%;
       transform: translateX(-50%);
-  }
-  
-  .scroll-btn i {
+    }
+
+    .scroll-btn i {
       font-size: 24px;
-      color: black; /* 화살표 색을 검은색으로 변경 */
-  }
+      color: black;
+      /* 화살표 색을 검은색으로 변경 */
+    }
+
+    @media screen and (max-width: 768px) {
+      .input-container {
+        height: 80px;
+        /* 모바일에서 높이 조정 */
+        padding: 10px;
+      }
+
+      #messageInput {
+        height: 40px;
+        /* 모바일에서 높이 조정 */
+        font-size: 16px;
+        /* 폰트 크기 조정 */
+      }
+
+      #sendButton,
+      #toggleChatBtn {
+        height: 40px;
+        /* 모바일에서 높이 조정 */
+        font-size: 16px;
+        /* 폰트 크기 조정 */
+      }
+
+      .chat-message {
+        font-size: 14px !important;
+        padding: 5px 10px !important;
+        margin-bottom: 5px !important; /* 모바일에서 채팅 간의 간격 조정 */
+      }
+
+      #messageInput {
+        height: 40px;
+        /* 모바일에서 높이 조정 */
+        font-size: 16px;
+        /* 폰트 크기 조정 */
+      }
+
+      .chat-message-container {
+        margin-bottom: 3px !important;
+        /* 모바일에서 채팅 컨테이너 간격 조정 */
+      }
+
+      .delete-button {
+        margin-left: 5px !important;
+        /* 모바일에서 채팅과 쓰레기통 버튼 사이 간격 조정 */
+      }
+    }
   </style>
 </head>
 <div id="main-container">
@@ -281,7 +329,8 @@
     </div>
   </div>
   <div id="chat" class="chat-content"></div>
-  <button id="scrollToBottomBtn" class="scroll-btn" onclick="scrollToBottom()"><i class="fas fa-arrow-down"></i></button>
+  <button id="scrollToBottomBtn" class="scroll-btn" onclick="scrollToBottom()"><i
+      class="fas fa-arrow-down"></i></button>
   <button id="scrollToTopBtn" class="scroll-btn" onclick="scrollToTop()"><i class="fas fa-arrow-up"></i></button>
 </div>
 <script src="XSSprotect.js"></script>
