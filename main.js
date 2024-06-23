@@ -50,6 +50,15 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .catch(error => console.error('Error fetching username:', error));
 
+        fetch(`/api/messages?roomId=${roomId}`)
+        .then(response => response.json())
+        .then(messages => {
+            messages.forEach(message => {
+                addMessageToChat(message.text, message.id, message.username);
+            });
+            scrollToBottom();
+        })
+        .catch(error => console.error('Error fetching messages:', error));
     setScreenSize();
     window.addEventListener('resize', setScreenSize);
 });

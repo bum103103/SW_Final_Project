@@ -207,7 +207,10 @@ io.on('connection', (socket) => {
         const currentMarkers = getMarkerPositions(roomId);
         socket.emit('initialMarkers', currentMarkers);
     });
-    
+    socket.on('getAdminStatus', (roomId) => {
+        const isAdmin = markers[roomId] && markers[roomId].created_by === socket.username;
+        socket.emit('adminStatus', isAdmin);
+    });
     socket.on('markerMove', (data) => {
         if (!roomMarkers[data.roomId]) {
             roomMarkers[data.roomId] = {};
