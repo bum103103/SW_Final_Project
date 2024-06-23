@@ -145,9 +145,7 @@ function setupSocketListeners(roomId) {
     socket.on('updateUserLocations', (data) => {
         //console.log("Received user locations:", data);
         updateUserMarkers(data.userLocations);
-        if (data.center) {
-            addOrUpdateCenterMarker(data.center.latitude, data.center.longitude);
-        }
+        updateCenterMarker(data.userLocations);
         users = data.users;
         updateUserList();
     });
@@ -416,18 +414,25 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
     return EARTH_RADIUS * c; // 거리 반환 (미터 단위)
 }
 
-function addOrUpdateCenterMarker(latitude, longitude) {
+function addOrUpdateCenterMarker(position) {
     if (centerMarker) {
-        centerMarker.setPosition(new kakao.maps.LatLng(latitude, longitude));
+        centerMarker.setPosition(position);
     } else {
-        var markerPosition = new kakao.maps.LatLng(latitude, longitude);
-        centerMarker = new kakao.maps.Marker({
-            position: markerPosition
+        const content = `
+            <div class="custom-center-marker" style="left: ${position.getLng()}px; top: ${position.getLat()}px;">
+                <div class="inner-circle"></div>
+            </div>
+        `;
+
+        centerMarker = new kakao.maps.CustomOverlay({
+            position: position,
+            content: content,
+            zIndex: 3
         });
+
         centerMarker.setMap(map);
     }
 }
-
 
 function removeUserMarker(username) {
     if (userMarkers[username]) {
@@ -757,3 +762,136 @@ chat.addEventListener('scroll', function () {
         hideNewMessageNotification();
     }
 });
+
+let animatedLines = [];
+function calculateCenter(userLocations) {
+    let x = 0, y = 0, z = 0;
+
+    userLocations.forEach(user => {
+        const lat = user.latitude * Math.PI / 180;
+        const lon = user.longitude * Math.PI / 180;
+        x += Math.cos(lat) * Math.cos(lon);
+        y += Math.cos(lat) * Math.sin(lon);
+        z += Math.sin(lat);
+    });
+
+    const total = userLocations.length;
+    x = x / total;
+    y = y / total;
+    z = z / total;
+
+    const centralLongitude = Math.atan2(y, x);
+    const centralSquareRoot = Math.sqrt(x * x + y * y);
+    const centralLatitude = Math.atan2(z, centralSquareRoot);
+
+    return {
+        latitude: centralLatitude * 180 / Math.PI,
+        longitude: centralLongitude * 180 / Math.PI
+    };
+}
+function updateCenterMarker(userLocations) {
+    if (userLocations.length >= 2) {
+        const center = calculateCenter(userLocations);
+        centerPosition = new kakao.maps.LatLng(center.latitude, center.longitude);
+        addOrUpdateCenterMarker(centerPosition);
+        drawAnimatedLines(userLocations);
+    } else {
+        if (centerMarker) {
+            centerMarker.setMap(null);
+            centerMarker = null;
+        }
+        centerPosition = null;
+        removeAnimatedLines();
+    }
+}
+
+function addOrUpdateCenterMarker(position) {
+    if (centerMarker) {
+        centerMarker.setPosition(position);
+    } else {
+        const content = `
+            <div class="custom-center-marker">
+                <div class="inner-circle"></div>
+            </div>
+        `;
+
+        centerMarker = new kakao.maps.CustomOverlay({
+            position: position,
+            content: content,
+            zIndex: 3
+        });
+
+        centerMarker.setMap(map);
+    }
+}
+
+function drawAnimatedLines(userLocations) {
+    removeAnimatedLines();
+
+    const centerPosition = centerMarker.getPosition(); // 원의 위치를 가져옴
+
+    userLocations.forEach(user => {
+        const userPoint = new kakao.maps.LatLng(user.latitude, user.longitude);
+        const line = new kakao.maps.Polyline({
+            path: [userPoint, centerPosition], // 선의 끝점을 원의 위치로 설정
+            strokeWeight: 3,
+            strokeColor: 'rgb(0, 255, 255)',
+            strokeOpacity: 0.8,
+            strokeStyle: 'dashed'
+        });
+
+        line.setMap(map);
+        animatedLines.push(line);
+
+        animateLine(line);
+    });
+}
+
+function removeAnimatedLines() {
+    animatedLines.forEach(line => line.setMap(null));
+    animatedLines = [];
+}
+
+function animateLine(line) {
+    let length = 0;
+    const path = line.getPath();
+    const totalLength = calculateDistance(path[0], path[1]);
+
+    const animation = setInterval(() => {
+        length += totalLength / 50;
+        if (length >= totalLength) {
+            clearInterval(animation);
+            return;
+        }
+
+        const newPath = [path[0], getPointAtLength(path[0], path[1], length)];
+        line.setPath(newPath);
+    }, 20);
+}
+
+function calculateDistance(point1, point2) {
+    const lat1 = point1.getLat(), lon1 = point1.getLng();
+    const lat2 = point2.getLat(), lon2 = point2.getLng();
+    const R = 6371e3;
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+    const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return R * c;
+}
+
+function getPointAtLength(start, end, length) {
+    const totalLength = calculateDistance(start, end);
+    const ratio = length / totalLength;
+
+    const lat = start.getLat() + (end.getLat() - start.getLat()) * ratio;
+    const lng = start.getLng() + (end.getLng() - start.getLng()) * ratio;
+
+    return new kakao.maps.LatLng(lat, lng);
+}
