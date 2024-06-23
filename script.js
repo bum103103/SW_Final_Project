@@ -267,18 +267,19 @@ function updateUserList() {
         userList.innerHTML = '';
         users.forEach(user => {
             const userItem = document.createElement('div');
-            userItem.textContent = user;
+            const userName = document.createElement('div');
+            userName.textContent = user;
+            userName.classList.add('user-name');
             userItem.classList.add('user-list-item');
 
             // 강퇴 버튼 추가
             if (isAdmin && user !== username) { // 현재 사용자가 방 관리자일 때, 본인이 아닌 경우에만 버튼을 추가
                 const kickButton = document.createElement('button');
-                kickButton.textContent = 'Kick';
                 kickButton.classList.add('kick-button');
                 kickButton.onclick = () => kickUser(user);
                 userItem.appendChild(kickButton);
             }
-
+            userItem.appendChild(userName);
             userList.appendChild(userItem);
         });
     } else {

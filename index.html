@@ -7,7 +7,7 @@
   <script src="/socket.io/socket.io.js"></script>
   <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
   <script type="text/javascript"
-    src="//dapi.kakao.com/v2/maps/sdk.js?appkey=22c293b2277db520a282856b10771470&libraries=services,clusterer,drawing"></script>
+    src="//dapi.kakao.com/v2/maps/sdk.js?appkey=bd2fcd69a2beb433b8b026c2d381f957&libraries=services,clusterer,drawing"></script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=0.8, maximum-scale=0.8, user-scalable=no">
   <title>Chat App</title>
@@ -72,9 +72,24 @@
     }
 
     .kick-button {
-      margin-left: 10px;
-      color: red;
+      width: 44px;  /* 원하는 너비 */
+      height: 35px;  /* 원하는 높이 */
+      margin-left:30px;
+      background-size: cover;
+      background-color: #ffffff;
+      background-repeat: no-repeat;
+      background-position: center;
+      border: 5px;
       cursor: pointer;
+      background-image: url('./images/kick.png');
+    }
+
+    .user-list-item {
+      padding-top: 5px;
+      padding-bottom: 5px;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
     }
 
     .button {
