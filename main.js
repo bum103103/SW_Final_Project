@@ -506,7 +506,34 @@ setInterval(() => {
     }
 }, 5000);
 
+let lastMessageTime = 0;
+let messageCount = 0;
+let isChatBlocked = false;
+const MESSAGE_LIMIT = 10; // 5개의 메시지를 기준으로 함
+const TIME_WINDOW = 10000; // 10초 동안의 메시지를 카운트
+const BLOCK_DURATION = 30000; // 30초 동안 채팅 차단
+
 function sendMessage() {
+    if (isChatBlocked) {
+        alert("과도한 메시지로 인해 채팅이 일시적으로 차단되었습니다. 잠시 후 다시 시도해주세요.");
+        return;
+    }
+
+    const currentTime = Date.now();
+    if (currentTime - lastMessageTime > TIME_WINDOW) {
+        // 시간 창이 지나면 카운트 리셋
+        messageCount = 0;
+    }
+
+    messageCount++;
+    lastMessageTime = currentTime;
+
+    if (messageCount > MESSAGE_LIMIT) {
+        blockChat();
+        return;
+    }
+
+    // 기존의 메시지 전송 로직
     const messageId = Date.now().toString();
     var messageText = messageInput.value.trim();
     messageText = escapeHTML(messageText);
@@ -521,6 +548,21 @@ function sendMessage() {
         messageInput.value = '';
     }
     scrollToBottom();
+}
+
+function blockChat() {
+    isChatBlocked = true;
+    messageInput.disabled = true;
+    sendButton.disabled = true;
+    alert("과도한 메시지 전송으로 인해 30초 동안 채팅이 차단되었습니다.");
+
+    setTimeout(() => {
+        isChatBlocked = false;
+        messageInput.disabled = false;
+        sendButton.disabled = false;
+        messageCount = 0;
+        alert("채팅 차단이 해제되었습니다.");
+    }, BLOCK_DURATION);
 }
 
 function addMessageToChat(messageText, messageId, messageUsername) {

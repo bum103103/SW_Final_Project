@@ -36,7 +36,7 @@ let roomUserLocations = {}; // 방별로 사용자 위치를 저장하는 객체
 let roomUsers = {}; // 방별 사용자 목록
 let bannedUsers = {}; // 방별 강퇴된 사용자 목록
 const roomUserCounts = {}; // 방별 유저 수를 저장하는 객체
-const roomEmptyCheckInterval = 5 * 60 * 1000; // 5분
+const roomEmptyCheckInterval = 30 * 1000; // 30초
 const roomMarkers = {};
 
 function checkAndRemoveEmptyRooms() {
@@ -559,18 +559,12 @@ app.post('/login', (req, res) => {
                         const isAdmin = results[0].is_admin;
                         req.session.isAdmin = isAdmin;
 
-                        pool.query('UPDATE user_login SET status = 0 WHERE username = ?', [username], (err, result) => {
+                        pool.query('UPDATE user_login SET status = 1 WHERE username = ?', [username], (err, result) => {
                             if (err) {
                                 console.error('Failed to update user status:', err);
                                 return;
                             }
                         });
-                        /*pool.query('UPDATE user_login SET status = 0 WHERE username = ?', [username], (err, result) => {
-                            if (err) {
-                                console.error('Failed to update user status:', err);
-                                return;
-                            }
-                        });*/
 
                         res.json({ success: true, isAdmin: isAdmin });
                     }
