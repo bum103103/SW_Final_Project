@@ -1150,9 +1150,33 @@
         }
 
         function deleteMarker() {
-            socket.emit('deleteMarker');
-            markerCreated = false;
-            resetPages();
+            fetch('/hasMarker')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.hasMarker) {
+                        const markerId = data.marker.id;
+                        const overlay = document.getElementById(`overlay_${markerId}`);
+                        if (overlay) {
+                            const countElement = overlay.querySelector('.count');
+                            if (countElement) {
+                                const [currentUsers, maxUsers] = countElement.textContent.split('/');
+                                if (parseInt(currentUsers) >= 1) {
+                                    alert("다른 사용자가 있는 방은 삭제할 수 없습니다.");
+                                    return;
+                                }
+                            }
+                        }
+                        
+                        if (confirm("정말로 이 방을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.")) {
+                            socket.emit('deleteMarker');
+                            markerCreated = false;
+                            resetPages();
+                        }
+                    } else {
+                        alert("삭제할 마커가 없습니다.");
+                    }
+                })
+                .catch(error => console.error('Error checking marker:', error));
         }
         var currentCategory = null;
         var markersByCategory = {}; // 카테고리별 마커를 저장할 객체
