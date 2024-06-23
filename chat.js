@@ -385,6 +385,35 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('transferAdmin', (data) => {
+        const { roomId, newAdmin } = data;
+        if (socket.username === markers[roomId].created_by) {
+            // DB에서 방장 정보 업데이트
+            pool.query('UPDATE markers SET created_by = ? WHERE id = ?', [newAdmin, roomId], (err) => {
+                if (err) {
+                    console.error('Error updating admin in database:', err);
+                    socket.emit('adminTransferred', { success: false, message: 'Failed to transfer admin rights.' });
+                } else {
+                    // 마커 정보 업데이트
+                    markers[roomId].created_by = newAdmin;
+                    
+                    // 모든 클라이언트에게 방장 이전 완료 알림
+                    io.to(roomId).emit('adminTransferred', { 
+                        success: true, 
+                        message: `방장 권한이 ${newAdmin}에게 이전되었습니다.`,
+                        newAdmin: newAdmin,
+                        shouldRefresh: true  // 새로고침 신호 추가
+                    });
+
+                    // 새 방장에게 관리자 상태 업데이트
+                    io.to(roomId).emit('adminStatus', socket.id === newAdmin);
+                }
+            });
+        } else {
+            socket.emit('adminTransferred', { success: false, message: 'You are not the admin of this room.' });
+        }
+    });
+
     socket.on('delete', (messageId) => {
         pool.query('DELETE FROM messages WHERE id = ?', [messageId], (err) => {
             if (err) {

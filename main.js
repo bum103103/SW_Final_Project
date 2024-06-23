@@ -167,6 +167,17 @@ function setupSocketListeners(roomId) {
         alert(data.message);
         window.location.href = '/map.html';
     });
+    socket.on('adminTransferred', (data) => {
+        if (data && data.success) {
+            alert(data.message);
+            if (data.shouldRefresh) {
+                // 잠시 대기 후 새로고침 (다른 클라이언트들이 알림을 볼 수 있도록)
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);  // 1초 후 새로고침
+            }
+        }
+    });
 
     // 초기 관리자 상태 요청
     socket.emit('getAdminStatus', roomId);
@@ -727,13 +738,19 @@ function updateUserList() {
             userItem.textContent = user;
             userItem.classList.add('user-list-item');
 
-            // 강퇴 버튼 추가
-            if (isAdmin && user !== username) { // 현재 사용자가 방 관리자일 때, 본인이 아닌 경우에만 버튼을 추가
+            if (isAdmin && user !== username) {
                 const kickButton = document.createElement('button');
                 kickButton.textContent = 'Kick';
                 kickButton.classList.add('kick-button');
                 kickButton.onclick = () => kickUser(user);
                 userItem.appendChild(kickButton);
+
+                // 방장 이전 버튼 추가
+                const transferButton = document.createElement('button');
+                transferButton.textContent = 'Transfer Admin';
+                transferButton.classList.add('transfer-button');
+                transferButton.onclick = () => transferAdmin(user);
+                userItem.appendChild(transferButton);
             }
 
             userList.appendChild(userItem);
@@ -741,6 +758,13 @@ function updateUserList() {
     } else {
         userCount.textContent = 'Users: 0';
         userList.innerHTML = '';
+    }
+}
+
+
+function transferAdmin(newAdmin) {
+    if (confirm(`Are you sure you want to transfer admin rights to ${newAdmin}?`)) {
+        socket.emit('transferAdmin', { roomId: roomId, newAdmin: newAdmin });
     }
 }
 
