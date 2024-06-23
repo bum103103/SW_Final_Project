@@ -729,41 +729,78 @@ function toggleChat() {
     }
 }
 
+let activeButtons = null;
+
 function updateUserList() {
     if (users && Array.isArray(users)) {
         userCount.textContent = `Users: ${users.length}`;
         userList.innerHTML = '';
         users.forEach(user => {
             const userItem = document.createElement('div');
-            userItem.textContent = user;
             userItem.classList.add('user-list-item');
-
-            if (isAdmin && user !== username) {
-                const kickButton = document.createElement('button');
-                kickButton.textContent = 'Kick';
-                kickButton.classList.add('kick-button');
-                kickButton.onclick = () => kickUser(user);
-                userItem.appendChild(kickButton);
-
-                // 방장 이전 버튼 추가
-                const transferButton = document.createElement('button');
-                transferButton.textContent = 'Transfer Admin';
-                transferButton.classList.add('transfer-button');
-                transferButton.onclick = () => transferAdmin(user);
-                userItem.appendChild(transferButton);
-            }
-
+            userItem.textContent = user;
+            userItem.onclick = (event) => toggleAdminButtons(user, event);
             userList.appendChild(userItem);
         });
     } else {
         userCount.textContent = 'Users: 0';
         userList.innerHTML = '';
     }
+    console.log('User list updated:', users);
+}
+
+function toggleAdminButtons(user, event) {
+    if (activeButtons) {
+        document.body.removeChild(activeButtons);
+        activeButtons = null;
+    }
+
+    if (isAdmin && user !== username) {
+        const buttonContainer = document.createElement('div');
+        buttonContainer.classList.add('floating-admin-buttons');
+        
+        const kickButton = createButton('강퇴', () => kickUser(user), 'kick-button');
+        const transferButton = createButton('방장 이전', () => transferAdmin(user), 'transfer-button');
+        
+        buttonContainer.appendChild(kickButton);
+        buttonContainer.appendChild(transferButton);
+
+        // 위치 계산
+        const rect = event.target.getBoundingClientRect();
+        buttonContainer.style.position = 'absolute';
+        buttonContainer.style.left = `${rect.left}px`;
+        buttonContainer.style.top = `${rect.top - 50}px`; // 버튼 높이를 고려하여 조정
+
+        document.body.appendChild(buttonContainer);
+        activeButtons = buttonContainer;
+
+        // 다른 곳을 클릭하면 버튼 닫기
+        document.addEventListener('click', closeButtonsOnOutsideClick);
+    }
+}
+
+function closeButtonsOnOutsideClick(event) {
+    if (activeButtons && !activeButtons.contains(event.target) && !event.target.classList.contains('user-list-item')) {
+        document.body.removeChild(activeButtons);
+        activeButtons = null;
+        document.removeEventListener('click', closeButtonsOnOutsideClick);
+    }
+}
+
+function createButton(text, onClick, className) {
+    const button = document.createElement('button');
+    button.textContent = text;
+    button.classList.add('modern-button', className);
+    button.onclick = (e) => {
+        e.stopPropagation();
+        onClick();
+    };
+    return button;
 }
 
 
 function transferAdmin(newAdmin) {
-    if (confirm(`Are you sure you want to transfer admin rights to ${newAdmin}?`)) {
+    if (confirm(`정말로 방장을 이전하시겠습니까 ${newAdmin}에게?`)) {
         socket.emit('transferAdmin', { roomId: roomId, newAdmin: newAdmin });
     }
 }

@@ -165,7 +165,7 @@ io.on('connection', (socket) => {
 
     socket.on('joinRoom', (roomId) => {
         if (bannedUsers[roomId] && bannedUsers[roomId].includes(socket.username)) {
-            socket.emit('banned', { success: false, message: 'You are banned from this room.' });
+            socket.emit('banned', { success: false, message: '강퇴 당한 방은 입장이 불가능 합니다.' });
             return;
         }
 
@@ -410,7 +410,7 @@ io.on('connection', (socket) => {
                 }
             });
         } else {
-            socket.emit('adminTransferred', { success: false, message: 'You are not the admin of this room.' });
+            socket.emit('adminTransferred', { success: false, message: '이 방의 방장이 되었습니다.' });
         }
     });
 
@@ -549,7 +549,7 @@ app.post('/signup', (req, res) => {
                 return;
             }
             if (results.length > 0) {
-                res.json({ success: false, message: 'Username already exists.' });
+                res.json({ success: false, message: '아이디가 이미 존재합니다.' });
             } else {
                 const sql = 'INSERT INTO user_login (username, password) VALUES (?, ?)';
                 pool.query(sql, [username, password], (err, result) => {
@@ -562,7 +562,7 @@ app.post('/signup', (req, res) => {
             }
         });
     } else {
-        res.status(400).json({ success: false, message: 'Both username and password are required' });
+        res.status(400).json({ success: false, message: '아이디와 비밀번호 모두 작성해주세요.' });
     }
 });
 
