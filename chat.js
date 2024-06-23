@@ -92,16 +92,29 @@ setInterval(checkAndRemoveEmptyRooms, roomEmptyCheckInterval);
 app.use(sessionParser);
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
-function calculateCenter(locations) {
-    let latSum = 0;
-    let lngSum = 0;
-    locations.forEach(loc => {
-        latSum += loc.latitude;
-        lngSum += loc.longitude;
+function calculateCenter(userLocations) {
+    let x = 0, y = 0, z = 0;
+
+    userLocations.forEach(user => {
+        const lat = user.latitude * Math.PI / 180;
+        const lon = user.longitude * Math.PI / 180;
+        x += Math.cos(lat) * Math.cos(lon);
+        y += Math.cos(lat) * Math.sin(lon);
+        z += Math.sin(lat);
     });
+
+    const total = userLocations.length;
+    x = x / total;
+    y = y / total;
+    z = z / total;
+
+    const centralLongitude = Math.atan2(y, x);
+    const centralSquareRoot = Math.sqrt(x * x + y * y);
+    const centralLatitude = Math.atan2(z, centralSquareRoot);
+
     return {
-        latitude: latSum / locations.length,
-        longitude: lngSum / locations.length
+        latitude: centralLatitude * 180 / Math.PI,
+        longitude: centralLongitude * 180 / Math.PI
     };
 }
 
@@ -217,6 +230,10 @@ io.on('connection', (socket) => {
         }
         roomMarkers[data.roomId][data.type] = data;
         socket.to(data.roomId).emit('markerUpdate', data);
+    });
+    socket.on('requestMarkerPositions', function(roomId) {
+        const positions = getMarkerPositions(roomId);  // 이 함수는 서버에서 구현해야 함
+        socket.emit('markerPositions', positions);
     });
 
     socket.on('updateLocation', (data) => {
