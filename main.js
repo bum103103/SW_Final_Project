@@ -50,7 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
         })
         .catch(error => console.error('Error fetching username:', error));
 
-        fetch(`/api/messages?roomId=${roomId}`)
+    fetch(`/api/messages?roomId=${roomId}`)
         .then(response => response.json())
         .then(messages => {
             messages.forEach(message => {
@@ -59,6 +59,7 @@ document.addEventListener('DOMContentLoaded', function () {
             scrollToBottom();
         })
         .catch(error => console.error('Error fetching messages:', error));
+    initializeNewMessageNotification();
     setScreenSize();
     window.addEventListener('resize', setScreenSize);
 });
@@ -121,7 +122,7 @@ async function initializeMap(roomId) {
 
         setupSocketListeners(roomId);
         setInterval(() => updateUserLocation(roomId), 5000);
-        requestAdminStatus();   
+        requestAdminStatus();
         // 서버에 초기 위치 전송
         sendLocation(roomId, latitude, longitude);
     } catch (error) {
@@ -163,7 +164,7 @@ function setupSocketListeners(roomId) {
         alert(data.message);
         window.location.href = '/map.html';
     });
-    
+
     // 초기 관리자 상태 요청
     socket.emit('getAdminStatus', roomId);
 }
@@ -185,7 +186,7 @@ function createAdminMarkers() {
         return;
     }
     const center = map.getCenter();
-    
+
     if (!startMarker) {
         startMarker = new kakao.maps.Marker({
             position: new kakao.maps.LatLng(center.getLat() - offset, center.getLng() - offset),
@@ -197,8 +198,8 @@ function createAdminMarkers() {
             )
         });
         startMarker.setMap(map);
-        
-        kakao.maps.event.addListener(startMarker, 'dragend', function() {
+
+        kakao.maps.event.addListener(startMarker, 'dragend', function () {
             emitMarkerPosition('start', startMarker.getPosition());
         });
     }
@@ -214,8 +215,8 @@ function createAdminMarkers() {
             )
         });
         endMarker.setMap(map);
-        
-        kakao.maps.event.addListener(endMarker, 'dragend', function() {
+
+        kakao.maps.event.addListener(endMarker, 'dragend', function () {
             emitMarkerPosition('end', endMarker.getPosition());
         });
     }
@@ -498,6 +499,7 @@ function sendMessage() {
 }
 
 function addMessageToChat(messageText, messageId, messageUsername) {
+    const wasAtBottom = isScrolledToBottom();
     const messageContainer = document.createElement('div');
     messageContainer.classList.add('chat-message-container');
     var icon = document.createElement('i');
@@ -507,7 +509,12 @@ function addMessageToChat(messageText, messageId, messageUsername) {
     message.dataset.id = messageId;
     message.classList.add('chat-message', messageUsername === username ? 'self' : 'other');
     message.style.fontSize = '40px';
-    scrollToBottom();
+    if (wasAtBottom) {
+        scrollToBottom();
+        hideNewMessageNotification();
+    } else {
+        showNewMessageNotification();
+    }
     const formattedMessageText = `${messageUsername}: ${messageText}`;
     message.textContent = formattedMessageText;
     setTextColor(message, messageText);
@@ -529,7 +536,7 @@ function addMessageToChat(messageText, messageId, messageUsername) {
     if (userMarkers[messageUsername]) {
         let popupElement, queueKey;
         const isCluster = userMarkers[messageUsername].clusteredBy !== messageUsername || userMarkers[messageUsername].isCluster;
-        
+
         if (isCluster) {
             let clusteredBy = userMarkers[messageUsername].clusteredBy;
             popupElement = document.getElementById(`${clusteredBy}-popup`).querySelector('.messages');
@@ -538,29 +545,29 @@ function addMessageToChat(messageText, messageId, messageUsername) {
             popupElement = document.getElementById(`${messageUsername}-popup`).querySelector('.messages');
             queueKey = messageUsername;
         }
-    
+
         // 해당 사용자/클러스터의 메시지 큐가 없으면 생성
         if (!messageQueues[queueKey]) {
             messageQueues[queueKey] = [];
         }
-    
+
         const newMessage = {
             element: document.createElement('div'),
             timestamp: Date.now()
         };
         newMessage.element.style.background = 'beige';
         newMessage.element.style.marginBottom = '5px';
-        
+
         // 클러스터(단체 채팅방)인 경우에만 "이름: 채팅" 형식으로 표시
         if (isCluster) {
             newMessage.element.textContent = `${messageUsername}: ${messageText}`;
         } else {
             newMessage.element.textContent = messageText;
         }
-    
+
         // 새 메시지를 큐에 추가
         messageQueues[queueKey].push(newMessage);
-    
+
         // 큐에 3개 이상의 메시지가 있으면 가장 오래된 메시지 제거
         if (messageQueues[queueKey].length > 3) {
             const oldestMessage = messageQueues[queueKey].shift();
@@ -571,10 +578,10 @@ function addMessageToChat(messageText, messageId, messageUsername) {
                 }
             }, 1000); // 애니메이션 시간 (1초)
         }
-    
+
         // 새 메시지를 팝업에 추가
         popupElement.appendChild(newMessage.element);
-    
+
         // 5초 후 메시지 제거 타이머 설정
         setTimeout(() => {
             const index = messageQueues[queueKey].findIndex(msg => msg.timestamp === newMessage.timestamp);
@@ -629,18 +636,18 @@ function scrollToTop() {
 
 function toggleChat() {
     let chat = document.getElementsByClassName('chat-container')[0];
-    
+
     if (chat.classList.contains('show')) {
         chat.classList.remove('show');
         setTimeout(() => {
             chat.style.display = 'none';
-        }, 500); 
+        }, 500);
     } else {
         chat.style.display = 'flex';
         setTimeout(() => {
             chat.classList.add('show');
             scrollToBottom();
-        }, 10); 
+        }, 10);
     }
 }
 
@@ -707,3 +714,46 @@ function handleScrollButtons() {
 }
 
 chat.addEventListener('scroll', handleScrollButtons);
+
+
+let newMessageNotification = null;
+
+function initializeNewMessageNotification() {
+    newMessageNotification = document.getElementById('newMessageNotification');
+    newMessageNotification.addEventListener('click', () => {
+        scrollToBottom();
+        hideNewMessageNotification();
+    });
+}
+
+
+function showNewMessageNotification() {
+    if (newMessageNotification) {
+        newMessageNotification.style.display = 'block';
+        // 페이드 인 효과
+        setTimeout(() => {
+            newMessageNotification.style.opacity = '1';
+        }, 10);
+    }
+}
+
+function hideNewMessageNotification() {
+    if (newMessageNotification) {
+        // 페이드 아웃 효과
+        newMessageNotification.style.opacity = '0';
+        setTimeout(() => {
+            newMessageNotification.style.display = 'none';
+        }, 300);
+    }
+}
+
+function isScrolledToBottom() {
+    return chat.scrollHeight - chat.clientHeight <= chat.scrollTop + 1;
+}
+
+// 사용자가 수동으로 스크롤할 때 알림 숨기기
+chat.addEventListener('scroll', function () {
+    if (isScrolledToBottom()) {
+        hideNewMessageNotification();
+    }
+});

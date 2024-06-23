@@ -326,7 +326,21 @@
             width: 10px !important; 
             height: 10px !important; 
         }
+        
     }
+    .new-message-notification {
+      position: absolute;
+      bottom: 30px; /* 스크롤 버튼 위에 위치 */
+      right: 10px;
+      color: #007bff;
+      padding: 5px 10px;
+      border-radius: 15px;
+      cursor: pointer;
+      display: none;
+      font-weight: bold;
+      font-size: 16px;
+      transition: opacity 0.3s ease;
+  }
   </style>
 </head>
 <div id="main-container">
@@ -349,6 +363,7 @@
     </div>
   </div>
   <div id="chat" class="chat-content"></div>
+  <div id="newMessageNotification" class="new-message-notification">새로운 메시지!</div>
   <button id="scrollToBottomBtn" class="scroll-btn" onclick="scrollToBottom()"><i
       class="fas fa-arrow-down"></i></button>
   <button id="scrollToTopBtn" class="scroll-btn" onclick="scrollToTop()"><i class="fas fa-arrow-up"></i></button>
