@@ -74,7 +74,18 @@ function getUserGeoData() {
         }
     });
 }
-
+let adminStatusRequested = false;
+function requestAdminStatus() {
+    if (!adminStatusRequested) {
+        console.log('Requesting admin status');
+        socket.emit('getAdminStatus', roomId);
+        handleAdminStatus(adminStatusRequested);
+        // 5초 후에 다시 요청할 수 있도록 설정
+        setTimeout(() => {
+            adminStatusRequested = false;
+        }, 1000);
+    }
+}
 async function initializeMap(roomId) {
     try {
         await connectSocket();
@@ -101,7 +112,7 @@ async function initializeMap(roomId) {
 
         setupSocketListeners(roomId);
         setInterval(() => updateUserLocation(roomId), 5000);
-
+        requestAdminStatus();   
         // 서버에 초기 위치 전송
         sendLocation(roomId, latitude, longitude);
     } catch (error) {
@@ -122,7 +133,7 @@ function setupSocketListeners(roomId) {
     socket.on('adminStatus', handleAdminStatus);
     socket.on('markerUpdate', updateMarkerPosition);
     socket.on('updateUserLocations', (data) => {
-        console.log("Received user locations:", data);
+        //console.log("Received user locations:", data);
         updateUserMarkers(data.userLocations);
         if (data.center) {
             addOrUpdateCenterMarker(data.center.latitude, data.center.longitude);
@@ -150,15 +161,20 @@ function setupSocketListeners(roomId) {
 
 function handleAdminStatus(status) {
     isAdmin = status;
-    console.log("Admin status:", isAdmin);
+    console.log("Received admin status:", status);
     if (isAdmin) {
         createAdminMarkers();
     }
 }
 
 function createAdminMarkers() {
-    console.log("Creating admin markers");
+    console.log("Creating admin markers, isAdmin:", isAdmin);
     const offset = 0.001;
+    if (!map) {
+        console.log("Map not initialized, waiting...");
+        setTimeout(createAdminMarkers, 100);
+        return;
+    }
     const center = map.getCenter();
     
     if (!startMarker) {
@@ -210,7 +226,7 @@ function emitMarkerPosition(type, position) {
 }
 
 function updateMarkerPosition(data) {
-    console.log("Updating marker position:", data);
+    //console.log("Updating marker position:", data);
     const position = new kakao.maps.LatLng(data.lat, data.lng);
     if (data.type === 'start') {
         if (!startMarker) {
