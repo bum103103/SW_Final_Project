@@ -113,6 +113,11 @@ async function initializeMap(roomId) {
 
         map = new kakao.maps.Map(container, options);
 
+        kakao.maps.event.addListener(map, 'tilesloaded', function() {
+            console.log("Map tiles fully loaded");
+            socket.emit('requestMarkerPositions', roomId);
+        });
+
         var mapTypeControl = new kakao.maps.MapTypeControl();
         map.addControl(mapTypeControl, kakao.maps.ControlPosition.TOPRIGHT);
 
@@ -165,6 +170,17 @@ function setupSocketListeners(roomId) {
 
     // 초기 관리자 상태 요청
     socket.emit('getAdminStatus', roomId);
+
+    socket.on('markerPositions', function(positions) {
+        console.log("Received marker positions:", positions);
+        if (positions.start) {
+            updateMarkerPosition({type: 'start', lat: positions.start.lat, lng: positions.start.lng});
+        }
+        if (positions.end) {
+            updateMarkerPosition({type: 'end', lat: positions.end.lat, lng: positions.end.lng});
+        }
+    });
+    
 }
 
 function handleAdminStatus(status) {
@@ -234,7 +250,7 @@ function emitMarkerPosition(type, position) {
 }
 
 function updateMarkerPosition(data) {
-    //console.log("Updating marker position:", data);
+    console.log("Updating marker position:", data);
     const position = new kakao.maps.LatLng(data.lat, data.lng);
     if (data.type === 'start') {
         if (!startMarker) {
@@ -263,14 +279,18 @@ function updateMarkerPosition(data) {
         endMarker.setPosition(position);
         endMarker.setMap(map);
     }
+    setMarkerDraggable();
+}
 
-    if (!isAdmin) {
-        if (startMarker) startMarker.setDraggable(false);
-        if (endMarker) endMarker.setDraggable(false);
-    } else {
-        if (startMarker) startMarker.setDraggable(true);
-        if (endMarker) endMarker.setDraggable(true);
+setInterval(() => {
+    if (socket.connected && roomId) {
+        socket.emit('requestMarkerPositions', roomId);
     }
+}, 10000);  // 10초마다 확인
+
+function setMarkerDraggable() {
+    if (startMarker) startMarker.setDraggable(isAdmin);
+    if (endMarker) endMarker.setDraggable(isAdmin);
 }
 
 function addOrUpdateUserMarker(username, latitude, longitude) {

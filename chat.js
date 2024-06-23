@@ -231,6 +231,10 @@ io.on('connection', (socket) => {
         roomMarkers[data.roomId][data.type] = data;
         socket.to(data.roomId).emit('markerUpdate', data);
     });
+    socket.on('requestMarkerPositions', function(roomId) {
+        const positions = getMarkerPositions(roomId);  // 이 함수는 서버에서 구현해야 함
+        socket.emit('markerPositions', positions);
+    });
 
     socket.on('updateLocation', (data) => {
         const { latitude, longitude, roomId } = data;
