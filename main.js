@@ -1,25 +1,43 @@
+// main.js
+
 function escapeHTML(str) {
     return str.replace(/[&<>"']/g, function (match) {
         switch (match) {
-            case '&':
-                return '&amp;';
-            case '<':
-                return '&lt;';
-            case '>':
-                return '&gt;';
-            case '"':
-                return '&quot;';
-            case "'":
-                return '&#039;';
-            default:
-                return match;
+            case '&': return '&amp;';
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '"': return '&quot;';
+            case "'": return '&#039;';
+            default: return match;
         }
     });
 }
 
+let socket;
+let map;
+let userMarkers = {};
+let startMarker, endMarker;
+let isAdmin = false;
+let username = '';
+let roomId;
+let userLatitude = 0.0;
+let userLongitude = 0.0;
+let centerMarker = null;
+let users = [];
+
+const chat = document.getElementById('chat');
+const messageInput = document.getElementById('messageInput');
+const sendButton = document.getElementById('sendButton');
+const userCount = document.getElementById('userCount');
+const userList = document.getElementById('userList');
+const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
+const scrollToTopBtn = document.getElementById('scrollToTopBtn');
+
+const messageQueues = {};
+
 document.addEventListener('DOMContentLoaded', function () {
     const urlParams = new URLSearchParams(window.location.search);
-    roomId = urlParams.get('roomId');  // URL에서 roomId 추출
+    roomId = urlParams.get('roomId');
 
     fetch('/get-username')
         .then(response => response.json())
@@ -31,8 +49,10 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         })
         .catch(error => console.error('Error fetching username:', error));
-});
 
+    setScreenSize();
+    window.addEventListener('resize', setScreenSize);
+});
 
 function getUserGeoData() {
     return new Promise((resolve, reject) => {
@@ -54,14 +74,6 @@ function getUserGeoData() {
         }
     });
 }
-
-let socket;
-let userLatitude = 0.0;
-let userLongitude = 0.0;
-let map;
-let userMarkers = {};
-let startMarker, endMarker;
-let isAdmin = false;
 
 async function initializeMap(roomId) {
     try {
@@ -115,9 +127,21 @@ function setupSocketListeners(roomId) {
         if (data.center) {
             addOrUpdateCenterMarker(data.center.latitude, data.center.longitude);
         }
+        users = data.users;
+        updateUserList();
     });
     socket.on('removeMarker', (data) => {
         removeUserMarker(data.username);
+    });
+    socket.on('message', (data) => {
+        addMessageToChat(data.text, data.messageId, data.username);
+    });
+    socket.on('delete', (data) => {
+        document.querySelectorAll(`p[data-id='${data.messageId}']`).forEach(el => el.remove());
+    });
+    socket.on('kicked', (data) => {
+        alert(data.message);
+        window.location.href = '/map.html';
     });
     
     // 초기 관리자 상태 요청
@@ -129,56 +153,6 @@ function handleAdminStatus(status) {
     console.log("Admin status:", isAdmin);
     if (isAdmin) {
         createAdminMarkers();
-    }
-}
-function emitMarkerPosition(type, position) {
-    socket.emit('markerMove', {
-        type: type,
-        lat: position.getLat(),
-        lng: position.getLng(),
-        roomId: roomId
-    });
-}
-
-
-function updateMarkerPosition(data) {
-    console.log("Updating marker position:", data);
-    const position = new kakao.maps.LatLng(data.lat, data.lng);
-    if (data.type === 'start') {
-        if (!startMarker) {
-            startMarker = new kakao.maps.Marker({
-                position: position,
-                image: new kakao.maps.MarkerImage(
-                    'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/red_b.png',
-                    new kakao.maps.Size(50, 45),
-                    { offset: new kakao.maps.Point(15, 43) }
-                )
-            });
-        }
-        startMarker.setPosition(position);
-        startMarker.setMap(map);
-    } else if (data.type === 'end') {
-        if (!endMarker) {
-            endMarker = new kakao.maps.Marker({
-                position: position,
-                image: new kakao.maps.MarkerImage(
-                    'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/blue_b.png',
-                    new kakao.maps.Size(50, 45),
-                    { offset: new kakao.maps.Point(15, 43) }
-                )
-            });
-        }
-        endMarker.setPosition(position);
-        endMarker.setMap(map);
-    }
-
-    // 방장이 아닌 경우에만 마커를 드래그 불가능하게 설정
-    if (!isAdmin) {
-        if (startMarker) startMarker.setDraggable(false);
-        if (endMarker) endMarker.setDraggable(false);
-    } else {
-        if (startMarker) startMarker.setDraggable(true);
-        if (endMarker) endMarker.setDraggable(true);
     }
 }
 
@@ -226,33 +200,52 @@ function createAdminMarkers() {
     emitMarkerPosition('end', endMarker.getPosition());
 }
 
-function addMarkerDragListeners() {
-    kakao.maps.event.addListener(startMarker, 'dragend', function () {
-        emitMarkerPosition('start', startMarker.getPosition());
-    });
-
-    kakao.maps.event.addListener(endMarker, 'dragend', function () {
-        emitMarkerPosition('end', endMarker.getPosition());
+function emitMarkerPosition(type, position) {
+    socket.emit('markerMove', {
+        type: type,
+        lat: position.getLat(),
+        lng: position.getLng(),
+        roomId: roomId
     });
 }
 
-function hideControls() {
-    let mapContainer = document.getElementById('map');
-    // 지도의 오른쪽 위 컨트롤을 찾아서 숨깁니다.
-    let header = mapContainer.children[2];
-    let topRightControls = header.firstChild;
-    if (topRightControls) {
-        topRightControls.style.display = 'none'; // 모든 오른쪽 상단 컨트롤 숨기기
+function updateMarkerPosition(data) {
+    console.log("Updating marker position:", data);
+    const position = new kakao.maps.LatLng(data.lat, data.lng);
+    if (data.type === 'start') {
+        if (!startMarker) {
+            startMarker = new kakao.maps.Marker({
+                position: position,
+                image: new kakao.maps.MarkerImage(
+                    'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/red_b.png',
+                    new kakao.maps.Size(50, 45),
+                    { offset: new kakao.maps.Point(15, 43) }
+                )
+            });
+        }
+        startMarker.setPosition(position);
+        startMarker.setMap(map);
+    } else if (data.type === 'end') {
+        if (!endMarker) {
+            endMarker = new kakao.maps.Marker({
+                position: position,
+                image: new kakao.maps.MarkerImage(
+                    'https://t1.daumcdn.net/localimg/localimages/07/mapapidoc/blue_b.png',
+                    new kakao.maps.Size(50, 45),
+                    { offset: new kakao.maps.Point(15, 43) }
+                )
+            });
+        }
+        endMarker.setPosition(position);
+        endMarker.setMap(map);
     }
-}
 
-function showControls() {
-    let mapContainer = document.getElementById('map');
-    // 지도의 오른쪽 위 컨트롤을 찾아서 숨깁니다.
-    let header = mapContainer.children[2];
-    let topRightControls = header.firstChild;
-    if (topRightControls) {
-        topRightControls.style.display = 'block'; // 모든 오른쪽 상단 컨트롤 숨기기
+    if (!isAdmin) {
+        if (startMarker) startMarker.setDraggable(false);
+        if (endMarker) endMarker.setDraggable(false);
+    } else {
+        if (startMarker) startMarker.setDraggable(true);
+        if (endMarker) endMarker.setDraggable(true);
     }
 }
 
@@ -330,26 +323,6 @@ function addOrUpdateUserMarker(username, latitude, longitude) {
     }
 }
 
-// 두 개의 위도, 경도 간의 거리를 구하기
-function haversineDistance(lat1, lon1, lat2, lon2) {
-    const EARTH_RADIUS = 6371000; // 지구 반경 (미터)
-
-    // 라디안 단위로 변환
-    const toRadians = (degrees) => degrees * (Math.PI / 180);
-
-    const dLat = toRadians(lat2 - lat1);
-    const dLon = toRadians(lon2 - lon1);
-
-    const rLat1 = toRadians(lat1);
-    const rLat2 = toRadians(lat2);
-
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(rLat1) * Math.cos(rLat2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-
-    return EARTH_RADIUS * c; // 거리 반환 (미터 단위)
-}
-
 function updateUserMarkers(userLocations) {
     // 마커 최신화
     userLocations.forEach(userLocation => {
@@ -398,8 +371,24 @@ function updateUserMarkers(userLocations) {
     });
 }
 
+function haversineDistance(lat1, lon1, lat2, lon2) {
+    const EARTH_RADIUS = 6371000; // 지구 반경 (미터)
 
-let centerMarker = null;
+    // 라디안 단위로 변환
+    const toRadians = (degrees) => degrees * (Math.PI / 180);
+
+    const dLat = toRadians(lat2 - lat1);
+    const dLon = toRadians(lon2 - lon1);
+
+    const rLat1 = toRadians(lat1);
+    const rLat2 = toRadians(lat2);
+
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.sin(dLon / 2) * Math.sin(dLon / 2) * Math.cos(rLat1) * Math.cos(rLat2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+    return EARTH_RADIUS * c; // 거리 반환 (미터 단위)
+}
 
 function addOrUpdateCenterMarker(latitude, longitude) {
     if (centerMarker) {
@@ -412,6 +401,7 @@ function addOrUpdateCenterMarker(latitude, longitude) {
         centerMarker.setMap(map);
     }
 }
+
 
 function removeUserMarker(username) {
     if (userMarkers[username]) {
@@ -448,6 +438,7 @@ async function updateUserLocation(roomId) {
         console.error('Location update error:', error);
     }
 }
+
 function getCurrentPosition() {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
@@ -463,3 +454,231 @@ setInterval(() => {
         socket.connect();
     }
 }, 5000);
+
+function sendMessage() {
+    const messageId = Date.now().toString();
+    var messageText = messageInput.value.trim();
+    messageText = escapeHTML(messageText);
+    if (messageText) {
+        const messageData = {
+            text: messageText,
+            messageId: messageId,
+            username: username,
+            roomId: roomId
+        };
+        socket.emit('message', messageData);
+        messageInput.value = '';
+    }
+    scrollToBottom();
+}
+
+function addMessageToChat(messageText, messageId, messageUsername) {
+    const messageContainer = document.createElement('div');
+    messageContainer.classList.add('chat-message-container');
+    var icon = document.createElement('i');
+    icon.classList.add('fas', 'fa-trash');
+
+    const message = document.createElement('p');
+    message.dataset.id = messageId;
+    message.classList.add('chat-message', messageUsername === username ? 'self' : 'other');
+    message.style.fontSize = '40px';
+    scrollToBottom();
+    const formattedMessageText = `${messageUsername}: ${messageText}`;
+    message.textContent = formattedMessageText;
+    setTextColor(message, messageText);
+
+    if (messageUsername === username) {
+        const deleteButton = document.createElement('button');
+        deleteButton.onclick = function () {
+            socket.emit('delete', message.dataset.id);
+        };
+        deleteButton.classList.add('delete-button');
+        deleteButton.appendChild(icon);
+        message.appendChild(deleteButton);
+    } else {
+        message.classList.add('other');
+    }
+
+    messageContainer.appendChild(message);
+    chat.appendChild(messageContainer);
+    if (userMarkers[messageUsername]) {
+        let popupElement, queueKey;
+        const isCluster = userMarkers[messageUsername].clusteredBy !== messageUsername || userMarkers[messageUsername].isCluster;
+        
+        if (isCluster) {
+            let clusteredBy = userMarkers[messageUsername].clusteredBy;
+            popupElement = document.getElementById(`${clusteredBy}-popup`).querySelector('.messages');
+            queueKey = clusteredBy;
+        } else {
+            popupElement = document.getElementById(`${messageUsername}-popup`).querySelector('.messages');
+            queueKey = messageUsername;
+        }
+    
+        // 해당 사용자/클러스터의 메시지 큐가 없으면 생성
+        if (!messageQueues[queueKey]) {
+            messageQueues[queueKey] = [];
+        }
+    
+        const newMessage = {
+            element: document.createElement('div'),
+            timestamp: Date.now()
+        };
+        newMessage.element.style.background = 'beige';
+        newMessage.element.style.marginBottom = '5px';
+        
+        // 클러스터(단체 채팅방)인 경우에만 "이름: 채팅" 형식으로 표시
+        if (isCluster) {
+            newMessage.element.textContent = `${messageUsername}: ${messageText}`;
+        } else {
+            newMessage.element.textContent = messageText;
+        }
+    
+        // 새 메시지를 큐에 추가
+        messageQueues[queueKey].push(newMessage);
+    
+        // 큐에 3개 이상의 메시지가 있으면 가장 오래된 메시지 제거
+        if (messageQueues[queueKey].length > 3) {
+            const oldestMessage = messageQueues[queueKey].shift();
+            oldestMessage.element.classList.add('fade-out');
+            setTimeout(() => {
+                if (oldestMessage.element.parentNode === popupElement) {
+                    popupElement.removeChild(oldestMessage.element);
+                }
+            }, 1000); // 애니메이션 시간 (1초)
+        }
+    
+        // 새 메시지를 팝업에 추가
+        popupElement.appendChild(newMessage.element);
+    
+        // 5초 후 메시지 제거 타이머 설정
+        setTimeout(() => {
+            const index = messageQueues[queueKey].findIndex(msg => msg.timestamp === newMessage.timestamp);
+            if (index !== -1) {
+                messageQueues[queueKey].splice(index, 1);
+                newMessage.element.classList.add('fade-out');
+                setTimeout(() => {
+                    if (newMessage.element.parentNode === popupElement) {
+                        popupElement.removeChild(newMessage.element);
+                    }
+                }, 1000);
+            }
+        }, 10000);
+    }
+}
+
+function enterkey(e) {
+    if (e.keyCode === 13) {
+        sendMessage();
+    }
+}
+
+messageInput.addEventListener('keyup', event => enterkey(event));
+
+function setTextColor(element, messageText) {
+    const firstChar = messageText.trim().charAt(0);
+    if (/[a-zA-Z]/.test(firstChar)) {
+        if (firstChar.toLowerCase() == 'a') {
+            element.classList.add('red');
+        } else {
+            element.classList.add('blue');
+        }
+    }
+}
+
+function scrollToBottom() {
+    requestAnimationFrame(() => {
+        chat.scrollTo({
+            top: chat.scrollHeight,
+            behavior: 'smooth'
+        });
+    });
+}
+
+function scrollToTop() {
+    chat.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
+    handleScrollButtons(); // 스크롤 후 버튼 상태 업데이트
+}
+
+function toggleChat() {
+    let chat = document.getElementsByClassName('chat-container')[0];
+    
+    if (chat.classList.contains('show')) {
+        chat.classList.remove('show');
+        setTimeout(() => {
+            chat.style.display = 'none';
+        }, 500); 
+    } else {
+        chat.style.display = 'flex';
+        setTimeout(() => {
+            chat.classList.add('show');
+            scrollToBottom();
+        }, 10); 
+    }
+}
+
+function updateUserList() {
+    if (users && Array.isArray(users)) {
+        userCount.textContent = `Users: ${users.length}`;
+        userList.innerHTML = '';
+        users.forEach(user => {
+            const userItem = document.createElement('div');
+            userItem.textContent = user;
+            userItem.classList.add('user-list-item');
+
+            // 강퇴 버튼 추가
+            if (isAdmin && user !== username) { // 현재 사용자가 방 관리자일 때, 본인이 아닌 경우에만 버튼을 추가
+                const kickButton = document.createElement('button');
+                kickButton.textContent = 'Kick';
+                kickButton.classList.add('kick-button');
+                kickButton.onclick = () => kickUser(user);
+                userItem.appendChild(kickButton);
+            }
+
+            userList.appendChild(userItem);
+        });
+    } else {
+        userCount.textContent = 'Users: 0';
+        userList.innerHTML = '';
+    }
+}
+
+function kickUser(user) {
+    socket.emit('kickUser', { roomId: roomId, username: user });
+}
+
+function toggleUserList() {
+    const userListElement = document.getElementById('userList');
+    if (userListElement.style.display === 'none' || userListElement.style.display === '') {
+        userListElement.style.display = 'block';
+    } else {
+        userListElement.style.display = 'none';
+    }
+}
+
+function setScreenSize() {
+    let vh = window.innerHeight * 0.01;
+    document.documentElement.style.setProperty('--vh', `${vh}px`);
+}
+
+function handleScrollButtons() {
+    const scrollPosition = chat.scrollTop;
+    const scrollHeight = chat.scrollHeight;
+    const clientHeight = chat.clientHeight;
+
+    if (scrollPosition + clientHeight >= scrollHeight - 10) {
+        scrollToBottomBtn.style.display = 'none';
+    } else {
+        scrollToBottomBtn.style.display = 'block';
+    }
+
+    if (scrollPosition > 10) {
+        scrollToTopBtn.style.display = 'block';
+    } else {
+        scrollToTopBtn.style.display = 'none';
+    }
+}
+
+chat.addEventListener('scroll', handleScrollButtons);

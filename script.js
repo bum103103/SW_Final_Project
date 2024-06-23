@@ -45,7 +45,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
-
 const chat = document.getElementById('chat');
 const messageInput = document.getElementById('messageInput');
 const sendButton = document.getElementById('sendButton');
@@ -56,8 +55,8 @@ const scrollToBottomBtn = document.getElementById('scrollToBottomBtn');
 const scrollToTopBtn = document.getElementById('scrollToTopBtn');
 
 let users = [];
-let isAdmin = false;
-let username = '';
+//let isAdmin = false;
+//let username = '';
 
 function initializeChat(roomId) {
       

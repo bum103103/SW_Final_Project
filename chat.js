@@ -441,7 +441,7 @@ app.use(session({
     cookie: { secure: false }
 }));
 
-['/intro.html','/login.js', '/login.css', '/index.html', '/register.html', '/script.js', '/gps_set.js', '/style.css', '/map.html','/admin.html'].forEach(file => {
+['/intro.html','/login.js', '/login.css', '/index.html', '/register.html','/main.js', '/script.js', '/gps_set.js', '/style.css', '/map.html','/admin.html'].forEach(file => {
     app.get(file, (req, res) => {
         const filePath = path.join(__dirname, file);
         fs.readFile(filePath, (err, data) => {
