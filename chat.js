@@ -1,7 +1,7 @@
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
-const mysql = require('mysql2');
+const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const session = require('express-session');
@@ -20,14 +20,16 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-const pool = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    password: '1234',
-    database: 'chat_db',
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
+// PostgreSQL 연결 설정
+const pool = new Pool({
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5432,
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'postgres123',
+    database: process.env.DB_NAME || 'chat_db',
+    max: 10, // 최대 연결 수
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
 });
 
 let markers = {}; // 마커 정보를 저장할 객체
@@ -52,9 +54,9 @@ function checkAndRemoveEmptyRooms() {
 
 function removeRoom(roomId) {
     // DB에서 마커 삭제
-    pool.query('DELETE FROM markers WHERE id = ?', [roomId], (err) => {
+    pool.query('DELETE FROM markers WHERE id = $1', [roomId], (err) => {
         if (err) {
-            console.error('Error deleting marker from MySQL:', err);
+            console.error('Error deleting marker from PostgreSQL:', err);
             return;
         }
 
@@ -119,12 +121,12 @@ function calculateCenter(userLocations) {
 }
 
 function loadMarkersFromDB() {
-    pool.query('SELECT * FROM markers', (err, results) => {
+    pool.query('SELECT * FROM markers', (err, result) => {
         if (err) {
-            console.error('Error loading markers from MySQL:', err);
+            console.error('Error loading markers from PostgreSQL:', err);
             return;
         }
-        results.forEach(marker => {
+        result.rows.forEach(marker => {
             markers[marker.id] = marker;
 
             // 유저 수 정보를 포함시켜서 클라이언트로 전송
@@ -271,13 +273,13 @@ io.on('connection', (socket) => {
         userMarkers[socket.username] = roomId;
         io.emit('newMarker', markerData);
 
-        pool.query('INSERT INTO markers (id, title, created_by, context, latitude, longitude, max_number, type, image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        pool.query('INSERT INTO markers (id, title, created_by, context, latitude, longitude, max_number, type, image) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
             [markerData.id, markerData.title, markerData.created_by, markerData.context, markerData.latitude, markerData.longitude, markerData.max_number, markerData.type, markerData.image],
             (err) => {
                 if (err) {
-                    console.error('Error saving marker to MySQL:', err);
+                    console.error('Error saving marker to PostgreSQL:', err);
                 } else {
-                    console.log('Marker saved to MySQL');
+                    console.log('Marker saved to PostgreSQL');
                 }
             });
     });
@@ -285,30 +287,30 @@ io.on('connection', (socket) => {
     socket.on('deleteMarker', () => {
         const username = socket.username;
 
-        pool.query('SELECT * FROM markers WHERE created_by = ?', [username], (err, results) => {
+        pool.query('SELECT * FROM markers WHERE created_by = $1', [username], (err, result) => {
             if (err) {
                 console.error('Error checking existing marker:', err);
                 socket.emit('markerDeleteError', { success: false, message: 'Database error' });
                 return;
             }
 
-            if (results.length === 0) {
+            if (result.rows.length === 0) {
                 socket.emit('markerDeleteError', { success: false, message: 'No marker to delete' });
                 return;
             }
 
-            const markerId = results[0].id;
+            const markerId = result.rows[0].id;
 
             delete markers[markerId];
             delete userMarkers[username];
 
             io.emit('removeMarker', { id: markerId });
-            pool.query('DELETE FROM markers WHERE id = ?', [markerId], (err) => {
+            pool.query('DELETE FROM markers WHERE id = $1', [markerId], (err) => {
                 if (err) {
-                    console.error('Error deleting marker from MySQL:', err);
+                    console.error('Error deleting marker from PostgreSQL:', err);
                     socket.emit('markerDeleteError', { success: false, message: 'Error deleting marker from database' });
                 } else {
-                    console.log('Marker deleted from MySQL');
+                    console.log('Marker deleted from PostgreSQL');
                     socket.emit('markerDeleted', { success: true, message: 'Marker deleted' });
                 }
             });
@@ -386,11 +388,11 @@ io.on('connection', (socket) => {
     });
 
     socket.on('delete', (messageId) => {
-        pool.query('DELETE FROM messages WHERE id = ?', [messageId], (err) => {
+        pool.query('DELETE FROM messages WHERE id = $1', [messageId], (err) => {
             if (err) {
-                console.error('Error deleting message from MySQL:', err);
+                console.error('Error deleting message from PostgreSQL:', err);
             } else {
-                console.log('Message deleted from MySQL');
+                console.log('Message deleted from PostgreSQL');
                 io.to(socket.room).emit('delete', { messageId: messageId });
             }
         });
@@ -399,11 +401,11 @@ io.on('connection', (socket) => {
     socket.on('message', (message) => {
         io.to(message.roomId).emit('message', { text: message.text, messageId: message.messageId, username: message.username });
 
-        pool.query('INSERT INTO messages (id, username, text, roomId) VALUES (?, ?, ?, ?)', [message.messageId, message.username, message.text, message.roomId], (err) => {
+        pool.query('INSERT INTO messages (id, username, text, roomId) VALUES ($1, $2, $3, $4)', [message.messageId, message.username, message.text, message.roomId], (err) => {
             if (err) {
-                console.error('Error saving message to MySQL:', err);
+                console.error('Error saving message to PostgreSQL:', err);
             } else {
-                console.log('Message saved to MySQL');
+                console.log('Message saved to PostgreSQL');
             }
         });
     });
@@ -411,7 +413,7 @@ io.on('connection', (socket) => {
     socket.on('disconnect', () => {
         console.log(`Socket disconnected: ${socket.username}`);
         if (socket.username) {
-            pool.query('UPDATE user_login SET status = 0 WHERE username = ?', [socket.username], (err, result) => {
+            pool.query('UPDATE user_login SET status = 0 WHERE username = $1', [socket.username], (err, result) => {
                 if (err) {
                     console.error('Failed to update user status on disconnect:', err);
                     return;
@@ -514,15 +516,15 @@ app.get('/get-username', (req, res) => {
 app.post('/signup', (req, res) => {
     const { username, password } = req.body;
     if (username && password) {
-        pool.execute('SELECT username FROM user_login WHERE username = ?', [username], (err, results) => {
+        pool.query('SELECT username FROM user_login WHERE username = $1', [username], (err, result) => {
             if (err) {
                 res.status(500).json({ success: false, message: 'Database error' });
                 return;
             }
-            if (results.length > 0) {
+            if (result.rows.length > 0) {
                 res.json({ success: false, message: 'Username already exists.' });
             } else {
-                const sql = 'INSERT INTO user_login (username, password) VALUES (?, ?)';
+                const sql = 'INSERT INTO user_login (username, password) VALUES ($1, $2)';
                 pool.query(sql, [username, password], (err, result) => {
                     if (err) {
                         res.status(500).json({ success: false, message: 'Database error' });
@@ -541,25 +543,25 @@ app.post('/login', (req, res) => {
     const { username, password } = req.body;
 
     if (username && password) {
-        pool.execute(
-            'SELECT * FROM user_login WHERE username = ? AND password = ?',
+        pool.query(
+            'SELECT * FROM user_login WHERE username = $1 AND password = $2',
             [username, password],
-            (err, results) => {
+            (err, result) => {
                 if (err) {
                     res.status(500).json({ success: false, message: 'Database error' });
                     return;
                 }
-                if (results.length > 0) {
-                    if (results[0].status === 1) {
+                if (result.rows.length > 0) {
+                    if (result.rows[0].status === 1) {
                         res.status(400).json({ success: false, message: '이미 접속 중입니다.' });
                     } else {
                         req.session.loggedin = true;
                         req.session.username = username;
 
-                        const isAdmin = results[0].is_admin;
+                        const isAdmin = result.rows[0].is_admin;
                         req.session.isAdmin = isAdmin;
 
-                        pool.query('UPDATE user_login SET status = 1 WHERE username = ?', [username], (err, result) => {
+                        pool.query('UPDATE user_login SET status = 1 WHERE username = $1', [username], (err, result) => {
                             if (err) {
                                 console.error('Failed to update user status:', err);
                                 return;
@@ -581,34 +583,13 @@ app.post('/login', (req, res) => {
 app.post('/getMarkers', (req, res) => {
     const markerType = req.body.type;
 
-    pool.execute('SELECT * FROM markers WHERE type = ?', [markerType], (err, results) => {
+    pool.query('SELECT * FROM markers WHERE type = $1', [markerType], (err, result) => {
         if (err) {
             console.error('Error fetching markers:', err);
             res.status(500).send('Database error');
             return;
         }
-        res.json(results);
-    });
-});
-
-app.get('/hasMarker', (req, res) => {
-    if (!req.session.username) {
-        return res.status(401).json({ error: 'Not logged in' });
-    }
-
-    const username = req.session.username;
-
-    pool.query('SELECT * FROM markers WHERE created_by = ?', [username], (err, results) => {
-        if (err) {
-            console.error('Error checking existing marker:', err);
-            return res.status(500).json({ success: false, message: 'Database error' });
-        }
-
-        if (results.length > 0) {
-            return res.json({ hasMarker: true, marker: results[0] });
-        }
-
-        res.json({ hasMarker: false });
+        res.json(result.rows);
     });
 });
 
@@ -632,14 +613,14 @@ app.get('/hasMarker', (req, res) => {
 
     const username = req.session.username;
 
-    pool.query('SELECT * FROM markers WHERE created_by = ?', [username], (err, results) => {
+    pool.query('SELECT * FROM markers WHERE created_by = $1', [username], (err, result) => {
         if (err) {
             console.error('Error checking existing marker:', err);
             return res.status(500).json({ success: false, message: 'Database error' });
         }
 
-        if (results.length > 0) {
-            return res.json({ hasMarker: true, marker: results[0] });
+        if (result.rows.length > 0) {
+            return res.json({ hasMarker: true, marker: result.rows[0] });
         }
 
         res.json({ hasMarker: false });
@@ -652,12 +633,12 @@ app.get('/api/messages', (req, res) => {
         return res.status(400).send('Room ID is required');
     }
 
-    pool.query('SELECT * FROM messages WHERE roomId = ? ORDER BY id ASC', [roomId], (err, results) => {
+    pool.query('SELECT * FROM messages WHERE roomId = $1 ORDER BY id ASC', [roomId], (err, result) => {
         if (err) {
-            console.error('Error fetching messages from MySQL:', err);
+            console.error('Error fetching messages from PostgreSQL:', err);
             return res.status(500).send('Database error');
         }
-        res.json(results);
+        res.json(result.rows);
     });
 });
 
