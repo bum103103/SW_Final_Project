@@ -1,0 +1,50 @@
+# 프론트엔드 관련
+frontend/
+node_modules/
+*.log
+
+# Python 관련
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 가상환경
+.venv/
+venv/
+env/
+ENV/
+backend/.venv/
+backend/venv/
+
+# IDE 관련
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS 관련
+.DS_Store
+Thumbs.db
+
+# Git 관련
+.git/
+.gitignore
+
+# Docker 관련
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# 기타
+README.md
+*.md
+images/
+*.html
+*.css
+*.js

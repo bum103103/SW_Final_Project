@@ -12,15 +12,18 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - chat_network
 
   app:
-    build: .
+    build: 
+      context: ./backend
+      dockerfile: ../Dockerfile
+      args:
+        - BUILDKIT_INLINE_CACHE=1
     container_name: chat_app
     ports:
-      - "8080:8080"
+      - "8000:8000"
     depends_on:
       - postgres
     environment:
@@ -29,12 +32,9 @@ services:
       DB_USER: postgres
       DB_PASSWORD: postgres123
       DB_NAME: chat_db
-    volumes:
-      - .:/app
-      - /app/node_modules
+      DJANGO_SETTINGS_MODULE: chat_backend.settings
     networks:
       - chat_network
-    command: npm start
 
 volumes:
   postgres_data:
