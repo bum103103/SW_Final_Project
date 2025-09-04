@@ -89,7 +89,11 @@ export default {
       isAtBottom: true,
       messageCount: 0,
       lastMessageTime: 0,
-      isChatBlocked: false
+      isChatBlocked: false,
+      userMarkers: {}, // 사용자 위치 마커들
+      userLatitude: 0.0,
+      userLongitude: 0.0,
+      locationUpdateInterval: null
     }
   },
   mounted() {
@@ -100,6 +104,11 @@ export default {
     if (this.socket) {
       this.socket.close()
     }
+    if (this.locationUpdateInterval) {
+      clearInterval(this.locationUpdateInterval)
+    }
+    // 모든 사용자 마커 제거
+    this.clearAllUserMarkers()
   },
   methods: {
     loadKakaoMaps() {
@@ -138,10 +147,90 @@ export default {
     },
 
     async getUserLocation() {
-      // 간단하게 기본 위치만 설정
-      this.userLatitude = 35.1152
-      this.userLongitude = 128.9684
-      console.log('User location set to default')
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, {
+            enableHighAccuracy: true,
+            timeout: 5000,
+            maximumAge: 0
+          })
+        })
+
+        this.userLatitude = position.coords.latitude
+        this.userLongitude = position.coords.longitude
+
+        // 실시간 위치 공유 시작
+        this.startLocationSharing()
+
+        console.log('User location obtained:', this.userLatitude, this.userLongitude)
+      } catch (error) {
+        console.error('Error getting location:', error)
+        // 위치 정보 얻기 실패 시 기본 위치 사용
+        this.userLatitude = 35.1152
+        this.userLongitude = 128.9684
+      }
+    },
+
+    startLocationSharing() {
+      // 10초마다 위치 업데이트
+      this.locationUpdateInterval = setInterval(() => {
+        this.updateUserLocation()
+      }, 10000)
+
+      // 초기 위치 전송
+      this.sendLocationUpdate()
+    },
+
+    updateUserLocation() {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const newLat = position.coords.latitude
+          const newLng = position.coords.longitude
+
+          // 위치가 크게 변경되었을 때만 업데이트
+          const distance = this.calculateDistance(
+            this.userLatitude, this.userLongitude,
+            newLat, newLng
+          )
+
+          if (distance > 10) { // 10미터 이상 이동 시
+            this.userLatitude = newLat
+            this.userLongitude = newLng
+            this.sendLocationUpdate()
+          }
+        },
+        (error) => console.error('Location update error:', error),
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 10000 }
+      )
+    },
+
+    sendLocationUpdate() {
+      if (this.socket && this.socket.readyState === WebSocket.OPEN) {
+        const locationData = {
+          type: 'location_update',
+          room_id: this.roomId,
+          username: this.username,
+          latitude: this.userLatitude,
+          longitude: this.userLongitude
+        }
+        this.socket.send(JSON.stringify(locationData))
+      }
+    },
+
+    calculateDistance(lat1, lng1, lat2, lng2) {
+      // 간단한 거리 계산 (미터 단위)
+      const R = 6371e3 // 지구 반지름 (미터)
+      const φ1 = lat1 * Math.PI / 180
+      const φ2 = lat2 * Math.PI / 180
+      const Δφ = (lat2 - lat1) * Math.PI / 180
+      const Δλ = (lng2 - lng1) * Math.PI / 180
+
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2)
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+
+      return R * c
     },
 
     connectSocket() {
@@ -164,8 +253,16 @@ export default {
         } else if (data.type === 'message_deleted') {
           this.messages = this.messages.filter(msg => msg.id !== (data.message_id || data.messageId))
         } else if (data.type === 'user_joined') {
-          // 사용자 입장 메시지 처리
           this.addMessage(data.message, Date.now().toString(), 'System')
+        } else if (data.type === 'updateUserLocations') {
+          // 실시간 사용자 위치 업데이트
+          this.updateUserMarkers(data.userLocations)
+          this.users = data.users || []
+        } else if (data.type === 'location_update') {
+          // 개별 사용자 위치 업데이트
+          this.updateUserMarker(data.username, data.latitude, data.longitude)
+        } else if (data.type === 'user_left') {
+          this.removeUserMarker(data.username)
         }
       }
 
@@ -254,12 +351,105 @@ export default {
       }
     },
 
-    // 간소화된 사용자 관리
+    // 사용자 마커 관리
     updateUserMarkers(userLocations) {
-      // 간단하게 사용자 수만 업데이트
-      if (userLocations && Array.isArray(userLocations)) {
-        this.users = userLocations.map(user => user.username || user)
+      if (!userLocations || !Array.isArray(userLocations)) return
+
+      // 기존 마커들 업데이트 또는 새로 생성
+      userLocations.forEach(user => {
+        if (user.username !== this.username) {
+          this.addOrUpdateUserMarker(user.username, user.latitude, user.longitude)
+        }
+      })
+
+      // 사라진 사용자 마커 제거
+      const currentUsernames = userLocations.map(user => user.username)
+      Object.keys(this.userMarkers).forEach(username => {
+        if (!currentUsernames.includes(username)) {
+          this.removeUserMarker(username)
+        }
+      })
+
+      this.users = userLocations.map(user => user.username || user)
+    },
+
+    addOrUpdateUserMarker(username, latitude, longitude) {
+      if (!this.map) return
+
+      const position = new window.kakao.maps.LatLng(latitude, longitude)
+
+      if (this.userMarkers[username]) {
+        // 기존 마커 업데이트
+        const markerData = this.userMarkers[username]
+        markerData.marker.setPosition(position)
+        if (markerData.overlay) {
+          markerData.overlay.setPosition(position)
+        }
+        console.log(`Updated marker for ${username}`)
+      } else {
+        // 새 마커 생성
+        const marker = new window.kakao.maps.Marker({
+          position: position,
+          map: this.map,
+          image: new window.kakao.maps.MarkerImage(
+            '/images/person_marker.png', // 사용자용 마커 이미지
+            new window.kakao.maps.Size(30, 30),
+            { offset: new window.kakao.maps.Point(15, 30) }
+          )
+        })
+
+        // 사용자 정보 오버레이 생성 (원본 스타일)
+        const content = `
+          <div class="user-popup">
+            <div class="leaflet-popup-content-wrapper">
+              <div class="leaflet-popup-content">
+                <strong>${username}</strong><br>
+                <small>실시간 위치 공유 중</small>
+              </div>
+            </div>
+            <div class="leaflet-popup-tip-container">
+              <div class="leaflet-popup-tip"></div>
+            </div>
+          </div>
+        `
+
+        const overlay = new window.kakao.maps.CustomOverlay({
+          position: position,
+          content: content,
+          yAnchor: 0.6,
+          xAnchor: 0.5
+        })
+        overlay.setMap(this.map)
+
+        this.userMarkers[username] = { marker, overlay }
+        console.log(`Created new marker for ${username}`)
       }
+    },
+
+    updateUserMarker(username, latitude, longitude) {
+      this.addOrUpdateUserMarker(username, latitude, longitude)
+    },
+
+    removeUserMarker(username) {
+      if (this.userMarkers[username]) {
+        const markerData = this.userMarkers[username]
+        if (markerData.marker) {
+          markerData.marker.setMap(null)
+        }
+        if (markerData.overlay) {
+          markerData.overlay.setMap(null)
+        }
+        delete this.userMarkers[username]
+        console.log(`Removed marker for ${username}`)
+      }
+    },
+
+    clearAllUserMarkers() {
+      Object.values(this.userMarkers).forEach(markerData => {
+        if (markerData.marker) markerData.marker.setMap(null)
+        if (markerData.overlay) markerData.overlay.setMap(null)
+      })
+      this.userMarkers = {}
     },
 
     scrollToBottom() {
@@ -464,6 +654,55 @@ export default {
 
 .back-to-map-btn:hover {
   background: #218838;
+}
+
+/* 사용자 위치 마커 오버레이 스타일 (Kakao Maps 동적 요소용 :deep() 적용) */
+:deep(.user-popup) {
+  position: absolute;
+  bottom: 40px;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.2);
+  width: 150px;
+  font-size: 12px;
+}
+
+:deep(.user-popup .leaflet-popup-content-wrapper) {
+  padding: 1px;
+  text-align: center;
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.2);
+  width: 150px;
+  height: auto;
+  min-height: 40px;
+}
+
+:deep(.user-popup .leaflet-popup-content) {
+  margin: 8px;
+  line-height: 1.4;
+  word-wrap: break-word;
+  white-space: normal;
+}
+
+:deep(.user-popup .leaflet-popup-tip-container) {
+  width: 20px;
+  height: 20px;
+  position: absolute;
+  pointer-events: none;
+  left: 50%;
+  margin-left: -10px;
+  overflow: hidden;
+  bottom: -12px;
+}
+
+:deep(.user-popup .leaflet-popup-tip) {
+  width: 14px;
+  height: 14px;
+  background: white;
+  transform: rotate(45deg);
+  margin: -7px auto 0;
+  box-shadow: 0 3px 14px rgba(0,0,0,0.2);
 }
 
 /* 모바일 반응형 */
