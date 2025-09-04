@@ -533,7 +533,7 @@ export default {
         const overlay = new window.kakao.maps.CustomOverlay({
           position: position,
           content: content,
-          yAnchor: 1.5,
+          yAnchor: 1.6,
           xAnchor: 0.5
         })
         overlay.setMap(this.map)
@@ -690,11 +690,13 @@ export default {
   transform: scale(0.5);
   transform-origin: bottom left;
   transition: all 0.3s ease;
+  pointer-events: none; 
 }
 
 .chat-container.show {
   opacity: 1;
   transform: scale(1);
+  pointer-events: auto;
 }
 
 .header {
@@ -820,7 +822,7 @@ export default {
   left: 50%;
   margin-left: -10px;
   overflow: hidden;
-  bottom: -12px;
+  bottom: -20px;
 }
 
 :deep(.user-popup .leaflet-popup-tip) {
