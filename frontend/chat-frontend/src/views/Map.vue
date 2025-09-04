@@ -349,8 +349,8 @@ export default {
         console.error('Invalid room ID:', roomId)
         return
       }
-      this.currentRoomId = roomId
-      this.chatVisible = true
+      // ChatRoom 페이지로 이동
+      this.$router.push(`/chat/${roomId}`)
     },
 
     toggleChat() {

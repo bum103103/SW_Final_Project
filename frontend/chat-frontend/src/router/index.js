@@ -2,7 +2,6 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
 import Register from '../views/Register.vue'
 import Map from '../views/Map.vue'
-import Chat from '../components/Chat.vue'
 
 const routes = [
   {
@@ -27,8 +26,8 @@ const routes = [
   },
   {
     path: '/chat/:roomId',
-    name: 'Chat',
-    component: Chat,
+    name: 'ChatRoom',
+    component: () => import('../views/ChatRoom.vue'),
     meta: { requiresAuth: true }
   }
 ]
