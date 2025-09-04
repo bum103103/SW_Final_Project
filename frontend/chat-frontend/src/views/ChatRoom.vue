@@ -3,11 +3,8 @@
     <!-- 지도 영역 -->
     <div id="map" class="map-container" ref="mapContainer"></div>
 
-    <!-- 채팅 토글 버튼 -->
-    <div class="input-container">
-      <button id="toggleChatBtn" @click="toggleChat()" class="chat-toggle-btn">
-        💬
-      </button>
+    <!-- 메시지 입력 컨테이너 -->
+    <div class="message-input-container">
       <input
         type="text"
         id="messageInput"
@@ -16,7 +13,10 @@
         placeholder="메시지를 입력하세요..."
       />
       <button id="sendButton" @click="sendMessage" class="send-btn">
-        전송
+        📤
+      </button>
+      <button id="toggleChatBtn" @click="toggleChat()" class="chat-toggle-btn">
+        💬
       </button>
     </div>
 
@@ -649,64 +649,121 @@ export default {
   border-color: #007bff;
 }
 
+/* 메시지 입력 컨테이너 */
+.message-input-container {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  z-index: 1000;
+}
+
+.message-input-container input {
+  width: 300px;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 25px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.message-input-container input:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
 .send-btn, .chat-toggle-btn {
-  padding: 10px 20px;
+  padding: 12px 20px;
   border: none;
-  border-radius: 20px;
+  border-radius: 25px;
   cursor: pointer;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .send-btn {
-  background: #007bff;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+  min-width: 70px;
 }
 
 .send-btn:hover {
-  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.send-btn:active {
+  transform: translateY(0);
 }
 
 .chat-toggle-btn {
-  background: #28a745;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transition: all 0.3s ease;
 }
 
 .chat-toggle-btn:hover {
-  background: #218838;
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+}
+
+.chat-toggle-btn:active {
+  transform: scale(0.95);
 }
 
 .chat-container {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  bottom: 20px;
+  right: 20px;
+  width: 380px;
+  height: 500px;
   display: flex;
   flex-direction: column;
-  background: rgba(0, 0, 0, 0.8);
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   z-index: 2000;
   opacity: 0;
-  transform: scale(0.5);
-  transform-origin: bottom left;
-  transition: all 0.3s ease;
-  pointer-events: none; 
+  transform: translateY(20px) scale(0.95);
+  transform-origin: bottom right;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  backdrop-filter: blur(10px);
 }
 
 .chat-container.show {
   opacity: 1;
-  transform: scale(1);
+  transform: translateY(0) scale(1);
   pointer-events: auto;
 }
 
 .header {
-  background-color: #343a40;
-  padding: 15px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 16px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
   color: white;
-  border-radius: 10px 10px 0 0;
+  border-radius: 16px 16px 0 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .user-count {
@@ -721,39 +778,90 @@ export default {
 
 .chat-content {
   flex: 1;
-  padding: 20px;
+  padding: 16px;
   overflow-y: auto;
-  background: rgba(255, 255, 255, 0.9);
+  background: #f8fafc;
+  border-radius: 0 0 16px 16px;
+  scroll-behavior: smooth;
+}
+
+.chat-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.chat-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.chat-content::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.chat-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .chat-message-container {
   display: flex;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   align-items: flex-start;
+  position: relative;
 }
 
 .chat-message-container.self {
   justify-content: flex-end;
+  flex-direction: row-reverse;
 }
 
 .chat-message {
-  padding: 10px 15px;
-  border-radius: 18px;
-  max-width: 70%;
+  padding: 12px 16px;
+  border-radius: 20px;
+  max-width: 280px;
   word-wrap: break-word;
   font-size: 14px;
   line-height: 1.4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
 }
 
 .chat-message.self {
-  background-color: #007bff;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   margin-left: auto;
+  position: relative;
+}
+
+.chat-message.self::after {
+  content: '';
+  position: absolute;
+  bottom: 12px;
+  right: -8px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid #764ba2;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
 }
 
 .chat-message.other {
-  background-color: #f1f1f1;
-  color: #333;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  position: relative;
+}
+
+.chat-message.other::after {
+  content: '';
+  position: absolute;
+  bottom: 12px;
+  left: -8px;
+  width: 0;
+  height: 0;
+  border-right: 8px solid #ffffff;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 8px solid transparent;
 }
 
 .delete-button {
@@ -836,22 +944,56 @@ export default {
 
 /* 모바일 반응형 */
 @media (max-width: 768px) {
-  .input-container {
+  .chat-container {
+    width: 90vw;
+    height: 70vh;
     bottom: 10px;
-    padding: 8px 15px;
-  }
-
-  #messageInput {
-    font-size: 16px; /* iOS에서 줌 방지 */
+    right: 10px;
+    max-width: 350px;
   }
 
   .chat-content {
-    padding: 15px;
+    padding: 12px;
   }
 
   .chat-message {
-    font-size: 16px;
-    max-width: 80%;
+    font-size: 15px;
+    max-width: 85%;
+    padding: 10px 14px;
+  }
+
+  .message-input-container {
+    bottom: 10px;
+    left: 10px;
+    gap: 6px;
+  }
+
+  .message-input-container input {
+    width: 200px;
+    font-size: 16px; /* iOS에서 줌 방지 */
+  }
+
+  .send-btn, .chat-toggle-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+
+  .chat-toggle-btn {
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
+  }
+
+  .header {
+    padding: 12px 16px;
+  }
+
+  .user-count {
+    font-size: 14px;
+  }
+
+  .room-info {
+    font-size: 12px;
   }
 }
 </style>
