@@ -307,7 +307,7 @@ export default {
         console.log('Received message:', data)
 
         if (data.type === 'chat_message') {
-          this.addMessage(data.message, data.message_id || data.messageId, data.username)
+          this.addMessage(data.message, data.message_id || data.messageId, data.user)
         } else if (data.type === 'message_deleted') {
           this.messages = this.messages.filter(msg => msg.id !== (data.message_id || data.messageId))
         } else if (data.type === 'user_joined') {
@@ -318,9 +318,9 @@ export default {
           this.users = data.users || []
         } else if (data.type === 'location_update') {
           // 개별 사용자 위치 업데이트
-          this.updateUserMarker(data.username, data.latitude, data.longitude)
+          this.updateUserMarker(data.user, data.latitude, data.longitude)
         } else if (data.type === 'user_left') {
-          this.removeUserMarker(data.username)
+          this.removeUserMarker(data.user)
         }
       }
 
@@ -533,7 +533,7 @@ export default {
         const overlay = new window.kakao.maps.CustomOverlay({
           position: position,
           content: content,
-          yAnchor: 1.2,
+          yAnchor: 1.5,
           xAnchor: 0.5
         })
         overlay.setMap(this.map)
@@ -786,8 +786,7 @@ export default {
 
 /* 사용자 위치 마커 오버레이 스타일 (Kakao Maps 동적 요소용 :deep() 적용) */
 :deep(.user-popup) {
-  position: absolute;
-  bottom: 40px;
+  z-index: 10; 
   border-radius: 12px;
   background: white;
   box-shadow: 0 3px 14px rgba(0,0,0,0.2);
