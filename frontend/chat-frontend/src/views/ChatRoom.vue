@@ -91,13 +91,16 @@ export default {
       lastMessageTime: 0,
       isChatBlocked: false,
       userMarkers: {}, // 사용자 위치 마커들
+      userMessages: {}, // 사용자별 최근 메시지 저장
       userLatitude: 0.0,
       userLongitude: 0.0,
       locationUpdateInterval: null
     }
   },
   mounted() {
-    this.username = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).username : ''
+    // 사용자 정보 가져오기 (여러 방식으로 시도)
+    this.username = this.getUsername()
+    console.log('ChatRoom mounted with username:', this.username)
     this.loadKakaoMaps()
   },
   beforeUnmount() {
@@ -109,8 +112,38 @@ export default {
     }
     // 모든 사용자 마커 제거
     this.clearAllUserMarkers()
+    // 사용자 메시지 초기화
+    this.userMessages = {}
   },
-  methods: {
+  methods: { // methods를 하나로 합칩니다.
+    getUsername() {
+      try {
+        // localStorage에서 user 정보 확인
+        const userStr = localStorage.getItem('user')
+        if (userStr) {
+          const user = JSON.parse(userStr)
+          if (user && user.username) {
+            return user.username
+          }
+        }
+
+        // JWT 토큰에서 사용자 정보 추출 시도
+        const token = localStorage.getItem('token')
+        if (token) {
+          const payload = JSON.parse(atob(token.split('.')[1]))
+          if (payload && payload.username) {
+            return payload.username
+          }
+        }
+
+        // 기본값 설정
+        return '사용자'
+      } catch (error) {
+        console.error('Error getting username:', error)
+        return '사용자'
+      }
+    },
+
     loadKakaoMaps() {
       console.log('loadKakaoMaps called')
       if (window.kakao && window.kakao.maps) {
@@ -141,9 +174,29 @@ export default {
         }
         this.map = new window.kakao.maps.Map(container, options)
 
+        // 지도 이벤트 리스너 추가 (오버레이 위치 업데이트)
+        window.kakao.maps.event.addListener(this.map, 'dragend', () => {
+          this.updateAllOverlayPositions()
+        })
+
+        window.kakao.maps.event.addListener(this.map, 'zoom_changed', () => {
+          this.updateAllOverlayPositions()
+        })
+
         // 사용자 위치 가져오기
         this.getUserLocation()
       }
+    },
+
+    updateAllOverlayPositions() {
+      // 모든 사용자 마커의 오버레이 위치 업데이트
+      Object.values(this.userMarkers).forEach(markerData => {
+        if (markerData.overlay) {
+          // 지도가 움직일 때 오버레이가 마커를 따라가도록 강제 업데이트
+          const position = markerData.marker.getPosition()
+          markerData.overlay.setPosition(position)
+        }
+      })
     },
 
     async getUserLocation() {
@@ -165,9 +218,10 @@ export default {
         console.log('User location obtained:', this.userLatitude, this.userLongitude)
       } catch (error) {
         console.error('Error getting location:', error)
-        // 위치 정보 얻기 실패 시 기본 위치 사용
-        this.userLatitude = 35.1152
-        this.userLongitude = 128.9684
+        // 위치 정보 얻기 실패 시 기본 위치 사용 (부산시청 근처)
+        this.userLatitude = 35.1795543
+        this.userLongitude = 129.0756416
+        this.startLocationSharing() // 기본 위치라도 공유 시작
       }
     },
 
@@ -242,6 +296,10 @@ export default {
 
       this.socket.onopen = () => {
         console.log('WebSocket connected')
+        // 연결되자마자 위치 정보 전송
+        if(this.userLatitude !== 0.0) {
+            this.sendLocationUpdate();
+        }
       }
 
       this.socket.onmessage = (event) => {
@@ -312,6 +370,21 @@ export default {
       const wasAtBottom = this.isAtBottom
       const isMine = username === this.username
 
+      // 사용자별 최근 메시지 저장 (최대 3개)
+      if (!this.userMessages[username]) {
+        this.userMessages[username] = []
+      }
+      this.userMessages[username].push({
+        text: text,
+        timestamp: new Date()
+      })
+
+      // 최근 3개 메시지만 유지
+      if (this.userMessages[username].length > 3) {
+        this.userMessages[username] = this.userMessages[username].slice(-3)
+      }
+
+      // 채팅 메시지 리스트에 추가
       this.messages.push({
         id: messageId,
         text: text,
@@ -319,6 +392,9 @@ export default {
         isMine: isMine,
         timestamp: new Date()
       })
+
+      // 해당 사용자의 오버레이 업데이트
+      this.updateUserOverlay(username)
 
       this.$nextTick(() => {
         if (wasAtBottom) {
@@ -328,6 +404,39 @@ export default {
           this.showNewMessageNotification = true
         }
       })
+    },
+
+    updateUserOverlay(username) {
+      // 사용자 마커의 오버레이 업데이트
+      if (this.userMarkers[username] && this.userMessages[username]) {
+        const recentMessages = this.userMessages[username]
+        const latestMessage = recentMessages[recentMessages.length - 1]
+
+        if (latestMessage) {
+          const overlay = this.userMarkers[username].overlay
+          if(overlay){
+              const shortMessage = latestMessage.text.length > 20
+                ? latestMessage.text.substring(0, 20) + '...'
+                : latestMessage.text
+
+              const newContent = `
+                <div class="user-popup">
+                  <div class="leaflet-popup-content-wrapper">
+                    <div class="leaflet-popup-content">
+                      <strong>${username}</strong><br>
+                      <small>"${shortMessage}"</small><br>
+                      <small style="color: #666;">실시간 위치 공유 중</small>
+                    </div>
+                  </div>
+                  <div class="leaflet-popup-tip-container">
+                    <div class="leaflet-popup-tip"></div>
+                  </div>
+                </div>
+              `
+              overlay.setContent(newContent)
+          }
+        }
+      }
     },
 
     deleteMessage(messageId) {
@@ -398,13 +507,21 @@ export default {
           )
         })
 
-        // 사용자 정보 오버레이 생성 (원본 스타일)
+        const recentMessage = this.userMessages[username] && this.userMessages[username].length > 0
+          ? this.userMessages[username][this.userMessages[username].length - 1].text
+          : null
+
+        const shortMessage = recentMessage && recentMessage.length > 20
+          ? recentMessage.substring(0, 20) + '...'
+          : recentMessage || '메시지 없음'
+
         const content = `
           <div class="user-popup">
             <div class="leaflet-popup-content-wrapper">
               <div class="leaflet-popup-content">
                 <strong>${username}</strong><br>
-                <small>실시간 위치 공유 중</small>
+                <small>"${shortMessage}"</small><br>
+                <small style="color: #666;">실시간 위치 공유 중</small>
               </div>
             </div>
             <div class="leaflet-popup-tip-container">
@@ -416,10 +533,21 @@ export default {
         const overlay = new window.kakao.maps.CustomOverlay({
           position: position,
           content: content,
-          yAnchor: 0.6,
+          yAnchor: 1.2,
           xAnchor: 0.5
         })
         overlay.setMap(this.map)
+
+        // 마커 클릭 이벤트 추가
+        window.kakao.maps.event.addListener(marker, 'click', () => {
+          this.$nextTick(() => {
+            const inputElement = document.getElementById('messageInput')
+            if (inputElement) {
+              inputElement.focus()
+              inputElement.placeholder = `${username}님에게 메시지...`
+            }
+          })
+        })
 
         this.userMarkers[username] = { marker, overlay }
         console.log(`Created new marker for ${username}`)
@@ -483,7 +611,7 @@ export default {
         this.messageCount = 0
       }, 30000)
     }
-  }
+  },
 }
 </script>
 
