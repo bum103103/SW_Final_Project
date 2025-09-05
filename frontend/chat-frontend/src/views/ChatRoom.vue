@@ -13,10 +13,10 @@
         placeholder="메시지를 입력하세요..."
       />
       <button id="sendButton" @click="sendMessage" class="send-btn">
-        📤
+        <FontAwesomeIcon :icon="['far', 'paper-plane']" />
       </button>
       <button id="toggleChatBtn" @click="toggleChat()" class="chat-toggle-btn">
-        💬
+        <FontAwesomeIcon :icon="['far', 'message']" />
       </button>
     </div>
 
@@ -653,7 +653,8 @@ export default {
 .message-input-container {
   position: fixed;
   bottom: 20px;
-  left: 20px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   gap: 8px;
   align-items: center;
@@ -692,7 +693,22 @@ export default {
 .send-btn {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  min-width: 70px;
+  width: 50px;  /* 추가 */
+  height: 50px; /* 추가 */
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.send-btn .fa-paper-plane {
+  transition: transform 0.2s ease;
+}
+
+.send-btn:hover .fa-paper-plane {
+  transform: translateX(2px);
 }
 
 .send-btn:hover {
@@ -713,9 +729,18 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
   transition: all 0.3s ease;
+  border: none;
+  cursor: pointer;
+}
+
+.chat-toggle-btn .fa-message {
+  transition: transform 0.3s ease;
+}
+
+.chat-toggle-btn:hover .fa-message {
+  transform: scale(1.1);
 }
 
 .chat-toggle-btn:hover {
@@ -964,7 +989,8 @@ export default {
 
   .message-input-container {
     bottom: 10px;
-    left: 10px;
+    left: 50%;
+    transform: translateX(-50%);
     gap: 6px;
   }
 
@@ -974,8 +1000,15 @@ export default {
   }
 
   .send-btn, .chat-toggle-btn {
-    padding: 10px 16px;
-    font-size: 13px;
+    padding: 10px;
+  }
+
+  .send-btn .fa-paper-plane {
+    font-size: 18px;
+  }
+
+  .chat-toggle-btn .fa-message {
+    font-size: 22px;
   }
 
   .chat-toggle-btn {
