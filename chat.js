@@ -21,10 +21,11 @@ const server = http.createServer(app);
 const io = socketIo(server);
 
 const pool = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    password: '1234',
-    database: 'chat_db',
+    host: process.env.DB_HOST || 'localhost',
+    port: Number(process.env.DB_PORT || 3307),
+    user: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '1234',
+    database: process.env.DB_NAME || 'chat_db',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
@@ -665,7 +666,9 @@ app.get('/map.html', (req, res) => {
     res.sendFile(__dirname + '/map.html');
 });
 
-server.listen(8080, () => {
-    console.log('Server is listening on http://localhost:8080');
+const PORT = Number(process.env.PORT || 8080);
+
+server.listen(PORT, () => {
+    console.log(`Server is listening on http://localhost:${PORT}`);
     loadMarkersFromDB(); // 서버 시작 시 마커 로드
 });
