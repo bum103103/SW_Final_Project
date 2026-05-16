@@ -37,7 +37,7 @@ let roomUserLocations = {}; // 방별로 사용자 위치를 저장하는 객체
 let roomUsers = {}; // 방별 사용자 목록
 let bannedUsers = {}; // 방별 강퇴된 사용자 목록
 const roomUserCounts = {}; // 방별 유저 수를 저장하는 객체
-const roomEmptyCheckInterval = 30 * 1000; // 30초
+const roomEmptyCheckInterval = 5 * 60 * 1000; // 5분으로 변경 (너무 짧으면 새로고침 시 방이 삭제될 수 있음)
 const roomMarkers = {};
 
 function checkAndRemoveEmptyRooms() {
@@ -455,12 +455,6 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-app.use(session({
-    secret: 'your_secret_key',
-    resave: false,
-    saveUninitialized: true,
-    cookie: { secure: false }
-}));
 
 ['/intro.html','/login.js', '/login.css', '/index.html', '/register.html','/main.js', '/script.js', '/gps_set.js', '/style.css', '/map.html','/admin.html'].forEach(file => {
     app.get(file, (req, res) => {
@@ -497,7 +491,9 @@ app.get('/login.html', (req, res) => {
 app.get('/index.html', (req, res) => {
     if (req.session.loggedin) {
         const indexHtml = fs.readFileSync(path.join(__dirname, 'index.html'), 'utf8');
-        const modifiedHtml = indexHtml.replace('<!--USERNAME-->', `<script>var username = "${req.session.username}";</script>`);
+        // XSS 방지를 위해 유저 이름을 안전하게 주입
+        const safeUsername = JSON.stringify(req.session.username);
+        const modifiedHtml = indexHtml.replace('<!--USERNAME-->', `<script>var username = ${safeUsername};</script>`);
         res.send(modifiedHtml);
     } else {
         res.redirect('/login.html');
@@ -523,8 +519,9 @@ app.post('/signup', (req, res) => {
             if (results.length > 0) {
                 res.json({ success: false, message: 'Username already exists.' });
             } else {
+                const hashedPassword = bcrypt.hashSync(password, 10);
                 const sql = 'INSERT INTO user_login (username, password) VALUES (?, ?)';
-                pool.query(sql, [username, password], (err, result) => {
+                pool.query(sql, [username, hashedPassword], (err, result) => {
                     if (err) {
                         res.status(500).json({ success: false, message: 'Database error' });
                         return;
@@ -543,14 +540,14 @@ app.post('/login', (req, res) => {
 
     if (username && password) {
         pool.execute(
-            'SELECT * FROM user_login WHERE username = ? AND password = ?',
-            [username, password],
+            'SELECT * FROM user_login WHERE username = ?',
+            [username],
             (err, results) => {
                 if (err) {
                     res.status(500).json({ success: false, message: 'Database error' });
                     return;
                 }
-                if (results.length > 0) {
+                if (results.length > 0 && bcrypt.compareSync(password, results[0].password)) {
                     if (results[0].status === 1) {
                         res.status(400).json({ success: false, message: '이미 접속 중입니다.' });
                     } else {

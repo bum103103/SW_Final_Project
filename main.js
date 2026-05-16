@@ -89,11 +89,11 @@ function requestAdminStatus() {
     if (!adminStatusRequested) {
         console.log('Requesting admin status');
         socket.emit('getAdminStatus', roomId);
-        handleAdminStatus(adminStatusRequested);
+        adminStatusRequested = true;
         // 5초 후에 다시 요청할 수 있도록 설정
         setTimeout(() => {
             adminStatusRequested = false;
-        }, 1000);
+        }, 5000);
     }
 }
 async function initializeMap(roomId) {
@@ -575,7 +575,6 @@ function addMessageToChat(messageText, messageId, messageUsername) {
     const message = document.createElement('p');
     message.dataset.id = messageId;
     message.classList.add('chat-message', messageUsername === username ? 'self' : 'other');
-    message.style.fontSize = '40px';
     if (wasAtBottom) {
         scrollToBottom();
         hideNewMessageNotification();
@@ -584,7 +583,6 @@ function addMessageToChat(messageText, messageId, messageUsername) {
     }
     const formattedMessageText = `${messageUsername}: ${messageText}`;
     message.textContent = formattedMessageText;
-    setTextColor(message, messageText);
 
     if (messageUsername === username) {
         const deleteButton = document.createElement('button');
@@ -673,16 +671,6 @@ function enterkey(e) {
 
 messageInput.addEventListener('keyup', event => enterkey(event));
 
-function setTextColor(element, messageText) {
-    const firstChar = messageText.trim().charAt(0);
-    if (/[a-zA-Z]/.test(firstChar)) {
-        if (firstChar.toLowerCase() == 'a') {
-            element.classList.add('red');
-        } else {
-            element.classList.add('blue');
-        }
-    }
-}
 
 function scrollToBottom() {
     requestAnimationFrame(() => {
