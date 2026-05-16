@@ -24,7 +24,7 @@ document.getElementById('loginForm').addEventListener('submit', function(event) 
     var password = document.getElementById('password').value;
 
     username = escapeHTML(username);
-    password = escapeHTML(password);
+    // password는 이스케이프 처리하지 않고 원본 그대로 서버로 전송해야 함 (Bcrypt 해싱 목적)
 
     fetch('/login', {
         method: 'POST',

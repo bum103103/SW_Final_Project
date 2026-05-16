@@ -109,7 +109,6 @@ function addMessageToChat(messageText, messageId, messageUsername) {
     scrollToBottom();
     const formattedMessageText = `${messageUsername}: ${messageText}`;
     message.textContent = formattedMessageText;
-    setTextColor(message, messageText);
 
     if (messageUsername === username) {
         const deleteButton = document.createElement('button');
@@ -215,16 +214,6 @@ function enterkey(e) {
 
 messageInput.addEventListener('keyup', event => enterkey(event));
 
-function setTextColor(element, messageText) {
-    const firstChar = messageText.trim().charAt(0);
-    if (/[a-zA-Z]/.test(firstChar)) {
-        if (firstChar.toLowerCase() == 'a') {
-            element.classList.add('red');
-        } else {
-            element.classList.add('blue');
-        }
-    }
-}
 
 function scrollToBottom() {
     requestAnimationFrame(() => {
