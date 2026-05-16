@@ -5,12 +5,12 @@
   "main": "chat.js",
   "scripts": {
     "start": "node chat.js",
-    "dev": "node chat.js",
+    "dev": "nodemon chat.js",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose stop db",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
-    "test": "echo \"No tests configured\" && exit 0"
+    "test": "jest --runInBand --detectOpenHandles"
   },
   "keywords": [],
   "author": "",
@@ -23,8 +23,12 @@
     "express-session": "^1.18.0",
     "figlet": "^1.7.0",
     "mysql2": "^3.9.7",
-    "nodemin": "^1.0.1",
     "socket.io": "^4.7.5",
     "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "jest": "^30.4.2",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.2.2"
   }
 }

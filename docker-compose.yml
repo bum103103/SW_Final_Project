@@ -34,8 +34,12 @@ services:
       DB_USER: root
       DB_PASSWORD: ${DB_PASSWORD:-1234}
       DB_NAME: ${DB_NAME:-chat_db}
+    volumes:
+      - .:/app
+      - /app/node_modules
     ports:
       - "${APP_PORT:-8080}:8080"
+    command: npm run dev
 
 volumes:
   mysql_data:
